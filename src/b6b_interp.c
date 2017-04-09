@@ -482,6 +482,12 @@ enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 	return res;
 }
 
+static enum b6b_res b6b_interp_proc_nop(struct b6b_interp *interp,
+                                        struct b6b_obj *args)
+{
+	return B6B_OK;
+}
+
 static enum b6b_res b6b_interp_proc_yield(struct b6b_interp *interp,
                                           struct b6b_obj *args)
 {
@@ -689,6 +695,12 @@ static enum b6b_res b6b_interp_proc_spawn(struct b6b_interp *interp,
 }
 
 static const struct b6b_ext_obj b6b_interp[] = {
+	{
+		.name = "nop",
+		.type = B6B_OBJ_STR,
+		.val.s = "nop",
+		.proc = b6b_interp_proc_nop
+	},
 	{
 		.name = "yield",
 		.type = B6B_OBJ_STR,
