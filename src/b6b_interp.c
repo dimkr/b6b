@@ -329,14 +329,19 @@ static enum b6b_res b6b_on_res(struct b6b_interp *interp,
 
 	/* switch to another thread upon B6B_YIELD or after each batch of
 	 * B6B_QUANT_LEN statements */
-	if (res == B6B_YIELD) {
-		b6b_thread_sched(interp->threads, B6B_NTHREADS, &interp->fg);
-		return B6B_OK;
-	}
+	switch (res) {
+		case B6B_YIELD:
+			b6b_thread_sched(interp->threads, B6B_NTHREADS, &interp->fg);
+			return B6B_OK;
 
-	if ((++interp->qstep == B6B_QUANT_LEN) && (res != B6B_EXIT)) {
-		b6b_thread_sched(interp->threads, B6B_NTHREADS, &interp->fg);
-		interp->qstep = 0;
+		case B6B_EXIT:
+			return res;
+
+		default:
+			if (++interp->qstep == B6B_QUANT_LEN) {
+				interp->qstep = 0;
+				b6b_thread_sched(interp->threads, B6B_NTHREADS, &interp->fg);
+			}
 	}
 
 	return res;

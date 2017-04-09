@@ -435,8 +435,10 @@ static enum b6b_res b6b_list_proc_pop(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	li = b6b_list_first(l);
-	if (!li)
+	if (!li) {
+		b6b_return_str(interp, "pop from {}", sizeof("pop from {}") - 1);
 		return B6B_ERR;
+	}
 
 	for (i = 1; i <= n->n; ++i) {
 		li = b6b_list_next(li);
