@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <stdint.h>
 
 #undef _GNU_SOURCE
 
@@ -231,3 +232,66 @@ uint32_t b6b_str_hash(const char *s, const size_t len)
 	h += (h << 15);
 	return h;
 }
+
+static enum b6b_res b6b_str_proc_len(struct b6b_interp *interp,
+                                     struct b6b_obj *args)
+{
+	struct b6b_obj *s;
+
+	if (b6b_proc_get_args(interp, args, "o s", NULL, &s))
+		return b6b_return_num(interp, (b6b_num)s->slen);
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_str_proc_index(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
+{
+	struct b6b_obj *s, *i;
+
+	if (!b6b_proc_get_args(interp, args, "o s i", NULL, &s, &i) ||
+	    (i->n >= s->slen))
+	    return B6B_ERR;
+
+	return b6b_return_str(interp, &s->s[(ptrdiff_t)i->n], 1);
+}
+
+static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
+{
+	struct b6b_obj *s, *start, *end;
+
+	if (!b6b_proc_get_args(interp, args, "o s i i", NULL, &s, &start, &end) ||
+	    (start->n < 0) ||
+	    (start->n >= s->slen) ||
+	    (end->n < 0) ||
+	    (end->n >= s->slen) ||
+	    (start->n > end->n))
+	    return B6B_ERR;
+
+	return b6b_return_str(interp,
+	                      &s->s[(ptrdiff_t)start->n],
+	                      end->n - start->n);
+}
+
+static const struct b6b_ext_obj b6b_str[] = {
+	{
+		.name = "str.len",
+		.type = B6B_OBJ_STR,
+		.val.s = "str.len",
+		.proc = b6b_str_proc_len
+	},
+	{
+		.name = "str.index",
+		.type = B6B_OBJ_STR,
+		.val.s = "str.index",
+		.proc = b6b_str_proc_index
+	},
+	{
+		.name = "str.range",
+		.type = B6B_OBJ_STR,
+		.val.s = "str.range",
+		.proc = b6b_str_proc_range
+	}
+};
+__b6b_ext(b6b_str);

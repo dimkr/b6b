@@ -231,6 +231,11 @@ unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap)
 						return 0;
 					break;
 
+				case 'i':
+					if (!b6b_as_num(li->o) || (roundf(li->o->n) != li->o->n))
+						return 0;
+					break;
+
 				default:
 					return 0;
 			}
