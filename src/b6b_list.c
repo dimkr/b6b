@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <math.h>
 
 #include <b6b.h>
 

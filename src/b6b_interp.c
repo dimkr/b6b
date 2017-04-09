@@ -331,7 +331,7 @@ static enum b6b_res b6b_on_res(struct b6b_interp *interp,
 	 * B6B_QUANT_LEN statements */
 	switch (res) {
 		case B6B_YIELD:
-			b6b_thread_sched(interp->threads, B6B_NTHREADS, &interp->fg);
+			b6b_yield(interp);
 			return B6B_OK;
 
 		case B6B_EXIT:
@@ -340,7 +340,7 @@ static enum b6b_res b6b_on_res(struct b6b_interp *interp,
 		default:
 			if (++interp->qstep == B6B_QUANT_LEN) {
 				interp->qstep = 0;
-				b6b_thread_sched(interp->threads, B6B_NTHREADS, &interp->fg);
+				b6b_yield(interp);
 			}
 	}
 

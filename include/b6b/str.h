@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
+__attribute__((nonnull(1)))
 struct b6b_obj *b6b_str_new(char *s, const size_t len);
 
 __attribute__((nonnull(1)))
@@ -30,4 +31,5 @@ struct b6b_obj *b6b_str_fmt(const char *fmt, ...);
 
 int b6b_as_str(struct b6b_obj *o);
 
+__attribute__((nonnull(1)))
 uint32_t b6b_str_hash(const char *s, const size_t len);
