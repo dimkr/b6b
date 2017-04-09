@@ -1,0 +1,159 @@
+/*
+ * This file is part of b6b.
+ *
+ * Copyright 2017 Dima Krasner
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <math.h>
+#include <errno.h>
+#include <fenv.h>
+
+#include <b6b.h>
+
+static enum b6b_res b6b_math_proc_add(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+		return b6b_return_num(interp, m->n + n->n);
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_sub(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+		return b6b_return_num(interp, m->n - n->n);
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_mul(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+		return b6b_return_num(interp, m->n * n->n);
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_div(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n)) {
+		if (b6b_unlikely(n->n == 0))
+			return b6b_return_str(interp, "/ by 0", sizeof("/ by 0") - 1);
+
+		return b6b_return_num(interp, m->n / n->n);
+	}
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_mod(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+	double p;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n)) {
+		if (b6b_unlikely(n->n == 0))
+			return b6b_return_str(interp, "% by 0", sizeof("% by 0") - 1);
+
+		errno = 0;
+		feclearexcept(FE_ALL_EXCEPT);
+		p = fmod(m->n, n->n);
+		if (!errno && !fetestexcept(FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW))
+			return b6b_return_num(interp, p);
+	}
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_lt(struct b6b_interp *interp,
+                                     struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+		return b6b_return_bool(interp, m->n < n->n);
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_gt(struct b6b_interp *interp,
+                                     struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+		return b6b_return_bool(interp, m->n > n->n);
+
+	return B6B_ERR;
+}
+
+static const struct b6b_ext_obj b6b_math[] = {
+	{
+		.name = "+",
+		.type = B6B_OBJ_STR,
+		.val.s = "+",
+		.proc = b6b_math_proc_add
+	},
+	{
+		.name = "-",
+		.type = B6B_OBJ_STR,
+		.val.s = "-",
+		.proc = b6b_math_proc_sub
+	},
+	{
+		.name = "*",
+		.type = B6B_OBJ_STR,
+		.val.s = "*",
+		.proc = b6b_math_proc_mul
+	},
+	{
+		.name = "/",
+		.type = B6B_OBJ_STR,
+		.val.s = "/",
+		.proc = b6b_math_proc_div
+	},
+	{
+		.name = "%",
+		.type = B6B_OBJ_STR,
+		.val.s = "%",
+		.proc = b6b_math_proc_mod
+	},
+	{
+		.name = "<",
+		.type = B6B_OBJ_STR,
+		.val.s = "<",
+		.proc = b6b_math_proc_lt
+	},
+	{
+		.name = ">",
+		.type = B6B_OBJ_STR,
+		.val.s = ">",
+		.proc = b6b_math_proc_gt
+	}
+};
+__b6b_ext(b6b_math);

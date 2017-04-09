@@ -1,0 +1,31 @@
+ _      __   _
+| |__  / /_ | |__
+| '_ \| '_ \| '_ \
+| |_) | (_) | |_) |
+|_.__/ \___/|_.__/
+
+Overview
+========
+
+b6b is a tiny, embeddable scripting engine.
+
+It is named so in admiration of the excellent Vincent Bach 6B trumpet
+mouthpiece, which produces compact, yet lively and expressive tone with a
+strong, solid core, that makes it a good choice for many playing situations. The
+name was chosen with hope that these qualities will also be attributed to the
+language and its implementation.
+
+Building
+========
+
+  $ meson build
+  $ ninja -C build
+
+Credits and Legal Information
+=============================
+
+b6b is free and unencumbered software released under the terms of the Apache
+Apache License Version 2.0; see COPYING for the license text. For a list of its
+authors and contributors, see AUTHORS.
+
+The ASCII art logo at the top was made using FIGlet (http://www.figlet.org/).
