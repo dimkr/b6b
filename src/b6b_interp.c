@@ -98,6 +98,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 {
 	struct b6b_obj *args, *a;
 	const struct b6b_ext *e;
+	b6b_initf *ip;
 	int i;
 	unsigned int j;
 
@@ -174,6 +175,11 @@ int b6b_interp_new(struct b6b_interp *interp,
 			if (!b6b_interp_new_ext_obj(interp, &e->os[j]))
 				goto bail;
 		}
+	}
+
+	for (ip = b6b_init_first; ip < b6b_init_last; ++ip) {
+		if (!(*ip)(interp))
+			goto bail;
 	}
 
 	b6b_unref(args);

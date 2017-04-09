@@ -32,12 +32,10 @@ struct b6b_ext {
 	uint8_t n;
 } __attribute__((packed));
 
-
-#define ___b6b_ext_name(os) b6b_ext_ ##os
-#define __b6b_ext_name(os) ___b6b_ext_name(os)
+#define __b6b_ext_name(os) b6b_ext_ ##os
 #define __b6b_ext(_os) \
 	struct b6b_ext __attribute__((section("_b6b_ext"), used)) \
-	___b6b_ext_name(_os) = { \
+	__b6b_ext_name(_os) = { \
 		.os = _os, \
 		.n = sizeof(_os) / sizeof(_os[0]) \
 	}
@@ -46,3 +44,14 @@ extern const struct b6b_ext __start__b6b_ext[];
 #define b6b_ext_first __start__b6b_ext
 extern const struct b6b_ext __stop__b6b_ext[];
 #define b6b_ext_last __stop__b6b_ext
+
+typedef int (*b6b_initf)(struct b6b_interp *);
+
+#define __b6b_initp_name(_init) __ ##_init
+#define __b6b_init(_func) \
+	__attribute__((section("_b6b_init"), used)) b6b_initf __b6b_initp_name(_func) = _func
+
+extern b6b_initf __start__b6b_init[];
+#define b6b_init_first __start__b6b_init
+extern b6b_initf __stop__b6b_init[];
+#define b6b_init_last __stop__b6b_init

@@ -21,6 +21,7 @@ libb6b = library('b6b',
                  'b6b_frame.c', 'b6b_thread.c', 'b6b_interp.c',
                  'b6b_math.c', 'b6b_logic.c', 'b6b_loop.c', 'b6b_exc.c', 'b6b_proc.c',
                  'b6b_time.c',
+                 'linenoise/linenoise.c', 'b6b_linenoise.c',
                  include_directories: b6b_includes,
                  dependencies: [cc.find_library('m', required: false)])
 

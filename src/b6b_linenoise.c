@@ -21,6 +21,8 @@
 #include "linenoise/linenoise.h"
 #include <b6b.h>
 
+#define B6B_LINENOISE_HISTORY_SIZE 64
+
 static enum b6b_res b6b_linenoise_proc_read(struct b6b_interp *interp,
                                             struct b6b_obj *args)
 {
@@ -104,3 +106,9 @@ static const struct b6b_ext_obj b6b_linenoise[] = {
 	}
 };
 __b6b_ext(b6b_linenoise);
+
+static int b6b_linenoise_init(struct b6b_interp *interp)
+{
+	return linenoiseHistorySetMaxLen(B6B_LINENOISE_HISTORY_SIZE);
+}
+__b6b_init(b6b_linenoise_init);
