@@ -40,19 +40,24 @@ static enum b6b_res b6b_loop_proc_map(struct b6b_interp *interp,
 		}
 
 		res = b6b_call(interp, b);
-		if (res != B6B_OK) {
-			b6b_destroy(r);
-			return res;
-		}
+		switch (res) {
+			case B6B_OK:
+				if (b6b_unlikely(!b6b_list_add(r, interp->fg->_))) {
+					b6b_destroy(r);
+					return B6B_ERR;
+				}
 
-		if (b6b_unlikely(!b6b_list_add(r, interp->fg->_))) {
-			b6b_destroy(r);
-			return B6B_ERR;
-		}
+			/* ignore the current iteration's return value on B6B_CONT, to allow
+			 * long-running loops without increase in memory usage */
+			case B6B_CONT:
+				li = b6b_list_next(li);
+				break;
 
-		li = b6b_list_next(li);
+			default:
+				b6b_destroy(r);
+				return res;
+		}
 	}
-
 
 	return b6b_return(interp, r);
 }
