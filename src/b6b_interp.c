@@ -124,7 +124,10 @@ int b6b_interp_new(struct b6b_interp *interp,
 
 	memset(interp, 0, sizeof(*interp));
 
-	interp->stksiz = sysconf(_SC_THREAD_ATTR_STACKSIZE);
+	/* we allocate a small stack (just one page, instead of the bigger
+	 * _SC_THREAD_ATTR_STACKSIZE used by native threads), to reduce memory
+	 * consumption */
+	interp->stksiz = sysconf(_SC_PAGESIZE);
 	if (interp->stksiz <= 0)
 		goto bail;
 
