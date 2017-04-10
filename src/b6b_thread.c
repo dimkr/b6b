@@ -110,26 +110,13 @@ bail:
 	return 0;
 }
 
-void b6b_thread_sched(struct b6b_thread *ts,
-                      const unsigned int n,
-                      struct b6b_thread **fg)
+void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 {
-	unsigned int i;
-	struct b6b_thread *bg;
+	fg->flags &= ~B6B_THREAD_BG;
+	fg->flags |= B6B_THREAD_FG;
 
-	for (i = 0; i < n; ++i) {
-		if ((ts[i].flags & B6B_THREAD_BG) &&
-		    !(ts[i].flags & B6B_THREAD_DONE)) {
-			bg = *fg;
+	bg->flags &= ~B6B_THREAD_FG;
+	bg->flags |= B6B_THREAD_BG;
 
-			ts[i].flags &= ~B6B_THREAD_BG;
-			ts[i].flags |= B6B_THREAD_FG;
-
-			bg->flags &= ~B6B_THREAD_FG;
-			bg->flags |= B6B_THREAD_BG;
-
-			*fg = &ts[i];
-			swapcontext(&bg->ucp, &(*fg)->ucp);
-		}
-	}
+	swapcontext(&bg->ucp, &fg->ucp);
 }

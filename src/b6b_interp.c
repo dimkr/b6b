@@ -320,6 +320,23 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	return b6b_return(interp, b6b_ref(exp));
 }
 
+static void b6b_yield(struct b6b_interp *interp)
+{
+	struct b6b_thread *bg;
+	unsigned int i;
+
+	for (i = 0; i < sizeof(interp->threads) / sizeof(interp->threads[0]); ++i) {
+		if ((interp->threads[i].flags & B6B_THREAD_BG) &&
+		    !(interp->threads[i].flags & B6B_THREAD_DONE)) {
+
+			bg = interp->fg;
+			interp->fg = &interp->threads[i];
+			b6b_thread_swap(bg, interp->fg);
+			break;
+		}
+	}
+}
+
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,
                                const enum b6b_res res)
 {
@@ -417,7 +434,9 @@ int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts)
 {
 	int i;
 
-	for (i = B6B_NTHREADS - 1; i >= 0; --i) {
+	for (i = (sizeof(interp->threads) / sizeof(interp->threads[0])) - 1;
+	     i >= 0;
+	     --i) {
 		if (interp->threads[i].flags & B6B_THREAD_DONE)
 			b6b_thread_reset(&interp->threads[i]);
 

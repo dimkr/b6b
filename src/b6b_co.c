@@ -25,10 +25,10 @@
 	"}}\n" \
 	"{$spawn {" \
 		"{$while 1 {" \
-			"{$try {" \
-				"{$call [$list.pop $_cos 0]}" \
-			"} {" \
-				"{$continue}" \
+			"{$if $_cos {" \
+				"{$try {" \
+					"{$call [$list.pop $_cos 0]}" \
+				"}}" \
 			"} {" \
 				"{$yield}" \
 			"}}" \

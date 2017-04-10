@@ -49,6 +49,4 @@ int b6b_thread_init(struct b6b_thread *t,
 void b6b_thread_reset(struct b6b_thread *t);
 void b6b_thread_destroy(struct b6b_thread *t);
 
-void b6b_thread_sched(struct b6b_thread *ts,
-                      const unsigned int n,
-                      struct b6b_thread **fg);
+void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg);

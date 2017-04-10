@@ -60,11 +60,6 @@ enum b6b_res b6b_call(struct b6b_interp *interp, struct b6b_obj *stmts);
 int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts);
 enum b6b_res b6b_source(struct b6b_interp *interp, const char *path);
 
-static inline void b6b_yield(struct b6b_interp *interp)
-{
-	b6b_thread_sched(interp->threads, B6B_NTHREADS, &interp->fg);
-}
-
 static inline enum b6b_res b6b_return(struct b6b_interp *interp,
                                       struct b6b_obj *o)
 {
