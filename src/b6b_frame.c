@@ -45,9 +45,17 @@ void b6b_frame_destroy(struct b6b_frame *f)
 
 struct b6b_frame *b6b_frame_push(struct b6b_interp *interp)
 {
-	struct b6b_frame *f = b6b_frame_new(interp->fg->curr);
+	struct b6b_frame *f;
 
-	if (f) {
+	if (b6b_unlikely(interp->fg->depth >= B6B_MAX_NESTING)) {
+		b6b_return_str(interp,
+		               "call stack overflow",
+		               sizeof("call stack overflow") - 1);
+		return NULL;
+	}
+
+	f = b6b_frame_new(interp->fg->curr);
+	if (b6b_likely(f)) {
 		interp->fg->curr = f;
 		++interp->fg->depth;
 	}
