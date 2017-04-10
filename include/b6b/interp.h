@@ -18,7 +18,7 @@
 
 #include <inttypes.h>
 
-#define B6B_QUANT_LEN 8
+#define B6B_QUANT_LEN 16
 
 struct b6b_interp {
 	struct b6b_thread threads[B6B_NTHREADS];
