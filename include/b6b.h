@@ -30,5 +30,6 @@
 #	include <b6b/interp.h>
 #	include <b6b/proc.h>
 #	include <b6b/ext.h>
+#	include <b6b/strm.h>
 
 #endif
