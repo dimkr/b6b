@@ -131,7 +131,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 	if (interp->stksiz <= 0)
 		goto bail;
 
-	interp->null = b6b_str_copy("null", 4);
+	interp->null = b6b_str_copy("", 0);
 	if (b6b_unlikely(!interp->null))
 		goto bail;
 

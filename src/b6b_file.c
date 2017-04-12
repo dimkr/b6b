@@ -31,8 +31,8 @@
 #define B6B_FILE_DEF_FMODE "r"
 
 struct b6b_file {
-	char *buf;
 	FILE *fp;
+	void *buf;
 };
 
 static ssize_t b6b_file_read(struct b6b_interp *interp,

@@ -23,37 +23,69 @@
 
 #include <b6b.h>
 
+#define B6B_SHELL \
+	"{$while 1 {" \
+		"{$local stmt [$linenoise.read {>>> }]}\n" \
+		"{$try {" \
+			"{$call $stmt}" \
+		"} {" \
+			"{$nop}" \
+		"} {" \
+			"{$linenoise.add $stmt}" \
+		"}}" \
+	"}}"
+
 int main(int argc, char *argv[]) {
 	struct b6b_interp interp;
+	struct b6b_obj *s;
+	enum b6b_res res;
 	int ret = EXIT_FAILURE;
 
 	if (argc == 2) {
 		setlocale(LC_ALL, "");
 
-		if (b6b_interp_new(&interp, argc, (const char **)argv)) {
-			switch (b6b_source(&interp, argv[1])) {
-				case B6B_OK:
-					ret = EXIT_SUCCESS;
-					break;
+		if (!b6b_interp_new(&interp, argc, (const char **)argv))
+			return EXIT_FAILURE;
 
-				case B6B_EXIT:
-					if (b6b_obj_isnull(interp.fg->_))
-						ret = EXIT_SUCCESS;
-					else if (b6b_as_num(interp.fg->_) &&
-					         (interp.fg->_->n >= INT_MIN) &&
-					         (interp.fg->_->n <= INT_MAX)) {
-						ret = (int)interp.fg->_->n;
-					}
+		res = b6b_source(&interp, argv[1]);
+	}
+	else if (argc == 1) {
+		setlocale(LC_ALL, "");
 
-				default:
-					break;
+		if (!b6b_interp_new(&interp, argc, (const char **)argv))
+			return EXIT_FAILURE;
+
+		s = b6b_str_copy(B6B_SHELL, sizeof(B6B_SHELL) - 1);
+		if (!s) {
+			b6b_interp_destroy(&interp);
+			return EXIT_FAILURE;
+		}
+
+		res = b6b_call(&interp, s);
+		b6b_unref(s);
+	} else {
+		fprintf(stderr, "Usage: %s [PATH]\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+
+	switch (res) {
+		case B6B_OK:
+			ret = EXIT_SUCCESS;
+			break;
+
+		case B6B_EXIT:
+			if (b6b_obj_isnull(interp.fg->_))
+				ret = EXIT_SUCCESS;
+			else if (b6b_as_num(interp.fg->_) &&
+			         (interp.fg->_->n >= INT_MIN) &&
+			         (interp.fg->_->n <= INT_MAX)) {
+				ret = (int)interp.fg->_->n;
 			}
 
-			b6b_interp_destroy(&interp);
-		}
+		default:
+			break;
 	}
-	else
-		fprintf(stderr, "Usage: %s PATH\n", argv[0]);
 
+	b6b_interp_destroy(&interp);
 	return ret;
 }
