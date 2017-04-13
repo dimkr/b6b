@@ -30,6 +30,7 @@ struct b6b_strm_ops {
 	                 void *,
 	                 const unsigned char *,
 	                 const size_t);
+	struct b6b_obj *(*peer)(struct b6b_interp *, void *);
 	void (*close)(void *);
 };
 
@@ -50,6 +51,5 @@ struct b6b_obj *b6b_strm_copy(struct b6b_interp *interp,
                               const size_t len);
 struct b6b_obj *b6b_strm_fmt(struct b6b_interp *interp,
                              struct b6b_strm *strm,
-                             const char *type,
-                             const void *id);
+                             const char *type);
 void b6b_strm_destroy(struct b6b_strm *strm);

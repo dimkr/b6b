@@ -123,7 +123,7 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 	f->fp = fp;
 	f->buf = NULL;
 
-	o = b6b_strm_fmt(interp, strm, "file", f);
+	o = b6b_strm_fmt(interp, strm, "file");
 	if (b6b_unlikely(!o)) {
 		b6b_strm_destroy(strm);
 		return NULL;

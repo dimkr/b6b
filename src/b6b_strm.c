@@ -89,7 +89,7 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 				strm->flags |= B6B_STRM_EOF;
 				break;
 			}
-		} while (1);
+		} while (more > 0);
 
 		buf[out] = '\0';
 		o = b6b_str_new((char *)buf, (size_t)out);
@@ -129,6 +129,20 @@ static enum b6b_res b6b_strm_write(struct b6b_interp *interp,
 	return b6b_return_num(interp, (b6b_num)out);
 }
 
+static enum b6b_res b6b_strm_peer(struct b6b_interp *interp,
+                                  struct b6b_strm *strm)
+{
+	struct b6b_obj *o;
+
+	if (strm->ops->peer) {
+		o = strm->ops->peer(interp, strm->priv);
+		if (o)
+			return b6b_return(interp, o);
+	}
+
+	return B6B_ERR;
+}
+
 static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
                                   struct b6b_obj *args)
 {
@@ -137,14 +151,22 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 
 	argc = b6b_proc_get_args(interp, args, "o s |s", &o, &op, &s);
 
-	if ((argc == 2) && (strcmp(op->s, "read") == 0))
-		return b6b_strm_read(interp,
-		                     (struct b6b_strm *)o->priv);
-	else if ((argc == 3) && (strcmp(op->s, "write") == 0))
-		return b6b_strm_write(interp,
-		                      (struct b6b_strm *)o->priv,
-		                      (const unsigned char *)s->s,
-		                      s->slen);
+	switch (argc) {
+		case 2:
+			if (strcmp(op->s, "read") == 0)
+				return b6b_strm_read(interp, (struct b6b_strm *)o->priv);
+			else if (strcmp(op->s, "peer") == 0)
+				return b6b_strm_peer(interp, (struct b6b_strm *)o->priv);
+			break;
+
+		case 3:
+			if (strcmp(op->s, "write") == 0)
+				return b6b_strm_write(interp,
+				                      (struct b6b_strm *)o->priv,
+				                      (const unsigned char *)s->s,
+				                      s->slen);
+			break;
+	}
 
 	if (argc >= 2)
 		b6b_return_fmt(interp, "bad strm op: %s", op->s);
@@ -180,10 +202,9 @@ struct b6b_obj *b6b_strm_copy(struct b6b_interp *interp,
 
 struct b6b_obj *b6b_strm_fmt(struct b6b_interp *interp,
                              struct b6b_strm *strm,
-                             const char *type,
-                             const void *id)
+                             const char *type)
 {
 	return b6b_strm_new(interp,
-	                    b6b_str_fmt("%s:%"PRIxPTR, type, (uintptr_t)id),
+	                    b6b_str_fmt("%s:%"PRIxPTR, type, (uintptr_t)strm),
 	                    strm);
 }
