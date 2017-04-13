@@ -25,12 +25,14 @@ struct b6b_strm_ops {
 	                void *,
 	                unsigned char *,
 	                const size_t,
+	                int *,
 	                int *);
 	ssize_t (*write)(struct b6b_interp *,
 	                 void *,
 	                 const unsigned char *,
 	                 const size_t);
 	struct b6b_obj *(*peer)(struct b6b_interp *, void *);
+	int (*accept)(struct b6b_interp *, void *, struct b6b_obj **);
 	void (*close)(void *);
 };
 

@@ -39,7 +39,8 @@ static ssize_t b6b_file_read(struct b6b_interp *interp,
                              void *priv,
                              unsigned char *buf,
                              const size_t len,
-                             int *eof)
+                             int *eof,
+                             int *again)
 {
 	struct b6b_file *f = (struct b6b_file *)priv;
 	size_t ret;

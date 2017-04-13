@@ -24,8 +24,12 @@
 #include <string.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <limits.h>
 
 #include <b6b.h>
+
+#define B6B_SERVER_DEF_BACKLOG 5
 
 struct b6b_socket {
 	int fd;
@@ -52,7 +56,8 @@ static ssize_t b6b_socket_read(struct b6b_interp *interp,
                                void *priv,
                                unsigned char *buf,
                                const size_t len,
-                               int *eof)
+                               int *eof,
+                               int *again)
 {
 	const struct b6b_socket *s = (const struct b6b_socket *)priv;
 
@@ -63,10 +68,12 @@ static ssize_t b6b_socket_readfrom(struct b6b_interp *interp,
                                    void *priv,
                                    unsigned char *buf,
                                    const size_t len,
-                                   int *eof)
+                                   int *eof,
+                                   int *again)
 {
 	struct b6b_socket *s = (struct b6b_socket *)priv;
 
+	*again = 0;
 	s->len = sizeof(s->peer);
 	return b6b_socket_on_read(interp,
 	                          recvfrom(s->fd, buf, len, 0, &s->peer, &s->len),
@@ -173,20 +180,6 @@ static void b6b_socket_close(void *priv)
 	free(priv);
 }
 
-static const struct b6b_strm_ops b6b_stream_socket_ops = {
-	.read = b6b_socket_read,
-	.write = b6b_socket_write,
-	.peer = b6b_socket_peer,
-	.close = b6b_socket_close
-};
-
-static const struct b6b_strm_ops b6b_dgram_socket_ops = {
-	.read = b6b_socket_readfrom,
-	.write = b6b_socket_write,
-	.peer = b6b_socket_peer,
-	.close = b6b_socket_close
-};
-
 static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
                                       const int fd,
                                       const struct sockaddr *peer,
@@ -223,27 +216,44 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
 	return o;
 }
 
-static struct b6b_obj *b6b_client_socket_new(struct b6b_interp *interp,
-                                             const char *host,
-                                             const char *service,
-                                             const int socktype,
-                                             const struct b6b_strm_ops *ops,
-                                             const char *type)
+static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
+                                           const char *host,
+                                           const char *service,
+                                           const int socktype)
 {
 	struct addrinfo hints = {0}, *res;
-	struct b6b_obj *o;
 	const char *s;
-	int fd, err;
+	int out;
 
 	hints.ai_socktype = socktype;
 	hints.ai_family = AF_UNSPEC;
-	err = getaddrinfo(host, service, &hints, &res);
-	if (err != 0) {
-		s = gai_strerror(err);
+
+	out = getaddrinfo(host, service, &hints, &res);
+	if (out != 0) {
+		s = gai_strerror(out);
 		if (s)
 			b6b_return_str(interp, s, strlen(s));
 		return NULL;
 	}
+
+	return res;
+}
+
+static struct b6b_obj *b6b_client_socket_new(struct b6b_interp *interp,
+                                             const char *host,
+                                             const char *service,
+                                             const int socktype,
+                                             int backlog,
+                                             const struct b6b_strm_ops *ops,
+                                             const char *type)
+{
+	struct addrinfo *res;
+	struct b6b_obj *o;
+	int fd, err;
+
+	res = b6b_socket_resolve(interp, host, service, socktype);
+	if (!res)
+		return NULL;
 
 	fd = socket(res->ai_family,
 	            res->ai_socktype | SOCK_NONBLOCK,
@@ -272,17 +282,39 @@ static struct b6b_obj *b6b_client_socket_new(struct b6b_interp *interp,
 	return o;
 }
 
-static enum b6b_res b6b_socket_client_proc(struct b6b_interp *interp,
-                                           struct b6b_obj *args,
-                                           const int socktype,
-                                           const struct b6b_strm_ops *ops)
+static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
+                                    struct b6b_obj *args,
+                                    const int socktype,
+                                    int backlog,
+                                    const struct b6b_strm_ops *ops,
+                                    struct b6b_obj *(*fn)(
+                                                    struct b6b_interp *,
+                                                    const char *,
+                                                    const char *,
+                                                    const int,
+                                                    int,
+                                                    const struct b6b_strm_ops *,
+                                                    const char *))
 {
-	struct b6b_obj *p, *h, *s, *o;
+	struct b6b_obj *p, *h, *s, *b, *o;
 
-	if (!b6b_proc_get_args(interp, args, "o s s", &p, &h, &s))
-		return B6B_ERR;
+	switch (b6b_proc_get_args(interp, args, "o s s |i", &p, &h, &s, &b)) {
+		case 3:
+			break;
 
-	o = b6b_client_socket_new(interp, h->s, s->s, socktype, ops, p->s);
+		case 4:
+			/* the 4th parameter shell not be passed if listen() is not called */
+			if (!backlog || ((b->n < 0) || (b->n > INT_MAX)))
+				return B6B_ERR;
+
+			backlog = (int)b->n;
+			break;
+
+		default:
+			return B6B_ERR;
+	}
+
+	o = fn(interp, h->s, s->s, socktype, backlog, ops, p->s);
 	if (!o)
 		return B6B_ERR;
 
@@ -290,22 +322,157 @@ static enum b6b_res b6b_socket_client_proc(struct b6b_interp *interp,
 
 }
 
+static const struct b6b_strm_ops b6b_stream_client_ops = {
+	.read = b6b_socket_read,
+	.write = b6b_socket_write,
+	.peer = b6b_socket_peer,
+	.close = b6b_socket_close
+};
+
 static enum b6b_res b6b_socket_proc_stream_client(struct b6b_interp *interp,
                                                   struct b6b_obj *args)
 {
-	return b6b_socket_client_proc(interp,
-	                              args,
-	                              SOCK_STREAM,
-	                              &b6b_stream_socket_ops);
+	return b6b_socket_proc(interp,
+	                       args,
+	                       SOCK_STREAM,
+	                       0,
+	                       &b6b_stream_client_ops,
+	                       b6b_client_socket_new);
 }
+
+static const struct b6b_strm_ops b6b_dgram_client_ops = {
+	.read = b6b_socket_readfrom,
+	.write = b6b_socket_write,
+	.peer = b6b_socket_peer,
+	.close = b6b_socket_close
+};
 
 static enum b6b_res b6b_socket_proc_dgram_client(struct b6b_interp *interp,
                                                  struct b6b_obj *args)
 {
-	return b6b_socket_client_proc(interp,
-	                              args,
-	                              SOCK_DGRAM,
-	                              &b6b_dgram_socket_ops);
+	return b6b_socket_proc(interp,
+	                       args,
+	                       SOCK_DGRAM,
+	                       0,
+	                       &b6b_dgram_client_ops,
+	                       b6b_client_socket_new);
+}
+
+static struct b6b_obj *b6b_server_socket_new(struct b6b_interp *interp,
+                                             const char *host,
+                                             const char *service,
+                                             const int socktype,
+                                             int backlog,
+                                             const struct b6b_strm_ops *ops,
+                                             const char *type)
+{
+	struct addrinfo *res;
+	struct b6b_obj *o;
+	int fd, err, one = 1;
+
+	res = b6b_socket_resolve(interp, host, service, socktype);
+	if (!res)
+		return NULL;
+
+	fd = socket(res->ai_family,
+	            res->ai_socktype | SOCK_NONBLOCK,
+	            res->ai_protocol);
+	if (fd < 0) {
+		err = errno;
+		freeaddrinfo(res);
+		b6b_return_strerror(interp, err);
+		return NULL;
+	}
+
+	if ((setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) ||
+		(bind(fd, res->ai_addr, res->ai_addrlen) < 0) ||
+		(backlog && (listen(fd, backlog) < 0))) {
+		err = errno;
+		close(fd);
+		freeaddrinfo(res);
+		b6b_return_strerror(interp, err);
+		return NULL;
+	}
+
+	o = b6b_socket_new(interp, fd, NULL, 0, type, ops);
+	if (b6b_unlikely(!o))
+		close(fd);
+
+	freeaddrinfo(res);
+	return o;
+}
+
+static int b6b_stream_socket_accept(struct b6b_interp *interp,
+                                    void *priv,
+                                    struct b6b_obj **o)
+{
+	struct sockaddr peer;
+	const struct b6b_socket *s = (const struct b6b_socket *)priv;
+	int fd, fl, err;
+	socklen_t len = sizeof(peer);
+
+	fd = accept(s->fd, &peer, &len);
+	if (fd < 0) {
+		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+			*o = NULL;
+			return 1;
+		}
+
+		b6b_return_strerror(interp, errno);
+		return 0;
+	}
+
+	fl = fcntl(fd, F_GETFL);
+	if ((fl < 0) || (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0)) {
+		err = errno;
+		close(fd);
+		b6b_return_strerror(interp, err);
+		return 0;
+	}
+
+	*o = b6b_socket_new(interp,
+	                    fd,
+	                    &peer,
+	                    len,
+	                    "stream.client",
+	                    &b6b_stream_client_ops);
+	if (*o)
+		return 1;
+
+	return 0;
+}
+
+static const struct b6b_strm_ops b6b_stream_server_ops = {
+	.accept = b6b_stream_socket_accept,
+	.close = b6b_socket_close
+};
+
+static enum b6b_res b6b_socket_proc_stream_server(struct b6b_interp *interp,
+                                                  struct b6b_obj *args)
+{
+	return b6b_socket_proc(interp,
+	                       args,
+	                       SOCK_STREAM,
+	                       B6B_SERVER_DEF_BACKLOG,
+	                       &b6b_stream_server_ops,
+	                       b6b_server_socket_new);
+}
+
+static const struct b6b_strm_ops b6b_dgram_server_ops = {
+	.read = b6b_socket_readfrom,
+	.peer = b6b_socket_peer,
+	.close = b6b_socket_close
+};
+
+static enum b6b_res b6b_socket_proc_dgram_server(struct b6b_interp *interp,
+                                                 struct b6b_obj *args)
+{
+	return b6b_socket_proc(interp,
+	                       args,
+	                       SOCK_DGRAM,
+	                       0,
+	                       &b6b_dgram_server_ops,
+	                       b6b_server_socket_new);
 }
 
 static const struct b6b_ext_obj b6b_socket[] = {
@@ -320,6 +487,18 @@ static const struct b6b_ext_obj b6b_socket[] = {
 		.type = B6B_OBJ_STR,
 		.val.s = "dgram.client",
 		.proc = b6b_socket_proc_dgram_client
+	},
+	{
+		.name = "stream.server",
+		.type = B6B_OBJ_STR,
+		.val.s = "stream.server",
+		.proc = b6b_socket_proc_stream_server
+	},
+	{
+		.name = "dgram.server",
+		.type = B6B_OBJ_STR,
+		.val.s = "dgram.server",
+		.proc = b6b_socket_proc_dgram_server
 	},
 };
 __b6b_ext(b6b_socket);

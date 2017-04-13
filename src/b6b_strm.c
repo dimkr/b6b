@@ -45,64 +45,57 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
                                   struct b6b_strm *strm)
 {
 	struct b6b_obj *o;
-	unsigned char *buf, *nbuf;
+	unsigned char *buf = NULL, *nbuf;
 	/* we read in B6B_STRM_BUFSIZ chunks, to improve efficiency of buffered
 	 * streams */
-	ssize_t len = B6B_STRM_BUFSIZ, out, more;
-	int eof = 0;
+	ssize_t len = B6B_STRM_BUFSIZ + 1, out = 0, more;
+	int eof = 0, again = 1;
 
 	if (strm->flags & B6B_STRM_EOF)
 		return B6B_OK;
 
-	if (strm->flags & B6B_STRM_CLOSED)
+	if ((strm->flags & B6B_STRM_CLOSED) || !strm->ops->read)
 		return B6B_ERR;
 
-	buf = (unsigned char *)malloc((size_t)len + 1);
-	if (b6b_unlikely(!buf))
-		return B6B_ERR;
-
-	out = strm->ops->read(interp, strm->priv, buf, len, &eof);
-	if (out > 0) {
-		do {
-			len += B6B_STRM_BUFSIZ;
-			nbuf = (unsigned char *)realloc(buf, len);
-			if (b6b_unlikely(!nbuf)) {
-				free(buf);
-				return B6B_ERR;
-			}
-
-			more = strm->ops->read(interp,
-			                       strm->priv,
-			                       nbuf + out,
-			                       B6B_STRM_BUFSIZ,
-			                       &eof);
-			if (more < 0) {
-				free(nbuf);
-				return B6B_ERR;
-			}
-			else
-				out += more;
-
-			buf = nbuf;
-
-			if (eof) {
-				strm->flags |= B6B_STRM_EOF;
-				break;
-			}
-		} while (more > 0);
-
-		buf[out] = '\0';
-		o = b6b_str_new((char *)buf, (size_t)out);
-		if (b6b_unlikely(!o)) {
+	do {
+		nbuf = (unsigned char *)realloc(buf, len);
+		if (b6b_unlikely(!nbuf)) {
 			free(buf);
 			return B6B_ERR;
 		}
 
-		return b6b_return(interp, o);
+		more = strm->ops->read(interp,
+		                       strm->priv,
+		                       nbuf + out,
+		                       B6B_STRM_BUFSIZ,
+		                       &eof,
+		                       &again);
+		if (more < 0) {
+			free(nbuf);
+			return B6B_ERR;
+		}
+
+		out += more;
+		buf = nbuf;
+
+		if (eof) {
+			strm->flags |= B6B_STRM_EOF;
+			break;
+		}
+		else if (!more || !again)
+			break;
+
+		len += B6B_STRM_BUFSIZ;
+	} while (1);
+
+	buf[out] = '\0';
+	o = b6b_str_new((char *)buf, (size_t)out);
+	if (b6b_unlikely(!o)) {
+		free(buf);
+		return B6B_ERR;
 	}
 
-	free(buf);
-	return (out == 0) ? B6B_OK : B6B_ERR;
+	return b6b_return(interp, o);
 }
 
 static enum b6b_res b6b_strm_write(struct b6b_interp *interp,
@@ -112,7 +105,7 @@ static enum b6b_res b6b_strm_write(struct b6b_interp *interp,
 {
 	ssize_t out = 0, chunk;
 
-	if (strm->flags & B6B_STRM_CLOSED)
+	if ((strm->flags & B6B_STRM_CLOSED) || !strm->ops->write)
 		return B6B_ERR;
 
 	while ((size_t)out < len) {
@@ -127,6 +120,39 @@ static enum b6b_res b6b_strm_write(struct b6b_interp *interp,
 	}
 
 	return b6b_return_num(interp, (b6b_num)out);
+}
+
+static enum b6b_res b6b_strm_accept(struct b6b_interp *interp,
+                                   struct b6b_strm *strm)
+{
+	struct b6b_obj *l, *o;
+
+	if ((strm->flags & B6B_STRM_CLOSED) || !strm->ops->accept)
+		return B6B_ERR;
+
+	l = b6b_list_new();
+	if (b6b_unlikely(!l))
+		return B6B_ERR;
+
+	do {
+		if (!strm->ops->accept(interp, strm->priv, &o)) {
+			b6b_destroy(l);
+			return B6B_ERR;
+		}
+
+		if (!o)
+			break;
+
+		if (b6b_unlikely(!b6b_list_add(l, o))) {
+			b6b_destroy(o);
+			b6b_destroy(l);
+			return B6B_ERR;
+		}
+
+		b6b_unref(o);
+	} while (1);
+
+	return b6b_return(interp, l);
 }
 
 static enum b6b_res b6b_strm_peer(struct b6b_interp *interp,
@@ -155,6 +181,8 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 		case 2:
 			if (strcmp(op->s, "read") == 0)
 				return b6b_strm_read(interp, (struct b6b_strm *)o->priv);
+			if (strcmp(op->s, "accept") == 0)
+				return b6b_strm_accept(interp, (struct b6b_strm *)o->priv);
 			else if (strcmp(op->s, "peer") == 0)
 				return b6b_strm_peer(interp, (struct b6b_strm *)o->priv);
 			break;
