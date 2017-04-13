@@ -26,12 +26,19 @@
 #define B6B_SHELL \
 	"{$while 1 {" \
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
-		"{$try {" \
-			"{$call $stmt}" \
-		"} {" \
-			"{$nop}" \
-		"} {" \
-			"{$linenoise.add $stmt}" \
+		"{$if $stmt {" \
+			"{$try {" \
+				"{$call $stmt}" \
+			"} {" \
+				"{$local err $_}\n" \
+				"{$stdout write {Error: }}\n" \
+				"{$stdout write $err}\n" \
+				"{$stdout write {\n}}" \
+			"} {" \
+				"{$try {" \
+					"{$linenoise.add $stmt}" \
+				"}}" \
+			"}}" \
 		"}}" \
 	"}}"
 

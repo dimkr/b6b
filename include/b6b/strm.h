@@ -44,7 +44,12 @@ struct b6b_strm {
 	uint8_t flags;
 };
 
-struct b6b_obj *b6b_strm_new(struct b6b_interp *interp,
+struct b6b_obj *b6b_strm_copy(struct b6b_interp *interp,
+                              struct b6b_strm *strm,
+                              const char *s,
+                              const size_t len);
+struct b6b_obj *b6b_strm_fmt(struct b6b_interp *interp,
                              struct b6b_strm *strm,
-                             const char *type);
+                             const char *type,
+                             const void *id);
 void b6b_strm_destroy(struct b6b_strm *strm);

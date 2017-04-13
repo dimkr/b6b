@@ -50,8 +50,11 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 		b6b_unref(interp->fg->_);
 		interp->fg->_ = o;
 
-		if ((res == B6B_ERR) || (res == B6B_EXIT))
+		if (res == B6B_EXIT)
 			return res;
+
+		if ((res == B6B_ERR) && (eres != B6B_OK))
+			return eres;
 
 		return fres;
 	}

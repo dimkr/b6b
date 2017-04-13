@@ -24,7 +24,8 @@
 static void b6b_strm_close(struct b6b_strm *strm)
 {
 	if (!(strm->flags & B6B_STRM_CLOSED)) {
-		strm->ops->close(strm->priv);
+		if (strm->ops->close)
+			strm->ops->close(strm->priv);
 		strm->flags |= (B6B_STRM_EOF | B6B_STRM_CLOSED);
 	}
 }
@@ -151,24 +152,38 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
-struct b6b_obj *b6b_strm_new(struct b6b_interp *interp,
-                             struct b6b_strm *strm,
-                             const char *type)
+static struct b6b_obj *b6b_strm_new(struct b6b_interp *interp,
+                                    struct b6b_obj *o,
+                                    struct b6b_strm *strm)
 {
-	struct b6b_obj *o;
+	if (b6b_unlikely(o)) {
+		if (b6b_unlikely(!b6b_global(interp, o, o))) {
+			b6b_destroy(o);
+			return NULL;
+		}
 
-	o = b6b_str_fmt("%s:%"PRIxPTR, type, (uintptr_t)strm->priv);
-	if (b6b_unlikely(!o))
-		return o;
-
-	if (b6b_unlikely(!b6b_global(interp, o, o))) {
-		b6b_destroy(o);
-		return NULL;
+		o->priv = strm;
+		o->proc = b6b_strm_proc;
+		o->del = b6b_strm_del;
 	}
 
-	o->priv = strm;
-	o->proc = b6b_strm_proc;
-	o->del = b6b_strm_del;
-
 	return o;
+}
+
+struct b6b_obj *b6b_strm_copy(struct b6b_interp *interp,
+                              struct b6b_strm *strm,
+                              const char *s,
+                              const size_t len)
+{
+	return b6b_strm_new(interp, b6b_str_copy(s, len), strm);
+}
+
+struct b6b_obj *b6b_strm_fmt(struct b6b_interp *interp,
+                             struct b6b_strm *strm,
+                             const char *type,
+                             const void *id)
+{
+	return b6b_strm_new(interp,
+	                    b6b_str_fmt("%s:%"PRIxPTR, type, (uintptr_t)id),
+	                    strm);
 }

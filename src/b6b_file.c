@@ -45,15 +45,14 @@ static ssize_t b6b_file_read(struct b6b_interp *interp,
 	size_t ret;
 
 	ret = fread(buf, 1, len, f->fp);
-	if (!ret) {
+	if (ret < len) {
 		if (ferror(f->fp)) {
 			b6b_return_strerror(interp, errno);
 			return -1;
 		}
+		if (feof(f->fp))
+			*eof = 1;
 	}
-
-	if (ret < len)
-		*eof = 1;
 
 	return (ssize_t)ret;
 }
@@ -124,7 +123,7 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 	f->fp = fp;
 	f->buf = NULL;
 
-	o = b6b_strm_new(interp, strm, "file");
+	o = b6b_strm_fmt(interp, strm, "file", f);
 	if (b6b_unlikely(!o)) {
 		b6b_strm_destroy(strm);
 		return NULL;
@@ -265,3 +264,56 @@ static const struct b6b_ext_obj b6b_file[] = {
 	}
 };
 __b6b_ext(b6b_file);
+
+static const struct b6b_strm_ops b6b_stdio_ops = {
+	.read = b6b_file_read,
+	.write = b6b_file_write,
+	.close = free
+};
+
+static int b6b_stdio_wrap(struct b6b_interp *interp,
+                          const char *name,
+                          const size_t len,
+                          FILE *fp)
+{
+	struct b6b_obj *o;
+	struct b6b_file *f;
+	struct b6b_strm *strm;
+
+	f = (struct b6b_file *)malloc(sizeof(*f));
+	if (b6b_unlikely(!f))
+		return 0;
+
+	strm = (struct b6b_strm *)malloc(sizeof(*strm));
+	if (b6b_unlikely(!strm)) {
+		free(f);
+		return 0;
+	}
+
+	strm->ops = &b6b_stdio_ops;
+	strm->flags = 0;
+	strm->priv = f;
+
+	f->fp = fp;
+	f->buf = NULL;
+
+	o = b6b_strm_copy(interp, strm, name, len);
+	if (b6b_unlikely(!o)) {
+		b6b_strm_destroy(strm);
+		return 0;
+	}
+	b6b_unref(o);
+
+	return 1;
+}
+
+#define B6B_STDIO_WRAP(interp, fp) \
+	b6b_stdio_wrap(interp, #fp, sizeof(#fp) - 1, fp)
+
+static int b6b_file_init(struct b6b_interp *interp)
+{
+	return B6B_STDIO_WRAP(interp, stdin) &&
+	       B6B_STDIO_WRAP(interp, stdout) &&
+	       B6B_STDIO_WRAP(interp, stderr);
+}
+__b6b_init(b6b_file_init);
