@@ -97,7 +97,6 @@ static ssize_t b6b_socket_write(struct b6b_interp *interp,
 	}
 
 	return out;
-
 }
 
 static struct b6b_obj *b6b_socket_peer(struct b6b_interp *interp, void *priv)
@@ -112,7 +111,7 @@ static struct b6b_obj *b6b_socket_peer(struct b6b_interp *interp, void *priv)
 	unsigned short port = ntohs(sin->sin_port);
 
 	if (!s->len)
-		return b6b_ref(interp->null);
+		return NULL;
 
 	buf = (char *)malloc(len);
 	if (b6b_unlikely(!buf))
@@ -303,7 +302,8 @@ static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
 			break;
 
 		case 4:
-			/* the 4th parameter shell not be passed if listen() is not called */
+			/* the 4th parameter shall not be passed if listen() is not
+			 * called */
 			if (!backlog || ((b->n < 0) || (b->n > INT_MAX)))
 				return B6B_ERR;
 
