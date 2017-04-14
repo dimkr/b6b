@@ -270,7 +270,7 @@ static enum b6b_res b6b_list_proc_new(struct b6b_interp *interp,
 	struct b6b_litem *li;
 
 	l = b6b_list_new();
-	if (l) {
+	if (b6b_likely(l)) {
 		li = b6b_list_first(args);
 		do {
 			li = b6b_list_next(li);
@@ -282,6 +282,8 @@ static enum b6b_res b6b_list_proc_new(struct b6b_interp *interp,
 				return B6B_ERR;
 			}
 		} while (1);
+
+		return b6b_return(interp, l);
 	}
 
 	return B6B_ERR;
