@@ -169,6 +169,12 @@ static enum b6b_res b6b_strm_peer(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
+static enum b6b_res b6b_strm_fd(struct b6b_interp *interp,
+                                struct b6b_strm *strm)
+{
+	return b6b_return_num(interp, (b6b_num)strm->ops->fd(strm->priv));
+}
+
 static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
                                   struct b6b_obj *args)
 {
@@ -185,6 +191,8 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 				return b6b_strm_accept(interp, (struct b6b_strm *)o->priv);
 			else if (strcmp(op->s, "peer") == 0)
 				return b6b_strm_peer(interp, (struct b6b_strm *)o->priv);
+			else if (strcmp(op->s, "fd") == 0)
+				return b6b_strm_fd(interp, (struct b6b_strm *)o->priv);
 			break;
 
 		case 3:

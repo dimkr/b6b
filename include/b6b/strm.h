@@ -33,6 +33,7 @@ struct b6b_strm_ops {
 	                 const size_t);
 	struct b6b_obj *(*peer)(struct b6b_interp *, void *);
 	int (*accept)(struct b6b_interp *, void *, struct b6b_obj **);
+	int (*fd)(void *);
 	void (*close)(void *);
 };
 

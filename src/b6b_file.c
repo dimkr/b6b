@@ -33,6 +33,7 @@
 struct b6b_file {
 	FILE *fp;
 	void *buf;
+	int fd;
 };
 
 static ssize_t b6b_file_read(struct b6b_interp *interp,
@@ -81,6 +82,13 @@ static ssize_t b6b_file_write(struct b6b_interp *interp,
 	return total;
 }
 
+static int b6b_file_fd(void *priv)
+{
+	const struct b6b_file *f = (const struct b6b_file *)priv;
+
+	return f->fd;
+}
+
 static void b6b_file_close(void *priv)
 {
 	struct b6b_file *f = (struct b6b_file *)priv;
@@ -96,11 +104,13 @@ static void b6b_file_close(void *priv)
 static const struct b6b_strm_ops b6b_file_ops = {
 	.read = b6b_file_read,
 	.write = b6b_file_write,
+	.fd = b6b_file_fd,
 	.close = b6b_file_close
 };
 
 static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
                                     FILE *fp,
+                                    const int fd,
                                     const int bmode)
 {
 	struct b6b_obj *o;
@@ -123,6 +133,7 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 
 	f->fp = fp;
 	f->buf = NULL;
+	f->fd = fd;
 
 	o = b6b_strm_fmt(interp, strm, "file");
 	if (b6b_unlikely(!o)) {
@@ -244,7 +255,7 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 				return b6b_return_strerror(interp, err);
 			}
 
-			f = b6b_file_new(interp, fp, bmode);
+			f = b6b_file_new(interp, fp, fd, bmode);
 			if (!f) {
 				fclose(fp);
 				return B6B_ERR;
@@ -269,13 +280,15 @@ __b6b_ext(b6b_file);
 static const struct b6b_strm_ops b6b_stdio_ops = {
 	.read = b6b_file_read,
 	.write = b6b_file_write,
+	.fd = b6b_file_fd,
 	.close = free
 };
 
 static int b6b_stdio_wrap(struct b6b_interp *interp,
                           const char *name,
                           const size_t len,
-                          FILE *fp)
+                          FILE *fp,
+                          const int fd)
 {
 	struct b6b_obj *o;
 	struct b6b_file *f;
@@ -297,6 +310,7 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 
 	f->fp = fp;
 	f->buf = NULL;
+	f->fd = fd;
 
 	o = b6b_strm_copy(interp, strm, name, len);
 	if (b6b_unlikely(!o)) {
@@ -308,13 +322,13 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 	return 1;
 }
 
-#define B6B_STDIO_WRAP(interp, fp) \
-	b6b_stdio_wrap(interp, #fp, sizeof(#fp) - 1, fp)
+#define B6B_STDIO_WRAP(interp, fp, fd) \
+	b6b_stdio_wrap(interp, #fp, sizeof(#fp) - 1, fp, fd)
 
 static int b6b_file_init(struct b6b_interp *interp)
 {
-	return B6B_STDIO_WRAP(interp, stdin) &&
-	       B6B_STDIO_WRAP(interp, stdout) &&
-	       B6B_STDIO_WRAP(interp, stderr);
+	return B6B_STDIO_WRAP(interp, stdin, STDIN_FILENO) &&
+	       B6B_STDIO_WRAP(interp, stdout, STDOUT_FILENO) &&
+	       B6B_STDIO_WRAP(interp, stderr, STDERR_FILENO);
 }
 __b6b_init(b6b_file_init);

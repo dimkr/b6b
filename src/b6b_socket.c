@@ -32,8 +32,8 @@
 #define B6B_SERVER_DEF_BACKLOG 5
 
 struct b6b_socket {
-	int fd;
 	struct sockaddr peer;
+	int fd;
 	socklen_t len;
 };
 
@@ -169,6 +169,13 @@ static struct b6b_obj *b6b_socket_peer(struct b6b_interp *interp, void *priv)
 
 	b6b_unref(o);
 	return l;
+}
+
+static int b6b_socket_fd(void *priv)
+{
+	const struct b6b_socket *s = (const struct b6b_socket *)priv;
+
+	return s->fd;
 }
 
 static void b6b_socket_close(void *priv)
@@ -326,6 +333,7 @@ static const struct b6b_strm_ops b6b_stream_client_ops = {
 	.read = b6b_socket_read,
 	.write = b6b_socket_write,
 	.peer = b6b_socket_peer,
+	.fd = b6b_socket_fd,
 	.close = b6b_socket_close
 };
 
@@ -344,6 +352,7 @@ static const struct b6b_strm_ops b6b_dgram_client_ops = {
 	.read = b6b_socket_readfrom,
 	.write = b6b_socket_write,
 	.peer = b6b_socket_peer,
+	.fd = b6b_socket_fd,
 	.close = b6b_socket_close
 };
 
@@ -444,6 +453,7 @@ static int b6b_stream_socket_accept(struct b6b_interp *interp,
 
 static const struct b6b_strm_ops b6b_stream_server_ops = {
 	.accept = b6b_stream_socket_accept,
+	.fd = b6b_socket_fd,
 	.close = b6b_socket_close
 };
 
@@ -461,6 +471,7 @@ static enum b6b_res b6b_socket_proc_stream_server(struct b6b_interp *interp,
 static const struct b6b_strm_ops b6b_dgram_server_ops = {
 	.read = b6b_socket_readfrom,
 	.peer = b6b_socket_peer,
+	.fd = b6b_socket_fd,
 	.close = b6b_socket_close
 };
 
