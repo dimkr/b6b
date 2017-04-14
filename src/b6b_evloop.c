@@ -69,15 +69,8 @@
 
 static int b6b_evloop_init(struct b6b_interp *interp)
 {
-	struct b6b_obj *o;
-	enum b6b_res res;
-
-	o = b6b_str_copy(B6B_EVLOOP_BODY, sizeof(B6B_EVLOOP_BODY) - 1);
-	if (b6b_unlikely(!o))
-		return 0;
-
-	res = b6b_call(interp, o);
-	b6b_unref(o);
-	return res == B6B_OK;
+	return b6b_call_copy(interp,
+	                     B6B_EVLOOP_BODY,
+	                     sizeof(B6B_EVLOOP_BODY) - 1) == B6B_OK;
 }
 __b6b_init(b6b_evloop_init);

@@ -57,6 +57,9 @@ struct b6b_obj *b6b_get(struct b6b_interp *interp, const char *name);
 
 enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp);
 enum b6b_res b6b_call(struct b6b_interp *interp, struct b6b_obj *stmts);
+enum b6b_res b6b_call_copy(struct b6b_interp *interp,
+                           const char *s,
+                           const size_t len);
 int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts);
 enum b6b_res b6b_source(struct b6b_interp *interp, const char *path);
 

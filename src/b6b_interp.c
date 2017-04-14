@@ -433,6 +433,22 @@ enum b6b_res b6b_call(struct b6b_interp *interp, struct b6b_obj *stmts)
 	return B6B_OK;
 }
 
+enum b6b_res b6b_call_copy(struct b6b_interp *interp,
+                           const char *s,
+                           const size_t len)
+{
+	struct b6b_obj *o;
+	enum b6b_res res;
+
+	o = b6b_str_copy(s, len);
+	if (b6b_unlikely(!o))
+		return B6B_ERR;
+
+	res = b6b_call(interp, o);
+	b6b_unref(o);
+	return res;
+}
+
 int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts)
 {
 	int i;
