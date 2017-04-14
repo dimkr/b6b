@@ -22,6 +22,6 @@ struct b6b_obj *b6b_list_new(void);
 int b6b_as_list(struct b6b_obj *o);
 
 int b6b_list_add(struct b6b_obj *l, struct b6b_obj *o);
-struct b6b_obj *b6b_list_pop(struct b6b_obj *l);
+struct b6b_obj *b6b_list_pop(struct b6b_obj *l, struct b6b_litem *li);
 unsigned int b6b_list_parse(struct b6b_obj *l, const char *fmt, ...);
 unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap);

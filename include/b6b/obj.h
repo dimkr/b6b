@@ -98,7 +98,7 @@ static inline enum b6b_res b6b_obj_isnull(const struct b6b_obj *o)
 
 static inline enum b6b_res b6b_obj_istrue(const struct b6b_obj *o)
 {
-	return (((o->flags & B6B_OBJ_STR) && o->slen) ||
+	return (((o->flags & B6B_OBJ_NUM) && o->n) ||
 	        ((o->flags & B6B_OBJ_LIST) && b6b_list_first(o)) ||
-	        o->n);
+	        o->slen);
 }

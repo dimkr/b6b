@@ -56,9 +56,13 @@ static enum b6b_res b6b_loop_proc_map(struct b6b_interp *interp,
 			default:
 				b6b_destroy(r);
 				return res;
+
+			case B6B_BREAK:
+				goto done;
 		}
 	}
 
+done:
 	return b6b_return(interp, r);
 }
 
@@ -77,6 +81,8 @@ static enum b6b_res b6b_loop_proc_while(struct b6b_interp *interp,
 			break;
 
 		res = b6b_call(interp, b);
+		if (res == B6B_BREAK)
+			return B6B_OK;
 	} while (res == B6B_OK);
 
 	return res;

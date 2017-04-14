@@ -58,17 +58,20 @@ int b6b_list_add(struct b6b_obj *l, struct b6b_obj *o)
 	return 1;
 }
 
-struct b6b_obj *b6b_list_pop(struct b6b_obj *l)
+struct b6b_obj *b6b_list_pop(struct b6b_obj *l, struct b6b_litem *li)
 {
-	struct b6b_obj *o = NULL;
-	struct b6b_litem *li = TAILQ_LAST(&l->l, b6b_lhead);
+	struct b6b_obj *o;
 
-	if (li) {
-		b6b_list_remove(l, li);
-		o = li->o;
-		free(li);
-		b6b_on_list_mod(l);
+	if (!li) {
+		li = TAILQ_LAST(&l->l, b6b_lhead);
+		if (!li)
+			return NULL;
 	}
+
+	b6b_list_remove(l, li);
+	o = li->o;
+	free(li);
+	b6b_on_list_mod(l);
 
 	return o;
 }
@@ -349,7 +352,7 @@ static enum b6b_res b6b_list_proc_index(struct b6b_interp *interp,
 		if (!li)
 			return B6B_ERR;
 
-		for (i = 1; i < n->n; ++i) {
+		for (i = 0; i < n->n; ++i) {
 			li = b6b_list_next(li);
 			if (!li)
 				return B6B_ERR;

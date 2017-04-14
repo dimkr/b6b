@@ -214,6 +214,10 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 				return b6b_strm_peer(interp, (struct b6b_strm *)o->priv);
 			else if (strcmp(op->s, "fd") == 0)
 				return b6b_strm_fd(interp, (struct b6b_strm *)o->priv);
+			else if (strcmp(op->s, "close") == 0) {
+				b6b_strm_close((struct b6b_strm *)o->priv);
+				return B6B_OK;
+			}
 			break;
 
 		case 3:

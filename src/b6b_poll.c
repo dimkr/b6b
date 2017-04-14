@@ -30,44 +30,47 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
                                   struct b6b_obj *args)
 {
 	struct epoll_event ev = {0}, *evs;
-	struct b6b_obj *fds[3], *p, *op, *n, *l, *fd;
+	struct b6b_obj *fds[3], *p, *op, *n, *t, *l, *fd;
 	int i, j = 0, out, err, r, w, e;
+	unsigned int argc;
 
-	if (!b6b_proc_get_args(interp, args, "o s n", &p, &op, &n) ||
-	    (n->n > INT_MAX))
+	argc = b6b_proc_get_args(interp, args, "o s n |i", &p, &op, &n, &t);
+	if (!argc || (n->n > INT_MAX))
 		return B6B_ERR;
 
-	if (strcmp(op->s, "add") == 0) {
-		if (n->n < 0)
-			return B6B_ERR;
+	if (argc == 3) {
+		if (strcmp(op->s, "add") == 0) {
+			if (n->n < 0)
+				return B6B_ERR;
 
-		ev.events = EPOLLIN | EPOLLOUT;
-		ev.data.fd = (int)n->n;
+			ev.events = EPOLLIN | EPOLLOUT;
+			ev.data.fd = (int)n->n;
 
-		if ((epoll_ctl((int)(intptr_t)p->priv,
-		               EPOLL_CTL_ADD,
-		               ev.data.fd,
-		               &ev) < 0) &&
-		    (errno != EEXIST))
-			return b6b_return_strerror(interp, errno);
+			if ((epoll_ctl((int)(intptr_t)p->priv,
+						   EPOLL_CTL_ADD,
+						   ev.data.fd,
+						   &ev) < 0) &&
+				(errno != EEXIST))
+				return b6b_return_strerror(interp, errno);
 
-		return B6B_OK;
+			return B6B_OK;
+		}
+		else if (strcmp(op->s, "remove") == 0) {
+			if (n->n < 0)
+				return B6B_ERR;
+
+			if ((epoll_ctl((int)(intptr_t)p->priv,
+						   EPOLL_CTL_DEL,
+						   (int)n->n,
+						   NULL) < 0) &&
+				(errno != ENOENT))
+				return b6b_return_strerror(interp, errno);
+
+			return B6B_OK;
+		}
 	}
-	else if (strcmp(op->s, "remove") == 0) {
-		if (n->n < 0)
-			return B6B_ERR;
-
-		if ((epoll_ctl((int)(intptr_t)p->priv,
-		               EPOLL_CTL_DEL,
-		               (int)n->n,
-		               NULL) < 0) &&
-		    (errno != ENOENT))
-			return b6b_return_strerror(interp, errno);
-
-		return B6B_OK;
-	}
-	else if (strcmp(op->s, "wait") == 0) {
-		if (n->n <= 0)
+	else if ((argc == 4) && (strcmp(op->s, "wait") == 0)) {
+		if ((n->n <= 0) || (t->n < INT_MIN) || (t->n > INT_MAX))
 			return B6B_ERR;
 
 		l = b6b_list_new();
@@ -102,7 +105,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			return B6B_ERR;
 		}
 
-		out = epoll_wait((int)(intptr_t)p->priv, evs, (int)n->n, -1);
+		out = epoll_wait((int)(intptr_t)p->priv, evs, (int)n->n, (int)t->n);
 		if (out < 0) {
 			err = errno;
 			free(evs);
