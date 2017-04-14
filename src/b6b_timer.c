@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
 #include <sys/timerfd.h>

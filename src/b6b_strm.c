@@ -122,6 +122,27 @@ static enum b6b_res b6b_strm_write(struct b6b_interp *interp,
 	return b6b_return_num(interp, (b6b_num)out);
 }
 
+static enum b6b_res b6b_strm_writeln(struct b6b_interp *interp,
+                                     struct b6b_strm *strm,
+                                     const char *buf,
+                                     const size_t len)
+{
+	enum b6b_res res;
+	char *s;
+
+	s = (char *)malloc(len + 2);
+	if (!s)
+		return B6B_ERR;
+
+	memcpy(s, buf, len);
+	s[len] = '\n';
+	s[len + 1] = '\0';
+	res = b6b_strm_write(interp, strm, (const unsigned char *)s, len + 1);
+
+	free(s);
+	return res;
+}
+
 static enum b6b_res b6b_strm_accept(struct b6b_interp *interp,
                                    struct b6b_strm *strm)
 {
@@ -201,6 +222,11 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 				                      (struct b6b_strm *)o->priv,
 				                      (const unsigned char *)s->s,
 				                      s->slen);
+			else if (strcmp(op->s, "writeln") == 0)
+				return b6b_strm_writeln(interp,
+				                        (struct b6b_strm *)o->priv,
+				                        s->s,
+				                        s->slen);
 			break;
 	}
 

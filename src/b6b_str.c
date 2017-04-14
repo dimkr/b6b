@@ -184,6 +184,19 @@ int b6b_as_str(struct b6b_obj *o)
 			}
 		}
 
+		/* special case: empty list */
+		if (!o->s) {
+			o->s = (char *)malloc(3);
+			if (b6b_unlikely(!o->s))
+				return 0;
+
+			o->s[0] = '{';
+			o->s[1] = '}';
+			o->s[2] = '\0';
+
+			o->slen = 2;
+		}
+
 		o->flags |= B6B_OBJ_STR;
 	}
 	else if (o->flags & B6B_OBJ_NUM) {
