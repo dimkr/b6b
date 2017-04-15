@@ -49,12 +49,13 @@
 		"{$evloop._fdp add $fd}" \
 	"}}\n" \
 	"{$proc evloop.wait {" \
+		"{$local to $1}\n" \
 		"{$while 1 {" \
 			"{$local n [$list.len $evloop._fdstrm]}\n" \
 			"{$if [$== $n 0] {" \
 				"{$break}" \
 			"}}\n" \
-			"{$local evs [$evloop._fdp wait [$* $n 1.5] 5000]}\n" \
+			"{$local evs [$evloop._fdp wait [$* $n 1.5] $to]}\n" \
 			"{$map fd [$list.index $evs 0] {" \
 				"{$co [$list.new [$list.new $try [$list.new [$list.new [$dict.get $evloop._fdintp $fd] [$dict.get $evloop._fdstrm $fd]]] [$list.new [$list.new $evloop.remove $fd]]]]}" \
 			"}}\n" \
