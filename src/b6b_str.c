@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdint.h>
+#include <wchar.h>
 
 #undef _GNU_SOURCE
 
@@ -244,6 +245,47 @@ uint32_t b6b_str_hash(const char *s, const size_t len)
 	h ^= (h >> 11);
 	h += (h << 15);
 	return h;
+}
+
+struct b6b_obj *b6b_str_decode(const char *s, size_t len)
+{
+	struct b6b_obj *l, *c;
+	mbstate_t ps = {0};
+	const char *p = s;
+	size_t out;
+
+	l = b6b_list_new();
+	if (b6b_unlikely(!l))
+		return 0;
+
+	do {
+		out = mbrtowc(NULL, p, len, &ps);
+		if ((out == (size_t)-1) || (out == (size_t)-2)) {
+			b6b_destroy(l);
+			return NULL;
+		}
+
+		if (!p || !out)
+			break;
+
+		c = b6b_str_copy(p, out);
+		if (b6b_unlikely(!c)) {
+			b6b_destroy(l);
+			return NULL;
+		}
+
+		if (b6b_unlikely(!b6b_list_add(l, c))) {
+			b6b_destroy(c);
+			b6b_destroy(l);
+			return NULL;
+		}
+
+		b6b_unref(c);
+		len -= out;
+		p += out;
+	} while (1);
+
+	return l;
 }
 
 static enum b6b_res b6b_str_proc_len(struct b6b_interp *interp,

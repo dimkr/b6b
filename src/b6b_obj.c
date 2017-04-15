@@ -24,12 +24,19 @@
 static enum b6b_res b6b_obj_proc(struct b6b_interp *interp,
                                  struct b6b_obj *args)
 {
-	struct b6b_litem *li = b6b_list_first(args);
+	struct b6b_obj *s, *op, *o;
 
-	if (b6b_as_str(li->o))
-		b6b_return_fmt(interp, "not a proc: %s", li->o->s);
+	if (!b6b_proc_get_args(interp, args, "s s", &s, &op))
+		return B6B_ERR;
 
-	return B6B_ERR;
+	if (strcmp(op->s, "decode"))
+		return B6B_ERR;
+
+	o = b6b_str_decode(s->s, s->slen);
+	if (!o)
+		return B6B_ERR;
+
+	return b6b_return(interp, o);
 }
 
 struct b6b_obj *b6b_new(void)
