@@ -249,9 +249,8 @@ uint32_t b6b_str_hash(const char *s, const size_t len)
 
 struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 {
-	struct b6b_obj *l, *c;
 	mbstate_t ps = {0};
-	const char *p = s;
+	struct b6b_obj *l, *c;
 	size_t out;
 
 	l = b6b_list_new();
@@ -259,16 +258,16 @@ struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 		return 0;
 
 	do {
-		out = mbrtowc(NULL, p, len, &ps);
+		out = mbrtowc(NULL, s, len, &ps);
 		if ((out == (size_t)-1) || (out == (size_t)-2)) {
 			b6b_destroy(l);
 			return NULL;
 		}
 
-		if (!p || !out)
+		if (!out)
 			break;
 
-		c = b6b_str_copy(p, out);
+		c = b6b_str_copy(s, out);
 		if (b6b_unlikely(!c)) {
 			b6b_destroy(l);
 			return NULL;
@@ -282,7 +281,7 @@ struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 
 		b6b_unref(c);
 		len -= out;
-		p += out;
+		s += out;
 	} while (1);
 
 	return l;
