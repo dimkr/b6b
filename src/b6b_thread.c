@@ -65,6 +65,12 @@ int b6b_thread_init(struct b6b_thread *t,
 		return 0;
 
 	if (fn) {
+		/* if this isn't the main thread, block all signals; otherwise,
+		 * terminating signals may kill the process, bypassing signal
+		 * handling */
+		if (sigfillset(&t->ucp.uc_sigmask) < 0)
+			goto bail;
+
 		if (!t->stack) {
 			t->stack = malloc(stksiz);
 			if (b6b_unlikely(!t->stack))

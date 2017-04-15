@@ -172,6 +172,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 
 	interp->fg = &interp->threads[0];
 	interp->qstep = 0;
+	interp->exit = 0;
 
 	for (e = b6b_ext_first; e < b6b_ext_last; ++e) {
 		for (j = 0; j < e->n; ++j) {
@@ -194,11 +195,26 @@ bail:
 	return 0;
 }
 
+static int b6b_yield(struct b6b_interp *);
+
+static void b6b_join(struct b6b_interp *interp)
+{
+	/* signal all threads to stop */
+	interp->exit = 1;
+
+	/* wait until all threads are inactive */
+	while (b6b_yield(interp) >= 0) {};
+}
+
 void b6b_interp_destroy(struct b6b_interp *interp)
 {
 	int i;
 
-	for (i = B6B_NTHREADS - 1; i >= 0; --i)
+	b6b_join(interp);
+
+	for (i = sizeof(interp->threads) / sizeof(interp->threads[0]) - 1;
+	     i >= 0;
+	     --i)
 		b6b_thread_destroy(&interp->threads[i]);
 
 	if (interp->global)
@@ -323,21 +339,24 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	return b6b_return(interp, b6b_ref(exp));
 }
 
-static void b6b_yield(struct b6b_interp *interp)
+static int b6b_yield(struct b6b_interp *interp)
 {
 	struct b6b_thread *bg;
-	unsigned int i;
+	int i;
 
 	for (i = 0; i < sizeof(interp->threads) / sizeof(interp->threads[0]); ++i) {
-		if ((interp->threads[i].flags & B6B_THREAD_BG) &&
+		if ((&interp->threads[i] != interp->fg) &&
+		    (interp->threads[i].flags & B6B_THREAD_BG) &&
 		    !(interp->threads[i].flags & B6B_THREAD_DONE)) {
 
 			bg = interp->fg;
 			interp->fg = &interp->threads[i];
 			b6b_thread_swap(bg, interp->fg);
-			break;
+			return i;
 		}
 	}
+
+	return -1;
 }
 
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,
@@ -373,6 +392,11 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	struct b6b_obj *args;
 	enum b6b_res res = B6B_ERR;
+
+	/* if the interpreter is exiting, issue B6B_EXIT in the current thread;
+	 * b6b_join() takes care of sweeping through all threads */
+	if (interp->exit)
+		return B6B_EXIT;
 
 	if (b6b_unlikely(!b6b_frame_push(interp)))
 		goto out;
