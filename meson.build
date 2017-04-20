@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project('b6b', 'c', version : '0.0.1', license : 'Apache-2.0')
+project('b6b', 'c', version: '0.0.1', license: 'Apache-2.0')
 
 add_global_arguments('-D_FILE_OFFSET_BITS=64', language: 'c')
 add_project_arguments('-Wall', '-Wno-overlength-strings', language: 'c')
