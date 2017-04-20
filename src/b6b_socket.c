@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <sys/ioctl.h>
 
 #include <b6b.h>
 
@@ -36,6 +37,17 @@ struct b6b_socket {
 	int fd;
 	socklen_t len;
 };
+
+static ssize_t b6b_socket_peeksz(struct b6b_interp *interp, void *priv)
+{
+	const struct b6b_socket *s = (const struct b6b_socket *)priv;
+	int ilen;
+
+	if (ioctl(s->fd, FIONREAD, &ilen) < 0)
+		return -1;
+
+	return (ssize_t)ilen;
+}
 
 static ssize_t b6b_socket_on_read(struct b6b_interp *interp,
                                   const ssize_t out,
@@ -330,6 +342,7 @@ static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
 }
 
 static const struct b6b_strm_ops b6b_stream_client_ops = {
+	.peeksz = b6b_socket_peeksz,
 	.read = b6b_socket_read,
 	.write = b6b_socket_write,
 	.peer = b6b_socket_peer,
@@ -349,6 +362,7 @@ static enum b6b_res b6b_socket_proc_stream_client(struct b6b_interp *interp,
 }
 
 static const struct b6b_strm_ops b6b_dgram_client_ops = {
+	.peeksz = b6b_socket_peeksz,
 	.read = b6b_socket_readfrom,
 	.write = b6b_socket_write,
 	.peer = b6b_socket_peer,
@@ -469,6 +483,7 @@ static enum b6b_res b6b_socket_proc_stream_server(struct b6b_interp *interp,
 }
 
 static const struct b6b_strm_ops b6b_dgram_server_ops = {
+	.peeksz = b6b_socket_peeksz,
 	.read = b6b_socket_readfrom,
 	.peer = b6b_socket_peer,
 	.fd = b6b_socket_fd,

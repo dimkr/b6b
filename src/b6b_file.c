@@ -36,6 +36,32 @@ struct b6b_file {
 	int fd;
 };
 
+static ssize_t b6b_file_peeksz(struct b6b_interp *interp, void *priv)
+{
+	const struct b6b_file *f = (const struct b6b_file *)priv;
+	off_t here, end;
+
+	here = ftello(f->fp);
+	if ((here == (off_t)-1) || (here > SSIZE_MAX))
+		return -1;
+
+	if (fseek(f->fp, 0, SEEK_END) < 0) {
+		b6b_return_strerror(interp, errno);
+		return -1;
+	}
+
+	end = ftello(f->fp);
+	if ((end == (off_t)-1) || (end > SSIZE_MAX))
+		return -1;
+
+	if (fseeko(f->fp, here, SEEK_SET) < 0) {
+		b6b_return_strerror(interp, errno);
+		return -1;
+	}
+
+	return (ssize_t)(end - here);
+}
+
 static ssize_t b6b_file_read(struct b6b_interp *interp,
                              void *priv,
                              unsigned char *buf,
@@ -43,7 +69,7 @@ static ssize_t b6b_file_read(struct b6b_interp *interp,
                              int *eof,
                              int *again)
 {
-	struct b6b_file *f = (struct b6b_file *)priv;
+	const struct b6b_file *f = (const struct b6b_file *)priv;
 	size_t ret;
 
 	ret = fread(buf, 1, len, f->fp);
@@ -64,7 +90,7 @@ static ssize_t b6b_file_write(struct b6b_interp *interp,
                               const unsigned char *buf,
                               const size_t len)
 {
-	struct b6b_file *f = (struct b6b_file *)priv;
+	const struct b6b_file *f = (const struct b6b_file *)priv;
 	size_t chunk, total = 0;
 
 	do {
@@ -102,6 +128,7 @@ static void b6b_file_close(void *priv)
 }
 
 static const struct b6b_strm_ops b6b_file_ops = {
+	.peeksz = b6b_file_peeksz,
 	.read = b6b_file_read,
 	.write = b6b_file_write,
 	.fd = b6b_file_fd,

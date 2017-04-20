@@ -21,6 +21,7 @@
 struct b6b_strm;
 
 struct b6b_strm_ops {
+	ssize_t (*peeksz)(struct b6b_interp *, void *);
 	ssize_t (*read)(struct b6b_interp *,
 	                void *,
 	                unsigned char *,
