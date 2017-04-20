@@ -54,7 +54,7 @@ static ssize_t b6b_file_peeksz(struct b6b_interp *interp, void *priv)
 	if ((end == (off_t)-1) || (end > SSIZE_MAX))
 		return -1;
 
-	if (fseeko(f->fp, here, SEEK_SET) < 0) {
+	if ((end > here) && (fseeko(f->fp, here, SEEK_SET) < 0)) {
 		b6b_return_strerror(interp, errno);
 		return -1;
 	}

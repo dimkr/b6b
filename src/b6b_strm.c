@@ -45,6 +45,10 @@ static int b6b_strm_peeksz(struct b6b_interp *interp,
                            struct b6b_strm *strm,
                            ssize_t *len)
 {
+	/* we fall back to B6B_STRM_BUFSIZ chunks, to improve efficiency of buffered
+	 * streams */
+	*len = B6B_STRM_BUFSIZ;
+
 	if (strm->ops->peeksz) {
 		*len = strm->ops->peeksz(interp, strm->priv);
 		if (*len < 0)
@@ -59,9 +63,7 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 {
 	struct b6b_obj *o;
 	unsigned char *buf = NULL, *nbuf;
-	/* we read in B6B_STRM_BUFSIZ chunks, to improve efficiency of buffered
-	 * streams */
-	ssize_t len, est = B6B_STRM_BUFSIZ, out = 0, more;
+	ssize_t len = 1, est, out = 0, more;
 	int eof = 0, again = 1;
 
 	if (strm->flags & B6B_STRM_EOF)
@@ -75,15 +77,17 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 	if (!b6b_strm_peeksz(interp, strm, &est))
 		return B6B_ERR;
 
-	/* add room for \0 */
-	len = est + 1;
-
 	do {
+		len += est;
+
 		nbuf = (unsigned char *)realloc(buf, len);
 		if (b6b_unlikely(!nbuf)) {
 			free(buf);
 			return B6B_ERR;
 		}
+
+		if (!est)
+			break;
 
 		more = strm->ops->read(interp,
 		                       strm->priv,
@@ -106,11 +110,11 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 		else if (!more || !again)
 			break;
 
-		len += B6B_STRM_BUFSIZ;
-
-		/* try to read another chunk */
-		est = B6B_STRM_BUFSIZ;
-	} while (1);
+		if (!b6b_strm_peeksz(interp, strm, &est)) {
+			free(nbuf);
+			return B6B_ERR;
+		}
+	} while (est);
 
 	buf[out] = '\0';
 	o = b6b_str_new((char *)buf, (size_t)out);
