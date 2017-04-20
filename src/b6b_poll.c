@@ -47,9 +47,9 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			ev.data.fd = (int)n->n;
 
 			if ((epoll_ctl((int)(intptr_t)p->priv,
-						   EPOLL_CTL_ADD,
-						   ev.data.fd,
-						   &ev) < 0) &&
+			               EPOLL_CTL_ADD,
+			               ev.data.fd,
+			               &ev) < 0) &&
 				(errno != EEXIST))
 				return b6b_return_strerror(interp, errno);
 
@@ -60,9 +60,9 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 				return B6B_ERR;
 
 			if ((epoll_ctl((int)(intptr_t)p->priv,
-						   EPOLL_CTL_DEL,
-						   (int)n->n,
-						   NULL) < 0) &&
+			               EPOLL_CTL_DEL,
+			               (int)n->n,
+			               NULL) < 0) &&
 				(errno != ENOENT))
 				return b6b_return_strerror(interp, errno);
 
