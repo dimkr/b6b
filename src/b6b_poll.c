@@ -50,7 +50,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			               EPOLL_CTL_ADD,
 			               ev.data.fd,
 			               &ev) < 0) &&
-				(errno != EEXIST))
+			    (errno != EEXIST))
 				return b6b_return_strerror(interp, errno);
 
 			return B6B_OK;
@@ -63,7 +63,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			               EPOLL_CTL_DEL,
 			               (int)n->n,
 			               NULL) < 0) &&
-				(errno != ENOENT))
+			    (errno != ENOENT))
 				return b6b_return_strerror(interp, errno);
 
 			return B6B_OK;
