@@ -19,21 +19,25 @@
 #include <b6b.h>
 
 #define B6B_CO_BODY \
+	"{$global _fco 1}\n" \
 	"{$global _cos {}}\n" \
 	"{$proc co {" \
-		"{$list.append $_cos $1}" \
-	"}}\n" \
-	"{$spawn {" \
-		"{$while 1 {" \
-			"{$if $_cos {" \
-				"{$try {" \
-					"{$call [$list.pop $_cos 0]}" \
+		"{$list.append $_cos $1}\n" \
+		"{$if $_fco {" \
+			"{$spawn {" \
+				"{$while 1 {" \
+					"{$if $_cos {" \
+						"{$try {" \
+							"{$call [$list.pop $_cos 0]}" \
+						"}}" \
+					"} {" \
+						"{$yield}" \
+					"}}" \
 				"}}" \
-			"} {" \
-				"{$yield}" \
-			"}}" \
+			"}}\n" \
+			"{$global _fco 0}" \
 		"}}" \
-	"}}"
+	"}}\n" \
 
 static int b6b_co_init(struct b6b_interp *interp)
 {
