@@ -159,6 +159,11 @@ err:
 	return B6B_ERR;
 }
 
+static void b6b_poll_del(void *priv)
+{
+	close((int)(intptr_t)priv);
+}
+
 static enum b6b_res b6b_poll_proc_poll(struct b6b_interp *interp,
                                        struct b6b_obj *args)
 {
@@ -180,6 +185,7 @@ static enum b6b_res b6b_poll_proc_poll(struct b6b_interp *interp,
 
 	o->proc = b6b_poll_proc;
 	o->priv = (void *)(intptr_t)fd;
+	o->del = b6b_poll_del;
 
 	return b6b_return(interp, o);
 }
