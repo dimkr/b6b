@@ -37,7 +37,7 @@
 			"}}\n" \
 			"{$global _fco 0}" \
 		"}}" \
-	"}}\n" \
+	"}}" \
 
 static int b6b_co_init(struct b6b_interp *interp)
 {
