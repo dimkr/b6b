@@ -40,7 +40,7 @@ static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
 
 	switch (b6b_proc_get_args(interp, args, "o s |i", NULL, &s, &l)) {
 		case 3:
-			if ((l->n < INT_MAX) || (l->n > INT_MAX))
+			if ((l->n < INT_MIN) || (l->n > INT_MAX))
 				return B6B_ERR;
 			level = (int)l->n;
 
