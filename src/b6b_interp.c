@@ -195,8 +195,6 @@ bail:
 	return 0;
 }
 
-static int b6b_yield(struct b6b_interp *);
-
 static void b6b_join(struct b6b_interp *interp)
 {
 	/* signal all threads to stop */
@@ -339,7 +337,7 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	return b6b_return(interp, b6b_ref(exp));
 }
 
-static int b6b_yield(struct b6b_interp *interp)
+int b6b_yield(struct b6b_interp *interp)
 {
 	struct b6b_thread *bg;
 	int i;
@@ -348,7 +346,6 @@ static int b6b_yield(struct b6b_interp *interp)
 		if ((&interp->threads[i] != interp->fg) &&
 		    (interp->threads[i].flags & B6B_THREAD_BG) &&
 		    !(interp->threads[i].flags & B6B_THREAD_DONE)) {
-
 			bg = interp->fg;
 			interp->fg = &interp->threads[i];
 			b6b_thread_swap(bg, interp->fg);

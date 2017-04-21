@@ -23,6 +23,7 @@ libb6b = library('b6b',
                  'b6b_strm.c', 'b6b_fdops.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sem.c', 'b6b_poll.c', 'b6b_evloop.c',
                  'b6b_time.c',
                  'linenoise/linenoise.c', 'b6b_linenoise.c',
+                 'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c',
                  include_directories: b6b_includes,
                  dependencies: [cc.find_library('m', required: false)])
 

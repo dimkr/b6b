@@ -109,3 +109,5 @@ unsigned int b6b_args_parse(struct b6b_interp *interp,
                             const char *help,
                             const char *fmt,
                             ...);
+
+int b6b_yield(struct b6b_interp *interp);
