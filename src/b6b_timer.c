@@ -25,19 +25,9 @@
 
 #include <b6b.h>
 
-static int b6b_timer_fd(void *priv)
-{
-	return (int)(intptr_t)priv;
-}
-
-static void b6b_timer_close(void *priv)
-{
-	close((int)(intptr_t)priv);
-}
-
 static const struct b6b_strm_ops b6b_timer_ops = {
-	.fd = b6b_timer_fd,
-	.close = b6b_timer_close
+	.fd = b6b_fd_fd,
+	.close = b6b_fd_close
 };
 
 static enum b6b_res b6b_timer_proc_timer(struct b6b_interp *interp,

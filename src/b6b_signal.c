@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdint.h>
 
 #include <b6b.h>
 
@@ -43,25 +44,24 @@ static ssize_t b6b_signal_read(struct b6b_interp *interp,
 	ssize_t out;
 	int outc;
 
-	out = read(s->fd, &si, sizeof(si));
-	if (out == sizeof(si)) {
-		outc = snprintf((char *)buf, len, "%"PRIu32, si.ssi_signo);
-		if ((outc >= len) || (outc < 0))
-			return -1;
+	out = b6b_fd_read(interp,
+	                  (void *)(intptr_t)s->fd,
+	                  (unsigned char *)&si,
+	                  sizeof(si),
+	                  eof,
+	                  again);
+	if (out <= 0)
+		return out;
 
-		out = (ssize_t)outc;
-		*again = 0;
-	} else if (!out)
-		*again = 0;
-	else {
-		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
-			return 0;
-
-		b6b_return_strerror(interp, errno);
+	if (out != sizeof(si))
 		return -1;
-	}
 
-	return out;
+	outc = snprintf((char *)buf, len, "%"PRIu32, si.ssi_signo);
+	if ((outc >= len) || (outc < 0))
+		return -1;
+
+	*again = 0;
+	return (ssize_t)outc;
 }
 
 static int b6b_signal_fd(void *priv)
