@@ -129,9 +129,65 @@ int b6b_as_str(struct b6b_obj *o)
 				return 0;
 			}
 
-			if (b6b_spaced(li->o->s, li->o->slen)) {
-				if (o->s) {
-					nlen = o->slen + li->o->slen + 3;
+			if (li->o->slen) {
+				if (b6b_spaced(li->o->s, li->o->slen)) {
+					if (o->s) { /* non-empty with whitespace */
+						nlen = o->slen + li->o->slen + 3;
+						s2 = (char *)realloc(o->s, nlen + 1);
+						if (b6b_unlikely(!s2)) {
+							free(o->s);
+							return 0;
+						}
+
+						s2[o->slen] = ' ';
+						s2[o->slen + 1] = '{';
+						memcpy(&s2[o->slen + 2], li->o->s, li->o->slen);
+						s2[nlen - 1] = '}';
+						s2[nlen] = '\0';
+
+						o->s = s2;
+						o->slen = nlen;
+					}
+					else { /* first, non-empty with whitespace */
+						o->slen = li->o->slen + 2;
+						o->s = (char *)malloc(o->slen + 1);
+						if (b6b_unlikely(!o->s))
+							return 0;
+
+						o->s[0] = '{';
+						memcpy(&o->s[1], li->o->s, li->o->slen);
+						o->s[o->slen - 1] = '}';
+						o->s[o->slen] = '\0';
+					}
+				}
+				else {
+					if (o->s) { /* non-empty without whitespace */
+						nlen = o->slen + li->o->slen + 1;
+						s2 = (char *)realloc(o->s, nlen + 1);
+						if (b6b_unlikely(!s2)) {
+							free(o->s);
+							return 0;
+						}
+
+						s2[o->slen] = ' ';
+						memcpy(&s2[o->slen + 1], li->o->s, li->o->slen);
+						s2[nlen] = '\0';
+
+						o->s = s2;
+						o->slen = nlen;
+					}
+					else { /* first, non-empty withput whitespace */
+						o->s = b6b_strndup(li->o->s, li->o->slen);
+						if (b6b_unlikely(!o->s))
+							return 0;
+
+						o->slen = li->o->slen;
+					}
+				}
+			}
+			else {
+				if (o->s) { /* empty */
+					nlen = o->slen + 3;
 					s2 = (char *)realloc(o->s, nlen + 1);
 					if (b6b_unlikely(!s2)) {
 						free(o->s);
@@ -140,47 +196,21 @@ int b6b_as_str(struct b6b_obj *o)
 
 					s2[o->slen] = ' ';
 					s2[o->slen + 1] = '{';
-					memcpy(&s2[o->slen + 2], li->o->s, li->o->slen);
 					s2[nlen - 1] = '}';
 					s2[nlen] = '\0';
 
 					o->s = s2;
 					o->slen = nlen;
 				}
-				else {
-					o->slen = li->o->slen + 2;
-					o->s = (char *)malloc(o->slen + 1);
+				else { /* first, empty */
+					o->s = (char *)malloc(3);
 					if (b6b_unlikely(!o->s))
 						return 0;
 
 					o->s[0] = '{';
-					memcpy(&o->s[1], li->o->s, li->o->slen);
-					o->s[o->slen - 1] = '}';
-					o->s[o->slen] = '\0';
-				}
-			}
-			else {
-				if (o->s) {
-					nlen = o->slen + li->o->slen + 1;
-					s2 = (char *)realloc(o->s, nlen + 1);
-					if (b6b_unlikely(!s2)) {
-						free(o->s);
-						return 0;
-					}
-
-					s2[o->slen] = ' ';
-					memcpy(&s2[o->slen + 1], li->o->s, li->o->slen);
-					s2[nlen] = '\0';
-
-					o->s = s2;
-					o->slen = nlen;
-				}
-				else {
-					o->s = b6b_strndup(li->o->s, li->o->slen);
-					if (b6b_unlikely(!o->s))
-						return 0;
-
-					o->slen = li->o->slen;
+					o->s[1] = '}';
+					o->s[2] = '\0';
+					o->slen = 2;
 				}
 			}
 		}
@@ -328,6 +358,126 @@ static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
 	                      end->n - start->n);
 }
 
+static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_litem *d, *li;
+	char *s = NULL, *ms;
+	struct b6b_obj *o;
+	size_t len, mlen;
+
+	d = b6b_list_next(b6b_list_first(args));
+	if (!b6b_as_str(d->o))
+		return B6B_ERR;
+
+	li = b6b_list_next(d);
+	if (!li || !b6b_as_str(li->o))
+		return B6B_ERR;
+
+	len = li->o->slen;
+	s = (char *)malloc(len + 1);
+	if (b6b_unlikely(!s))
+		return B6B_ERR;
+
+	memcpy(s, li->o->s, len);
+
+	do {
+		li = b6b_list_next(li);
+		if (!li)
+			break;
+
+		if (!b6b_as_str(li->o)) {
+			free(s);
+			return B6B_ERR;
+		}
+
+		mlen = len + d->o->slen + li->o->slen + 1;
+
+		ms = (char *)realloc(s, mlen);
+		if (b6b_unlikely(!ms)) {
+			free(s);
+			return B6B_ERR;
+		}
+
+		memcpy(ms + len, d->o->s, d->o->slen);
+		memcpy(ms + len + d->o->slen, li->o->s, li->o->slen);
+
+		s = ms;
+		len = mlen;
+	} while (1);
+
+	s[len - 1] = '\0';
+	o = b6b_str_new(s, len - 1);
+	if (b6b_unlikely(!o)) {
+		free(s);
+		return B6B_ERR;
+	}
+
+	return b6b_return(interp, o);
+}
+
+static enum b6b_res b6b_str_proc_split(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
+{
+	struct b6b_obj *s, *d, *l, *o;
+	const char *p, *end, *prev;
+
+	if (!b6b_proc_get_args(interp, args, "o s s", NULL, &s, &d))
+	    return B6B_ERR;
+
+	l = b6b_list_new();
+	if (b6b_unlikely(!l))
+		return B6B_ERR;
+
+	p = s->s;
+	end = p + s->slen;
+	prev = p;
+
+	do {
+		if (p == end) {
+			if (d->slen && prev) {
+				o = b6b_str_copy(prev, end - prev);
+				if (b6b_unlikely(!o)) {
+					b6b_destroy(l);
+					return B6B_ERR;
+				}
+
+				if (b6b_unlikely(!b6b_list_add(l, o))) {
+					b6b_destroy(o);
+					b6b_destroy(l);
+					return B6B_ERR;
+				}
+
+				b6b_unref(o);
+			}
+			break;
+		}
+
+		if (d->slen && memcmp(p, d->s, d->slen))
+			++p;
+		else {
+			o = b6b_str_copy(prev, d->slen ? (p - prev) : 1);
+			if (b6b_unlikely(!o)) {
+				b6b_destroy(l);
+				return B6B_ERR;
+			}
+
+			if (b6b_unlikely(!b6b_list_add(l, o))) {
+				b6b_destroy(o);
+				b6b_destroy(l);
+				return B6B_ERR;
+			}
+
+			b6b_unref(o);
+
+			p += d->slen ? d->slen : 1;
+			prev = p;
+		}
+	} while (1);
+
+	return b6b_return(interp, l);
+}
+
 static const struct b6b_ext_obj b6b_str[] = {
 	{
 		.name = "str.len",
@@ -346,6 +496,18 @@ static const struct b6b_ext_obj b6b_str[] = {
 		.type = B6B_OBJ_STR,
 		.val.s = "str.range",
 		.proc = b6b_str_proc_range
+	},
+	{
+		.name = "str.join",
+		.type = B6B_OBJ_STR,
+		.val.s = "str.join",
+		.proc = b6b_str_proc_join
+	},
+	{
+		.name = "str.split",
+		.type = B6B_OBJ_STR,
+		.val.s = "str.split",
+		.proc = b6b_str_proc_split
 	}
 };
 __b6b_ext(b6b_str);
