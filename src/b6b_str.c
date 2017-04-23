@@ -478,6 +478,119 @@ static enum b6b_res b6b_str_proc_split(struct b6b_interp *interp,
 	return b6b_return(interp, l);
 }
 
+static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
+                                        struct b6b_obj *args)
+{
+	struct b6b_obj *s, *o;
+	char *s2;
+	size_t i = 0, j = 0, last;
+
+	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+		return B6B_ERR;
+
+	s2 = (char *)malloc(s->slen + 1);
+	if (b6b_unlikely(!s2))
+		return B6B_ERR;
+
+	last = s->slen - 1;
+	while (i < s->slen) {
+		if (s->s[i] != '\\') {
+			s2[j] = s->s[i];
+			++i;
+		}
+		else if (j == last) {
+			free(s2);
+			b6b_return_str(interp, "bad escape", sizeof("bad escape") - 1);
+			return B6B_ERR;
+		}
+		else {
+			switch (s->s[i + 1]) {
+				case '0':
+					s2[j] = '\0';
+					i += 2;
+					break;
+
+				case '\\':
+					s2[j] = '\\';
+					i += 2;
+					break;
+
+				case 'n':
+					s2[j] = '\n';
+					i += 2;
+					break;
+
+				case 't':
+					s2[j] = '\t';
+					i += 2;
+					break;
+
+				case 'r':
+					s2[j] = '\r';
+					i += 2;
+					break;
+
+				case 'x':
+					if (i + 3 > last) {
+						free(s2);
+						b6b_return_str(interp,
+						               "bad hex escape",
+						               sizeof("bad hex escape") - 1);
+						return B6B_ERR;
+					}
+
+					if ((s->s[i + 2] >= '0') && (s->s[i + 2] <= '9'))
+						s2[j] = ((s->s[i + 2] - '0') << 4);
+					else if ((s->s[i + 2] >= 'a') && (s->s[i + 2] <= 'f'))
+						s2[j] = ((s->s[i + 2] - 'a' + 10) << 4);
+					else if ((s->s[i + 2] >= 'A') && (s->s[i + 2] <= 'F'))
+						s2[j] = ((s->s[i + 2] - 'A' + 10) << 4);
+					else {
+						free(s2);
+						b6b_return_str(interp,
+						               "bad hex digit",
+						               sizeof("bad hex digit") - 1);
+						return B6B_ERR;
+					}
+
+					if ((s->s[i + 3] >= '0') && (s->s[i + 3] <= '9'))
+						s2[j] |= s->s[i + 3] - '0';
+					else if ((s->s[i + 3] >= 'a') && (s->s[i + 3] <= 'f'))
+						s2[j] |= s->s[i + 3] - 'a' + 10;
+					else if ((s->s[i + 3] >= 'A') && (s->s[i + 3] <= 'F'))
+						s2[j] |= s->s[i + 3] - 'A' + 10;
+					else {
+						free(s2);
+						b6b_return_str(interp,
+						               "bad hex digit",
+						               sizeof("bad hex digit") - 1);
+						return B6B_ERR;
+					}
+
+					i += 4;
+					break;
+
+				default:
+					free(s2);
+					b6b_return_str(interp,
+					               "bad escape",
+					               sizeof("bad escape") - 1);
+					return B6B_ERR;
+			}
+		}
+
+		++j;
+	}
+
+	o = b6b_str_new(s2, j);
+	if (b6b_unlikely(!o)) {
+		free(s2);
+		return B6B_ERR;
+	}
+
+	return b6b_return(interp, o);
+}
+
 static const struct b6b_ext_obj b6b_str[] = {
 	{
 		.name = "str.len",
@@ -508,6 +621,12 @@ static const struct b6b_ext_obj b6b_str[] = {
 		.type = B6B_OBJ_STR,
 		.val.s = "str.split",
 		.proc = b6b_str_proc_split
+	},
+	{
+		.name = "str.expand",
+		.type = B6B_OBJ_STR,
+		.val.s = "str.expand",
+		.proc = b6b_str_proc_expand
 	}
 };
 __b6b_ext(b6b_str);
