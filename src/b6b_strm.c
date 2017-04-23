@@ -86,22 +86,22 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 			return B6B_ERR;
 		}
 
+		buf = nbuf;
 		if (!est)
 			break;
 
 		more = strm->ops->read(interp,
 		                       strm->priv,
-		                       nbuf + out,
+		                       buf + out,
 		                       est,
 		                       &eof,
 		                       &again);
 		if (more < 0) {
-			free(nbuf);
+			free(buf);
 			return B6B_ERR;
 		}
 
 		out += more;
-		buf = nbuf;
 
 		if (eof) {
 			strm->flags |= B6B_STRM_EOF;
@@ -111,7 +111,7 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 			break;
 
 		if (!b6b_strm_peeksz(interp, strm, &est)) {
-			free(nbuf);
+			free(buf);
 			return B6B_ERR;
 		}
 	} while (est);
