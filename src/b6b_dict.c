@@ -118,7 +118,7 @@ static enum b6b_res b6b_dict_proc_get(struct b6b_interp *interp,
 		return b6b_return(interp, b6b_ref(v));
 
 	if (f)
-		return b6b_return(interp, f);
+		return b6b_return(interp, b6b_ref(f));
 
 	return B6B_ERR;
 }
