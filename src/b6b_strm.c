@@ -221,6 +221,9 @@ static enum b6b_res b6b_strm_peer(struct b6b_interp *interp,
 static enum b6b_res b6b_strm_fd(struct b6b_interp *interp,
                                 struct b6b_strm *strm)
 {
+	if (strm->flags & B6B_STRM_CLOSED)
+		return B6B_ERR;
+
 	return b6b_return_num(interp, (b6b_num)strm->ops->fd(strm->priv));
 }
 
