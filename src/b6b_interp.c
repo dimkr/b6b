@@ -653,6 +653,7 @@ static enum b6b_res b6b_interp_proc_export(struct b6b_interp *interp,
                                            struct b6b_obj *args)
 {
 	struct b6b_obj *k, *v;
+	const struct b6b_frame *f = interp->fg->curr->prev;
 
 	switch (b6b_proc_get_args(interp, args, "o s |o", NULL, &k, &v)) {
 		case 3:
@@ -667,7 +668,10 @@ static enum b6b_res b6b_interp_proc_export(struct b6b_interp *interp,
 			return B6B_ERR;
 	}
 
-	if (b6b_dict_set(interp->fg->curr->prev->locals, k, v))
+	if (!f->prev)
+		return B6B_ERR;
+
+	if (b6b_dict_set(f->prev->locals, k, v))
 		return B6B_OK;
 
 	return B6B_ERR;
