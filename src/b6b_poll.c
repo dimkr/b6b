@@ -31,7 +31,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 {
 	struct epoll_event ev = {0}, *evs;
 	struct b6b_obj *fds[3], *p, *op, *n, *t, *l, *fd;
-	int i, j = 0, out, err, r, w, e;
+	int i, j = 0, out, err, r, w, e, to[2];
 	unsigned int argc;
 
 	argc = b6b_proc_get_args(interp, args, "o s n |i", &p, &op, &n, &t);
@@ -105,12 +105,23 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			return B6B_ERR;
 		}
 
-		out = epoll_wait((int)(intptr_t)p->priv, evs, (int)n->n, (int)t->n);
-		if (out < 0) {
-			err = errno;
-			free(evs);
-			b6b_destroy(l);
-			return b6b_return_strerror(interp, err);
+		/* p->priv may be freed during the context switch */
+		b6b_ref(p);
+
+		to[0] = 0;
+		to[1] = (int)t->n;
+		for (i = 0; i < 2; ++i) {
+			out = epoll_wait((int)(intptr_t)p->priv, evs, (int)n->n, to[i]);
+			if (out < 0) {
+				err = errno;
+				b6b_unref(p);
+				free(evs);
+				b6b_destroy(l);
+				return b6b_return_strerror(interp, err);
+			}
+			if (out > 0)
+				break;
+			b6b_yield(interp);
 		}
 
 		for (i = 0; (j < out) && (i < n->n); ++i) {
@@ -147,11 +158,13 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			continue;
 
 err:
+			b6b_unref(p);
 			free(evs);
 			b6b_destroy(l);
 			return B6B_ERR;
 		}
 
+		b6b_unref(p);
 		free(evs);
 		return b6b_return(interp, l);
 	}
