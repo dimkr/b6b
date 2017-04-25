@@ -317,21 +317,31 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	if (!b6b_as_str(exp))
 		return B6B_ERR;
 
-	if (exp->s[0] == '$') {
-		o = b6b_get(interp, &exp->s[1]);
-		if (o)
-			return b6b_return(interp, b6b_ref(o));
+	if (exp->slen) {
+		switch (exp->s[0]) {
+			case '$':
+				o = b6b_get(interp, &exp->s[1]);
+				if (o)
+					return b6b_return(interp, b6b_ref(o));
 
-		return B6B_ERR;
-	}
-	else if ((exp->s[0] == '[') && (exp->s[exp->slen - 1] == ']')) {
-		stmt = b6b_str_copy(&exp->s[1], exp->slen - 2);
-		if (b6b_unlikely(!stmt))
-			return B6B_ERR;
+				return B6B_ERR;
 
-		res = b6b_stmt_call(interp, stmt);
-		b6b_unref(stmt);
-		return res;
+			case '[':
+				if ((exp->slen == 1) || (exp->s[exp->slen - 1] != ']')) {
+					b6b_return_str(interp,
+					               "uneven []",
+					               sizeof("uneven []") - 1);
+					return B6B_ERR;
+				}
+
+				stmt = b6b_str_copy(&exp->s[1], exp->slen - 2);
+				if (b6b_unlikely(!stmt))
+					return B6B_ERR;
+
+				res = b6b_stmt_call(interp, stmt);
+				b6b_unref(stmt);
+				return res;
+		}
 	}
 
 	return b6b_return(interp, b6b_ref(exp));
