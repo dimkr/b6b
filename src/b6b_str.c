@@ -95,15 +95,17 @@ struct b6b_obj *b6b_str_fmt(const char *fmt, ...)
 	return s;
 }
 
+static int b6b_isspace(const char c)
+{
+	return ((c == ' ') || (c == '\t') || (c == '\n') || (c == '\r'));
+}
+
 static int b6b_spaced(const char *s, const size_t len)
 {
 	size_t i;
 
 	for (i = 0; i < len; ++i) {
-		if ((s[i] == ' ') ||
-		    (s[i] == '\t') ||
-		    (s[i] == '\n') ||
-		    (s[i] == '\r'))
+		if (b6b_isspace(s[i]))
 			return 1;
 	}
 
@@ -391,9 +393,9 @@ static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
 			return B6B_ERR;
 		}
 
-		mlen = len + d->o->slen + li->o->slen + 1;
+		mlen = len + d->o->slen + li->o->slen;
 
-		ms = (char *)realloc(s, mlen);
+		ms = (char *)realloc(s, mlen + 1);
 		if (b6b_unlikely(!ms)) {
 			free(s);
 			return B6B_ERR;
@@ -406,8 +408,8 @@ static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
 		len = mlen;
 	} while (1);
 
-	s[len - 1] = '\0';
-	o = b6b_str_new(s, len - 1);
+	s[len] = '\0';
+	o = b6b_str_new(s, len);
 	if (b6b_unlikely(!o)) {
 		free(s);
 		return B6B_ERR;
@@ -591,6 +593,45 @@ static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
 	return b6b_return(interp, o);
 }
 
+static enum b6b_res b6b_str_proc_rtrim(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
+{
+	struct b6b_obj *s;
+	ssize_t i, j;
+
+	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s) ||
+	    (s->slen > SSIZE_MAX))
+		return B6B_ERR;
+
+	i = (ssize_t)s->slen;
+	j = i - 1;
+	while (i >= 0) {
+		if (!b6b_isspace(s->s[j]))
+			break;
+		--i;
+		--j;
+	}
+
+	return b6b_return_str(interp, s->s, (size_t)i);
+}
+
+static enum b6b_res b6b_str_proc_ltrim(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
+{
+	struct b6b_obj *s;
+	size_t i;
+
+	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+		return B6B_ERR;
+
+	for (i = 0; i < s->slen; ++i) {
+		if (!b6b_isspace(s->s[i]))
+			break;
+	}
+
+	return b6b_return_str(interp, s->s + i, s->slen - i);
+}
+
 static const struct b6b_ext_obj b6b_str[] = {
 	{
 		.name = "str.len",
@@ -627,6 +668,18 @@ static const struct b6b_ext_obj b6b_str[] = {
 		.type = B6B_OBJ_STR,
 		.val.s = "str.expand",
 		.proc = b6b_str_proc_expand
+	},
+	{
+		.name = "rtrim",
+		.type = B6B_OBJ_STR,
+		.val.s = "rtrim",
+		.proc = b6b_str_proc_rtrim
+	},
+	{
+		.name = "ltrim",
+		.type = B6B_OBJ_STR,
+		.val.s = "ltrim",
+		.proc = b6b_str_proc_ltrim
 	}
 };
 __b6b_ext(b6b_str);
