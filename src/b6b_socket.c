@@ -49,33 +49,6 @@ static ssize_t b6b_socket_peeksz(struct b6b_interp *interp, void *priv)
 	return (ssize_t)ilen;
 }
 
-static ssize_t b6b_socket_on_read(struct b6b_interp *interp,
-                                  const ssize_t out,
-                                  int *eof)
-{
-	if (out < 0) {
-		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
-			return 0;
-
-		b6b_return_strerror(interp, errno);
-	} else if (out == 0)
-		*eof = 0;
-
-	return out;
-}
-
-static ssize_t b6b_socket_read(struct b6b_interp *interp,
-                               void *priv,
-                               unsigned char *buf,
-                               const size_t len,
-                               int *eof,
-                               int *again)
-{
-	const struct b6b_socket *s = (const struct b6b_socket *)priv;
-
-	return b6b_socket_on_read(interp, recv(s->fd, buf, len, 0), eof);
-}
-
 static ssize_t b6b_socket_readfrom(struct b6b_interp *interp,
                                    void *priv,
                                    unsigned char *buf,
@@ -87,28 +60,9 @@ static ssize_t b6b_socket_readfrom(struct b6b_interp *interp,
 
 	*again = 0;
 	s->len = sizeof(s->peer);
-	return b6b_socket_on_read(interp,
-	                          recvfrom(s->fd, buf, len, 0, &s->peer, &s->len),
-	                          eof);
-}
-
-static ssize_t b6b_socket_write(struct b6b_interp *interp,
-                                void *priv,
-                                const unsigned char *buf,
-                                const size_t len)
-{
-	const struct b6b_socket *s = (const struct b6b_socket *)priv;
-	ssize_t out;
-
-	out = send(s->fd, buf, len, MSG_NOSIGNAL);
-	if (out < 0) {
-		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
-			return 0;
-
-		b6b_return_strerror(interp, errno);
-	}
-
-	return out;
+	return b6b_fd_on_read(interp,
+	                      recvfrom(s->fd, buf, len, 0, &s->peer, &s->len),
+	                      eof);
 }
 
 static struct b6b_obj *b6b_socket_peer(struct b6b_interp *interp, void *priv)
@@ -343,8 +297,8 @@ static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
 
 static const struct b6b_strm_ops b6b_stream_client_ops = {
 	.peeksz = b6b_socket_peeksz,
-	.read = b6b_socket_read,
-	.write = b6b_socket_write,
+	.read = b6b_fd_recv,
+	.write = b6b_fd_send,
 	.peer = b6b_socket_peer,
 	.fd = b6b_socket_fd,
 	.close = b6b_socket_close
@@ -364,7 +318,7 @@ static enum b6b_res b6b_socket_proc_stream_client(struct b6b_interp *interp,
 static const struct b6b_strm_ops b6b_dgram_client_ops = {
 	.peeksz = b6b_socket_peeksz,
 	.read = b6b_socket_readfrom,
-	.write = b6b_socket_write,
+	.write = b6b_fd_send,
 	.peer = b6b_socket_peer,
 	.fd = b6b_socket_fd,
 	.close = b6b_socket_close

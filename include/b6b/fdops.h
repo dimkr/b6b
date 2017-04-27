@@ -16,15 +16,30 @@
  * limitations under the License.
  */
 
+ssize_t b6b_fd_on_read(struct b6b_interp *interp,
+                       const ssize_t out,
+                       int *eof);
 ssize_t b6b_fd_read(struct b6b_interp *interp,
                     void *priv,
                     unsigned char *buf,
                     const size_t len,
                     int *eof,
                     int *again);
+ssize_t b6b_fd_recv(struct b6b_interp *interp,
+                    void *priv,
+                    unsigned char *buf,
+                    const size_t len,
+                    int *eof,
+                    int *again);
+
 ssize_t b6b_fd_write(struct b6b_interp *interp,
-                     void *priv,
-                     const unsigned char *buf,
-                     const size_t len);
+                    void *priv,
+                    const unsigned char *buf,
+                    const size_t len);
+ssize_t b6b_fd_send(struct b6b_interp *interp,
+                    void *priv,
+                    const unsigned char *buf,
+                    const size_t len);
+
 int b6b_fd_fd(void *priv);
 void b6b_fd_close(void *priv);

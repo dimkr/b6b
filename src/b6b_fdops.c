@@ -19,8 +19,25 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include <b6b.h>
+
+ssize_t b6b_fd_on_read(struct b6b_interp *interp,
+                       const ssize_t out,
+                       int *eof)
+{
+	if (out < 0) {
+		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
+			return 0;
+
+		b6b_return_strerror(interp, errno);
+	} else if (out == 0)
+		*eof = 0;
+
+	return out;
+}
 
 ssize_t b6b_fd_read(struct b6b_interp *interp,
                     void *priv,
@@ -29,30 +46,21 @@ ssize_t b6b_fd_read(struct b6b_interp *interp,
                     int *eof,
                     int *again)
 {
-	ssize_t out;
-
-	out = read((int)(intptr_t)priv, buf, len);
-	if (!out)
-		*eof = 0;
-	else if (out < 0) {
-		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
-			return 0;
-
-		b6b_return_strerror(interp, errno);
-		return -1;
-	}
-
-	return out;
+	return b6b_fd_on_read(interp, read((int)(intptr_t)priv, buf, len), eof);
 }
 
-ssize_t b6b_fd_write(struct b6b_interp *interp,
-                     void *priv,
-                     const unsigned char *buf,
-                     const size_t len)
+ssize_t b6b_fd_recv(struct b6b_interp *interp,
+                    void *priv,
+                    unsigned char *buf,
+                    const size_t len,
+                    int *eof,
+                    int *again)
 {
-	ssize_t out;
+	return b6b_fd_on_read(interp, recv((int)(intptr_t)priv, buf, len, 0), eof);
+}
 
-	out = write((int)(intptr_t)priv, buf, len);
+static ssize_t b6b_fd_on_write(struct b6b_interp *interp, const ssize_t out)
+{
 	if (out < 0) {
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK))
 			return 0;
@@ -61,6 +69,23 @@ ssize_t b6b_fd_write(struct b6b_interp *interp,
 	}
 
 	return out;
+}
+
+ssize_t b6b_fd_write(struct b6b_interp *interp,
+                    void *priv,
+                    const unsigned char *buf,
+                    const size_t len)
+{
+	return b6b_fd_on_write(interp, write((int)(intptr_t)priv, buf, len));
+}
+
+ssize_t b6b_fd_send(struct b6b_interp *interp,
+                    void *priv,
+                    const unsigned char *buf,
+                    const size_t len)
+{
+	return b6b_fd_on_write(interp,
+	                       send((int)(intptr_t)priv, buf, len, MSG_NOSIGNAL));
 }
 
 int b6b_fd_fd(void *priv)
