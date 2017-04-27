@@ -21,3 +21,7 @@ add_project_arguments('-Wall', '-Wno-overlength-strings', language: 'c')
 
 subdir('include')
 subdir('src')
+subdir('doc')
+
+install_data('README', 'AUTHORS', 'COPYING',
+             install_dir: join_paths(get_option('datadir'), 'doc', 'b6b'))

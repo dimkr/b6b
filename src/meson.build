@@ -25,9 +25,11 @@ libb6b = library('b6b',
                  'linenoise/linenoise.c', 'b6b_linenoise.c',
                  'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c',
                  include_directories: b6b_includes,
-                 dependencies: [cc.find_library('m', required: false)])
+                 dependencies: [cc.find_library('m', required: false)],
+                 install: true)
 
 b6b = executable('b6b',
                  'b6b.c',
                  include_directories: b6b_includes,
-                 link_with: [libb6b])
+                 link_with: [libb6b],
+                 install: true)
