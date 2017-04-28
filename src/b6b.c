@@ -28,7 +28,7 @@
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
 		"{$if $stmt {" \
 			"{$try {" \
-				"{$call [$list.new $stmt]}" \
+				"{$stdout writeln [$call [$list.new $stmt]]}" \
 			"} {" \
 				"{$local err $_}\n" \
 				"{$stdout write {Error: }}\n" \
