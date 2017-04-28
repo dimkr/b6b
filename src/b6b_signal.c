@@ -92,7 +92,6 @@ static enum b6b_res b6b_signal_proc_signal(struct b6b_interp *interp,
 {
 	struct b6b_litem *li;
 	struct b6b_signal *sig;
-	struct b6b_strm *strm;
 	struct b6b_obj *o;
 	int err;
 
@@ -135,20 +134,9 @@ static enum b6b_res b6b_signal_proc_signal(struct b6b_interp *interp,
 		return b6b_return_strerror(interp, err);
 	}
 
-	strm = (struct b6b_strm *)malloc(sizeof(*strm));
-	if (b6b_unlikely(!strm)) {
-		close(sig->fd);
-		free(sig);
-		return B6B_ERR;
-	}
-
-	strm->ops = &b6b_signal_ops;
-	strm->flags = 0;
-	strm->priv = sig;
-
-	o = b6b_strm_fmt(interp, strm, "signal");
+	o = b6b_strm_fmt(interp, &b6b_signal_ops, sig, "signal");
 	if (b6b_unlikely(!o)) {
-		b6b_strm_destroy(strm);
+		b6b_signal_close(sig);
 		return B6B_ERR;
 	}
 

@@ -21,8 +21,19 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 
 #include <b6b.h>
+
+ssize_t b6b_fd_peeksz(struct b6b_interp *interp, void *priv)
+{
+	int ilen;
+
+	if (ioctl((int)(intptr_t)priv, FIONREAD, &ilen) < 0)
+		return -1;
+
+	return (ssize_t)ilen;
+}
 
 ssize_t b6b_fd_on_read(struct b6b_interp *interp,
                        const ssize_t out,

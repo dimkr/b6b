@@ -35,7 +35,6 @@ static enum b6b_res b6b_timer_proc_timer(struct b6b_interp *interp,
 {
 	struct itimerspec its;
 	struct b6b_obj *i, *o;
-	struct b6b_strm *s;
 	int fd, err;
 
 	if (!b6b_proc_get_args(interp, args, "o n", NULL, &i))
@@ -56,19 +55,9 @@ static enum b6b_res b6b_timer_proc_timer(struct b6b_interp *interp,
 		return b6b_return_strerror(interp, err);
 	}
 
-	s = (struct b6b_strm *)malloc(sizeof(*s));
-	if (b6b_unlikely(!s)) {
-		close(fd);
-		return B6B_ERR;
-	}
-
-	s->ops = &b6b_timer_ops;
-	s->flags = 0;
-	s->priv = (void *)(intptr_t)fd;
-
-	o = b6b_strm_fmt(interp, s, "timer");
+	o = b6b_strm_fmt(interp, &b6b_timer_ops, (void *)(intptr_t)fd, "timer");
 	if (b6b_unlikely(!o)) {
-		b6b_strm_destroy(s);
+		close(fd);
 		return B6B_ERR;
 	}
 

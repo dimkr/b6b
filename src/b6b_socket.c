@@ -26,7 +26,6 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <sys/ioctl.h>
 
 #include <b6b.h>
 
@@ -41,12 +40,8 @@ struct b6b_socket {
 static ssize_t b6b_socket_peeksz(struct b6b_interp *interp, void *priv)
 {
 	const struct b6b_socket *s = (const struct b6b_socket *)priv;
-	int ilen;
 
-	if (ioctl(s->fd, FIONREAD, &ilen) < 0)
-		return -1;
-
-	return (ssize_t)ilen;
+	return b6b_fd_peeksz(interp, (void *)(intptr_t)s->fd);
 }
 
 static ssize_t b6b_socket_readfrom(struct b6b_interp *interp,
@@ -160,30 +155,19 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
                                       const struct b6b_strm_ops *ops)
 {
 	struct b6b_obj *o;
-	struct b6b_strm *strm;
 	struct b6b_socket *s;
 
 	s = (struct b6b_socket *)malloc(sizeof(*s));
 	if (b6b_unlikely(!s))
 		return NULL;
 
-	strm = (struct b6b_strm *)malloc(sizeof(struct b6b_strm));
-	if (b6b_unlikely(!strm)) {
-		free(s);
-		return NULL;
-	}
-
-	strm->ops = ops;
-	strm->flags = 0;
-	strm->priv = s;
-
 	s->fd = fd;
 	s->len = len;
 	memcpy(&s->peer, peer, (size_t)len);
 
-	o = b6b_strm_fmt(interp, strm, type);
+	o = b6b_strm_fmt(interp, ops, s, type);
 	if (b6b_unlikely(!o))
-		b6b_strm_destroy(strm);
+		b6b_socket_close(s);
 
 	return o;
 }

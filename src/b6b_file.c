@@ -141,42 +141,31 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
                                     const int bmode)
 {
 	struct b6b_obj *o;
-	struct b6b_strm *strm;
 	struct b6b_file *f;
 
 	f = (struct b6b_file *)malloc(sizeof(*f));
 	if (b6b_unlikely(!f))
 		return NULL;
 
-	strm = (struct b6b_strm *)malloc(sizeof(struct b6b_strm));
-	if (b6b_unlikely(!strm)) {
-		free(f);
-		return NULL;
-	}
-
-	strm->ops = &b6b_file_ops;
-	strm->flags = 0;
-	strm->priv = f;
-
 	f->fp = fp;
 	f->buf = NULL;
 	f->fd = fd;
 
-	o = b6b_strm_fmt(interp, strm, "file");
+	o = b6b_strm_fmt(interp, &b6b_file_ops, f, "file");
 	if (b6b_unlikely(!o)) {
-		b6b_strm_destroy(strm);
+		b6b_file_close(f);
 		return NULL;
 	}
 
 	if (bmode == _IOFBF) {
 		f->buf = malloc(B6B_STRM_BUFSIZ);
 		if (b6b_unlikely(!f->buf)) {
-			b6b_strm_destroy(strm);
+			b6b_destroy(o);
 			return NULL;
 		}
 
 		if (setvbuf(fp, f->buf, _IOFBF, B6B_STRM_BUFSIZ) != 0) {
-			b6b_strm_destroy(strm);
+			b6b_destroy(o);
 			return NULL;
 		}
 	} else if (bmode == _IONBF)
@@ -319,29 +308,18 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 {
 	struct b6b_obj *o;
 	struct b6b_file *f;
-	struct b6b_strm *strm;
 
 	f = (struct b6b_file *)malloc(sizeof(*f));
 	if (b6b_unlikely(!f))
 		return 0;
 
-	strm = (struct b6b_strm *)malloc(sizeof(*strm));
-	if (b6b_unlikely(!strm)) {
-		free(f);
-		return 0;
-	}
-
-	strm->ops = &b6b_stdio_ops;
-	strm->flags = 0;
-	strm->priv = f;
-
 	f->fp = fp;
 	f->buf = NULL;
 	f->fd = fd;
 
-	o = b6b_strm_copy(interp, strm, name, len);
+	o = b6b_strm_copy(interp, &b6b_stdio_ops, f, name, len);
 	if (b6b_unlikely(!o)) {
-		b6b_strm_destroy(strm);
+		free(f);
 		return 0;
 	}
 	b6b_unref(o);

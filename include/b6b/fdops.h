@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+ssize_t b6b_fd_peeksz(struct b6b_interp *interp, void *priv);
 ssize_t b6b_fd_on_read(struct b6b_interp *interp,
                        const ssize_t out,
                        int *eof);

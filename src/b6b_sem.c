@@ -17,11 +17,10 @@
  */
 
 #include <sys/eventfd.h>
-#include <stdio.h>
 #include <errno.h>
 #include <limits.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <b6b.h>
 
@@ -77,7 +76,6 @@ static enum b6b_res b6b_sem_proc_sem(struct b6b_interp *interp,
                                      struct b6b_obj *args)
 {
 	struct b6b_obj *n, *o;
-	struct b6b_strm *strm;
 	int fd;
 
 	if (!b6b_proc_get_args(interp, args, "o n", NULL, &n) ||
@@ -88,19 +86,9 @@ static enum b6b_res b6b_sem_proc_sem(struct b6b_interp *interp,
 	if (fd < 0)
 		return b6b_return_strerror(interp, errno);
 
-	strm = (struct b6b_strm *)malloc(sizeof(*strm));
-	if (b6b_unlikely(!strm)) {
-		close(fd);
-		return B6B_ERR;
-	}
-
-	strm->ops = &b6b_sem_ops;
-	strm->flags = 0;
-	strm->priv = (void *)(intptr_t)fd;
-
-	o = b6b_strm_fmt(interp, strm, "sem");
+	o = b6b_strm_fmt(interp, &b6b_sem_ops, (void *)(intptr_t)fd, "sem");
 	if (b6b_unlikely(!o)) {
-		b6b_strm_destroy(strm);
+		close(fd);
 		return B6B_ERR;
 	}
 

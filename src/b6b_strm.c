@@ -30,15 +30,10 @@ static void b6b_strm_close(struct b6b_strm *strm)
 	}
 }
 
-void b6b_strm_destroy(struct b6b_strm *strm)
-{
-	b6b_strm_close(strm);
-	free(strm);
-}
-
 static void b6b_strm_del(void *priv)
 {
-	b6b_strm_destroy((struct b6b_strm *)priv);
+	b6b_strm_close((struct b6b_strm *)priv);
+	free(priv);
 }
 
 static int b6b_strm_peeksz(struct b6b_interp *interp,
@@ -272,14 +267,28 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 }
 
 static struct b6b_obj *b6b_strm_new(struct b6b_interp *interp,
-                                    struct b6b_obj *o,
-                                    struct b6b_strm *strm)
+                                    const struct b6b_strm_ops *ops,
+                                    void *priv,
+                                    struct b6b_obj *o)
 {
+	struct b6b_strm *strm;
+
 	if (b6b_unlikely(o)) {
-		if (b6b_unlikely(!b6b_global(interp, o, o))) {
+		strm = (struct b6b_strm *)malloc(sizeof(*strm));
+		if (b6b_unlikely(!strm)) {
 			b6b_destroy(o);
 			return NULL;
 		}
+
+		if (b6b_unlikely(!b6b_global(interp, o, o))) {
+			free(strm);
+			b6b_destroy(o);
+			return NULL;
+		}
+
+		strm->ops = ops;
+		strm->priv = priv;
+		strm->flags = 0;
 
 		o->priv = strm;
 		o->proc = b6b_strm_proc;
@@ -290,18 +299,21 @@ static struct b6b_obj *b6b_strm_new(struct b6b_interp *interp,
 }
 
 struct b6b_obj *b6b_strm_copy(struct b6b_interp *interp,
-                              struct b6b_strm *strm,
+                              const struct b6b_strm_ops *ops,
+                              void *priv,
                               const char *s,
                               const size_t len)
 {
-	return b6b_strm_new(interp, b6b_str_copy(s, len), strm);
+	return b6b_strm_new(interp, ops, priv, b6b_str_copy(s, len));
 }
 
 struct b6b_obj *b6b_strm_fmt(struct b6b_interp *interp,
-                             struct b6b_strm *strm,
+                             const struct b6b_strm_ops *ops,
+                             void *priv,
                              const char *type)
 {
 	return b6b_strm_new(interp,
-	                    b6b_str_fmt("%s:%"PRIxPTR, type, (uintptr_t)strm),
-	                    strm);
+	                    ops,
+	                    priv,
+	                    b6b_str_fmt("%s:%"PRIxPTR, type, (uintptr_t)priv));
 }

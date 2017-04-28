@@ -50,10 +50,11 @@ struct b6b_strm {
 };
 
 struct b6b_obj *b6b_strm_copy(struct b6b_interp *interp,
-                              struct b6b_strm *strm,
+                              const struct b6b_strm_ops *ops,
+                              void *priv,
                               const char *s,
                               const size_t len);
 struct b6b_obj *b6b_strm_fmt(struct b6b_interp *interp,
-                             struct b6b_strm *strm,
+                             const struct b6b_strm_ops *ops,
+                             void *priv,
                              const char *type);
-void b6b_strm_destroy(struct b6b_strm *strm);

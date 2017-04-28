@@ -31,6 +31,13 @@ struct b6b_sh {
 	pid_t pid;
 };
 
+static ssize_t b6b_sh_peeksz(struct b6b_interp *interp, void *priv)
+{
+	const struct b6b_sh *s = (const struct b6b_sh *)priv;
+
+	return b6b_fd_peeksz(interp, (void *)(intptr_t)s->fd);
+}
+
 static ssize_t b6b_sh_read(struct b6b_interp *interp,
                            void *priv,
                            unsigned char *buf,
@@ -71,6 +78,7 @@ static void b6b_sh_close(void *priv)
 }
 
 static const struct b6b_strm_ops b6b_sh_ops = {
+	.peeksz = b6b_sh_peeksz,
 	.read = b6b_sh_read,
 	.write = b6b_sh_write,
 	.fd = b6b_sh_fd,
@@ -80,7 +88,6 @@ static const struct b6b_strm_ops b6b_sh_ops = {
 static enum b6b_res b6b_sh_proc_sh(struct b6b_interp *interp,
                                        struct b6b_obj *args)
 {
-	struct b6b_strm *strm;
 	struct b6b_obj *cmd, *o;
 	struct b6b_sh *s;
 	int fds[2], err;
@@ -98,14 +105,6 @@ static enum b6b_res b6b_sh_proc_sh(struct b6b_interp *interp,
 		err = errno;
 		free(s);
 		return b6b_return_strerror(interp, err);
-	}
-
-	strm = (struct b6b_strm *)malloc(sizeof(*strm));
-	if (b6b_unlikely(!strm)) {
-		close(fds[1]);
-		close(fds[0]);
-		free(s);
-		return B6B_ERR;
 	}
 
 	s->pid = fork();
@@ -129,13 +128,9 @@ static enum b6b_res b6b_sh_proc_sh(struct b6b_interp *interp,
 	s->fd = fds[1];
 	close(fds[0]);
 
-	strm->ops = &b6b_sh_ops;
-	strm->flags = 0;
-	strm->priv = s;
-
-	o = b6b_strm_fmt(interp, strm, "exec");
+	o = b6b_strm_fmt(interp, &b6b_sh_ops, s, "exec");
 	if (b6b_unlikely(!o)) {
-		b6b_strm_destroy(strm);
+		b6b_sh_close(s);
 		return B6B_ERR;
 	}
 
