@@ -44,6 +44,18 @@ static ssize_t b6b_socket_peeksz(struct b6b_interp *interp, void *priv)
 	return b6b_fd_peeksz(interp, (void *)(intptr_t)s->fd);
 }
 
+static ssize_t b6b_socket_read(struct b6b_interp *interp,
+                               void *priv,
+                               unsigned char *buf,
+                               const size_t len,
+                               int *eof,
+                               int *again)
+{
+	const struct b6b_socket *s = (const struct b6b_socket *)priv;
+
+	return b6b_fd_recv(interp, (void *)(intptr_t)s->fd, buf, len, eof, again);
+}
+
 static ssize_t b6b_socket_readfrom(struct b6b_interp *interp,
                                    void *priv,
                                    unsigned char *buf,
@@ -58,6 +70,16 @@ static ssize_t b6b_socket_readfrom(struct b6b_interp *interp,
 	return b6b_fd_on_read(interp,
 	                      recvfrom(s->fd, buf, len, 0, &s->peer, &s->len),
 	                      eof);
+}
+
+static ssize_t b6b_socket_write(struct b6b_interp *interp,
+                                void *priv,
+                                const unsigned char *buf,
+                                const size_t len)
+{
+	const struct b6b_socket *s = (const struct b6b_socket *)priv;
+
+	return b6b_fd_send(interp, (void *)(intptr_t)s->fd, buf, len);
 }
 
 static struct b6b_obj *b6b_socket_peer(struct b6b_interp *interp, void *priv)
@@ -281,8 +303,8 @@ static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
 
 static const struct b6b_strm_ops b6b_stream_client_ops = {
 	.peeksz = b6b_socket_peeksz,
-	.read = b6b_fd_recv,
-	.write = b6b_fd_send,
+	.read = b6b_socket_read,
+	.write = b6b_socket_write,
 	.peer = b6b_socket_peer,
 	.fd = b6b_socket_fd,
 	.close = b6b_socket_close
@@ -302,7 +324,7 @@ static enum b6b_res b6b_socket_proc_stream_client(struct b6b_interp *interp,
 static const struct b6b_strm_ops b6b_dgram_client_ops = {
 	.peeksz = b6b_socket_peeksz,
 	.read = b6b_socket_readfrom,
-	.write = b6b_fd_send,
+	.write = b6b_socket_write,
 	.peer = b6b_socket_peer,
 	.fd = b6b_socket_fd,
 	.close = b6b_socket_close
