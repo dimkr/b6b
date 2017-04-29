@@ -32,6 +32,7 @@ struct b6b_interp {
 	struct b6b_obj *_;
 	long stksiz;
 	int exit;
+	uint8_t fgi;
 	uint8_t qstep;
 };
 

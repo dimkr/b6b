@@ -348,23 +348,32 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	return b6b_return(interp, b6b_ref(exp));
 }
 
+#define THREAD_PENDING(t) \
+	((t)->flags & B6B_THREAD_BG) && !((t)->flags & B6B_THREAD_DONE)
+
 int b6b_yield(struct b6b_interp *interp)
 {
 	struct b6b_thread *bg;
-	int i;
+	uint8_t i;
 
-	for (i = 0; i < sizeof(interp->threads) / sizeof(interp->threads[0]); ++i) {
-		if ((&interp->threads[i] != interp->fg) &&
-		    (interp->threads[i].flags & B6B_THREAD_BG) &&
-		    !(interp->threads[i].flags & B6B_THREAD_DONE)) {
-			bg = interp->fg;
-			interp->fg = &interp->threads[i];
-			b6b_thread_swap(bg, interp->fg);
-			return i;
-		}
+	for (i = interp->fgi + 1; i < B6B_NTHREADS; ++i) {
+		if (THREAD_PENDING(&interp->threads[i]))
+			goto swap;
+	}
+
+	for (i = 0; i < interp->fgi; ++i) {
+		if (THREAD_PENDING(&interp->threads[i]))
+			goto swap;
 	}
 
 	return -1;
+
+swap:
+	bg = interp->fg;
+	interp->fg = &interp->threads[i];
+	interp->fgi = i;
+	b6b_thread_swap(bg, interp->fg);
+	return i;
 }
 
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,
