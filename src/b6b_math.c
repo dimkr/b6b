@@ -61,8 +61,10 @@ static enum b6b_res b6b_math_proc_div(struct b6b_interp *interp,
 	struct b6b_obj *m, *n;
 
 	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n)) {
-		if (b6b_unlikely(n->n == 0))
-			return b6b_return_str(interp, "/ by 0", sizeof("/ by 0") - 1);
+		if (b6b_unlikely(n->n == 0)) {
+			b6b_return_str(interp, "/ by 0", sizeof("/ by 0") - 1);
+			return B6B_ERR;
+		}
 
 		return b6b_return_num(interp, m->n / n->n);
 	}
@@ -77,8 +79,10 @@ static enum b6b_res b6b_math_proc_mod(struct b6b_interp *interp,
 	double p;
 
 	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n)) {
-		if (b6b_unlikely(n->n == 0))
-			return b6b_return_str(interp, "% by 0", sizeof("% by 0") - 1);
+		if (b6b_unlikely(n->n == 0)) {
+			b6b_return_str(interp, "% by 0", sizeof("% by 0") - 1);
+			return B6B_ERR;
+		}
 
 		errno = 0;
 		feclearexcept(FE_ALL_EXCEPT);
