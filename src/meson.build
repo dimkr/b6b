@@ -16,6 +16,10 @@
 
 cc = meson.get_compiler('c')
 
+if get_option('buildtype').startswith('debug') and cc.has_header('valgrind/valgrind.h')
+	add_project_arguments('-DB6B_HAVE_VALGRIND', language: 'c')
+endif
+
 libb6b = library('b6b',
                  'b6b_obj.c', 'b6b_str.c', 'b6b_num.c', 'b6b_list.c', 'b6b_dict.c',
                  'b6b_frame.c', 'b6b_thread.c', 'b6b_interp.c',

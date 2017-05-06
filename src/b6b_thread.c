@@ -19,10 +19,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#ifdef B6B_HAVE_VALGRIND
+#	include <valgrind/valgrind.h>
+#endif
 
 #include <b6b.h>
 
-void b6b_thread_reset(struct b6b_thread *t)
+void b6b_thread_destroy(struct b6b_thread *t)
 {
 	if (t->_)
 		b6b_unref(t->_);
@@ -33,27 +36,30 @@ void b6b_thread_reset(struct b6b_thread *t)
 	if (t->curr)
 		b6b_frame_destroy(t->curr);
 
-	t->flags = 0;
-}
-
-void b6b_thread_destroy(struct b6b_thread *t)
-{
-	b6b_thread_reset(t);
-
 	if (t->stack) {
+#ifdef B6B_HAVE_VALGRIND
+		VALGRIND_STACK_DEREGISTER(t->sid);
+#endif
 		free(t->stack);
-		t->stack = NULL;
 	}
+
+	free(t);
 }
 
-int b6b_thread_init(struct b6b_thread *t,
-                    struct b6b_thread *next,
-                    struct b6b_obj *fn,
-                    struct b6b_frame *global,
-                    struct b6b_obj *null,
-                    void (*routine)(int, int, int, int),
-                    void *priv,
-                    const size_t stksiz)
+void b6b_thread_pop(struct b6b_threads *ts, struct b6b_thread *t)
+{
+	TAILQ_REMOVE(ts, t, ents);
+	b6b_thread_destroy(t);
+}
+
+static int b6b_thread_prep(struct b6b_thread *t,
+                           struct b6b_thread *next,
+                           struct b6b_obj *fn,
+                           struct b6b_frame *global,
+                           struct b6b_obj *null,
+                           void (*routine)(int, int, int, int),
+                           void *priv,
+                           const size_t stksiz)
 {
 	memset(t, 0, sizeof(*t));
 
@@ -75,6 +81,10 @@ int b6b_thread_init(struct b6b_thread *t,
 			t->stack = malloc(stksiz);
 			if (b6b_unlikely(!t->stack))
 				goto bail;
+
+#ifdef B6B_HAVE_VALGRIND
+			t->sid = VALGRIND_STACK_REGISTER(t->stack, t->stack + stksiz);
+#endif
 		}
 
 		t->ucp.uc_stack.ss_size = stksiz;
@@ -114,6 +124,36 @@ int b6b_thread_init(struct b6b_thread *t,
 bail:
 	b6b_thread_destroy(t);
 	return 0;
+}
+
+struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
+                                  struct b6b_thread *fg,
+                                  struct b6b_obj *fn,
+                                  struct b6b_frame *global,
+                                  struct b6b_obj *null,
+                                  void (*routine)(int, int, int, int),
+                                  void *priv,
+                                  const size_t stksiz)
+{
+	struct b6b_thread *t;
+
+	t = (struct b6b_thread *)malloc(sizeof(*t));
+	if (b6b_unlikely(!t))
+		return NULL;
+
+	if (!b6b_thread_prep(t,
+	                     b6b_thread_first(threads),
+	                     fn,
+	                     global,
+	                     null,
+	                     routine,
+	                     priv,
+	                     stksiz)) {
+		free(t);
+		return NULL;
+	}
+
+	return t;
 }
 
 void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)

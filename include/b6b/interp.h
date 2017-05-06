@@ -21,7 +21,7 @@
 #define B6B_QUANT_LEN 16
 
 struct b6b_interp {
-	struct b6b_thread threads[B6B_NTHREADS];
+	struct b6b_threads threads;
 	struct b6b_thread *fg;
 	struct b6b_frame *global;
 	struct b6b_obj *null;
@@ -32,7 +32,6 @@ struct b6b_interp {
 	struct b6b_obj *_;
 	long stksiz;
 	int exit;
-	uint8_t fgi;
 	uint8_t qstep;
 };
 

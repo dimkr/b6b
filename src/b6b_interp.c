@@ -47,7 +47,10 @@ static void b6b_thread_routine(const int th,
 	}
 
 	b6b_call(interp, t->fn);
+
+	/* mark this thread as dead and switch to another thread */
 	t->flags |= B6B_THREAD_DONE;
+	b6b_yield(interp);
 }
 
 static int b6b_interp_new_ext_obj(struct b6b_interp *interp,
@@ -123,6 +126,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 	}
 
 	memset(interp, 0, sizeof(*interp));
+	b6b_thread_init(&interp->threads);
 
 	/* we allocate a small stack (just two pages, instead of the bigger
 	 * _SC_THREAD_ATTR_STACKSIZE used by native threads), to reduce memory
@@ -161,17 +165,18 @@ int b6b_interp_new(struct b6b_interp *interp,
 	    b6b_unlikely(!b6b_frame_start(interp, interp->global, args)))
 		goto bail;
 
-	if (!b6b_thread_init(&interp->threads[0],
-	                     NULL,
-	                     NULL,
-	                     interp->global,
-	                     interp->null,
-	                     b6b_thread_routine,
-	                     interp,
-	                     (size_t)interp->stksiz))
+	interp->fg = b6b_thread_new(&interp->threads,
+	                            NULL,
+	                            NULL,
+	                            interp->global,
+	                            interp->null,
+	                            b6b_thread_routine,
+	                            interp,
+	                            (size_t)interp->stksiz);
+	if (!interp->fg)
 		goto bail;
+	b6b_thread_push(&interp->threads, interp->fg, NULL);
 
-	interp->fg = &interp->threads[0];
 	interp->qstep = 0;
 	interp->exit = 0;
 
@@ -198,23 +203,23 @@ bail:
 
 static void b6b_join(struct b6b_interp *interp)
 {
+	struct b6b_thread *t;
+
 	/* signal all threads to stop */
 	interp->exit = 1;
 
-	/* wait until all threads are inactive */
-	while (b6b_yield(interp) >= 0) {};
+	/* wait until all threads except the main thread are inactive */
+	do {} while (b6b_yield(interp));
+
+	/* destroy the main thread */
+	t = b6b_thread_first(&interp->threads);
+	if (t)
+		b6b_thread_destroy(t);
 }
 
 void b6b_interp_destroy(struct b6b_interp *interp)
 {
-	int i;
-
 	b6b_join(interp);
-
-	for (i = sizeof(interp->threads) / sizeof(interp->threads[0]) - 1;
-	     i >= 0;
-	     --i)
-		b6b_thread_destroy(&interp->threads[i]);
 
 	if (interp->global)
 		b6b_frame_destroy(interp->global);
@@ -348,32 +353,48 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	return b6b_return(interp, b6b_ref(exp));
 }
 
+static void b6b_wait(struct b6b_interp *interp)
+{
+	struct b6b_thread *t, *tt;
+
+	b6b_thread_foreach_safe(&interp->threads, t, tt) {
+		if (t->flags & B6B_THREAD_DONE)
+			b6b_thread_pop(&interp->threads, t);
+	}
+}
+
 int b6b_yield(struct b6b_interp *interp)
 {
-	struct b6b_thread *bg;
-	uint8_t i;
+	struct b6b_thread *bg, *t;
 
 #define THREAD_PENDING(t) \
-	((t)->flags & B6B_THREAD_BG) && !((t)->flags & B6B_THREAD_DONE)
+	(t->flags & B6B_THREAD_BG) && !(t->flags & B6B_THREAD_DONE)
 
-	for (i = interp->fgi + 1; i < B6B_NTHREADS; ++i) {
-		if (THREAD_PENDING(&interp->threads[i]))
+	t = b6b_thread_next(interp->fg);
+	while (t) {
+		if (THREAD_PENDING(t))
 			goto swap;
+
+		t = b6b_thread_next(t);
 	}
 
-	for (i = 0; i < interp->fgi; ++i) {
-		if (THREAD_PENDING(&interp->threads[i]))
+	t = b6b_thread_first(&interp->threads);
+	while (t != interp->fg) {
+		if (THREAD_PENDING(t))
 			goto swap;
+
+		t = b6b_thread_next(t);
 	}
 
-	return -1;
+	b6b_wait(interp);
+	return 0;
 
 swap:
 	bg = interp->fg;
-	interp->fg = &interp->threads[i];
-	interp->fgi = i;
+	interp->fg = t;
 	b6b_thread_swap(bg, interp->fg);
-	return (int)i;
+	b6b_wait(interp);
+	return 1;
 }
 
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,
@@ -492,27 +513,19 @@ enum b6b_res b6b_call_copy(struct b6b_interp *interp,
 
 int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts)
 {
-	int i;
+	struct b6b_thread *t;
 
-	for (i = (sizeof(interp->threads) / sizeof(interp->threads[0])) - 1;
-	     i >= 0;
-	     --i) {
-		if (interp->threads[i].flags & B6B_THREAD_DONE)
-			b6b_thread_reset(&interp->threads[i]);
-
-		if (!interp->threads[i].flags) {
-			if (b6b_thread_init(&interp->threads[i],
-			                    &interp->threads[0],
-			                    stmts,
-			                    interp->global,
-			                    interp->null,
-			                    b6b_thread_routine,
-			                    interp,
-			                    (size_t)interp->stksiz))
-				return 1;
-
-			return 0;
-		}
+	t = b6b_thread_new(&interp->threads,
+	                   interp->fg,
+	                   stmts,
+	                   interp->global,
+	                   interp->null,
+	                   b6b_thread_routine,
+	                   interp,
+	                   (size_t)interp->stksiz);
+	if (t) {
+		b6b_thread_push(&interp->threads, t, interp->fg);
+		return 1;
 	}
 
 	return 0;
