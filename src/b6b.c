@@ -26,7 +26,7 @@
 #define B6B_SHELL \
 	"{$while 1 {" \
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
-		"{$if $stmt {" \
+		"{$if [$str.len $stmt] {" \
 			"{$try {" \
 				"{$stdout writeln [$call [$list.new $stmt]]}" \
 			"} {" \
