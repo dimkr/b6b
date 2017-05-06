@@ -101,6 +101,17 @@ static enum b6b_res b6b_math_proc_lt(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
+static enum b6b_res b6b_math_proc_le(struct b6b_interp *interp,
+                                     struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+		return b6b_return_bool(interp, m->n <= n->n);
+
+	return B6B_ERR;
+}
+
 static enum b6b_res b6b_math_proc_gt(struct b6b_interp *interp,
                                      struct b6b_obj *args)
 {
@@ -108,6 +119,17 @@ static enum b6b_res b6b_math_proc_gt(struct b6b_interp *interp,
 
 	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
 		return b6b_return_bool(interp, m->n > n->n);
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_ge(struct b6b_interp *interp,
+                                     struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+		return b6b_return_bool(interp, m->n >= n->n);
 
 	return B6B_ERR;
 }
@@ -150,10 +172,22 @@ static const struct b6b_ext_obj b6b_math[] = {
 		.proc = b6b_math_proc_lt
 	},
 	{
+		.name = "<=",
+		.type = B6B_OBJ_STR,
+		.val.s = "<=",
+		.proc = b6b_math_proc_le
+	},
+	{
 		.name = ">",
 		.type = B6B_OBJ_STR,
 		.val.s = ">",
 		.proc = b6b_math_proc_gt
+	},
+	{
+		.name = ">=",
+		.type = B6B_OBJ_STR,
+		.val.s = ">=",
+		.proc = b6b_math_proc_ge
 	}
 };
 __b6b_ext(b6b_math);
