@@ -205,10 +205,8 @@ static void b6b_join(struct b6b_interp *interp)
 {
 	struct b6b_thread *t;
 
-	/* signal all threads to stop */
-	interp->exit = 1;
-
 	/* wait until all threads except the main thread are inactive */
+	interp->exit = 1;
 	do {} while (b6b_yield(interp));
 
 	/* destroy the main thread */
@@ -412,6 +410,8 @@ static enum b6b_res b6b_on_res(struct b6b_interp *interp,
 			return B6B_OK;
 
 		case B6B_EXIT:
+			/* signal all threads to stop */
+			interp->exit = 1;
 			return res;
 
 		default:
