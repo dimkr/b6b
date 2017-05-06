@@ -298,7 +298,6 @@ static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	return b6b_return(interp, o);
-
 }
 
 static const struct b6b_strm_ops b6b_stream_client_ops = {
@@ -485,6 +484,6 @@ static const struct b6b_ext_obj b6b_socket[] = {
 		.type = B6B_OBJ_STR,
 		.val.s = "dgram.server",
 		.proc = b6b_socket_proc_dgram_server
-	},
+	}
 };
 __b6b_ext(b6b_socket);
