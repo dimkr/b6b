@@ -53,7 +53,6 @@ void b6b_thread_pop(struct b6b_threads *ts, struct b6b_thread *t)
 }
 
 static int b6b_thread_prep(struct b6b_thread *t,
-                           struct b6b_thread *next,
                            struct b6b_obj *fn,
                            struct b6b_frame *global,
                            struct b6b_obj *null,
@@ -88,7 +87,9 @@ static int b6b_thread_prep(struct b6b_thread *t,
 		}
 
 		t->ucp.uc_stack.ss_size = stksiz;
-		t->ucp.uc_link = &next->ucp;
+		/* it's OK to assign NULL in uc_link, since we always b6b_yield() after
+		 * the thread routine: the thread routine does not return */
+		t->ucp.uc_link = NULL;
 		t->ucp.uc_stack.ss_sp = t->stack;
 
 		t->fn = b6b_ref(fn);
@@ -127,7 +128,6 @@ bail:
 }
 
 struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
-                                  struct b6b_thread *fg,
                                   struct b6b_obj *fn,
                                   struct b6b_frame *global,
                                   struct b6b_obj *null,
@@ -142,7 +142,6 @@ struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
 		return NULL;
 
 	if (!b6b_thread_prep(t,
-	                     b6b_thread_first(threads),
 	                     fn,
 	                     global,
 	                     null,

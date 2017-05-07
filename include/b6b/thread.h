@@ -48,7 +48,6 @@ struct b6b_thread {
 #define b6b_thread_foreach_safe(h, t, tt) TAILQ_FOREACH_SAFE(t, h, ents, tt)
 
 struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
-                                  struct b6b_thread *fg,
                                   struct b6b_obj *fn,
                                   struct b6b_frame *global,
                                   struct b6b_obj *null,

@@ -48,7 +48,7 @@ static void b6b_thread_routine(const int th,
 
 	b6b_call(interp, t->fn);
 
-	/* mark this thread as dead and switch to another thread */
+	/* mark this thread as dead, switch to another and let b6b_wait() free it */
 	t->flags |= B6B_THREAD_DONE;
 	b6b_yield(interp);
 }
@@ -166,7 +166,6 @@ int b6b_interp_new(struct b6b_interp *interp,
 		goto bail;
 
 	interp->fg = b6b_thread_new(&interp->threads,
-	                            NULL,
 	                            NULL,
 	                            interp->global,
 	                            interp->null,
@@ -390,6 +389,7 @@ int b6b_yield(struct b6b_interp *interp)
 swap:
 	bg = interp->fg;
 	interp->fg = t;
+	interp->qstep = 0;
 	b6b_thread_swap(bg, interp->fg);
 	b6b_wait(interp);
 	return 1;
@@ -398,28 +398,26 @@ swap:
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,
                                const enum b6b_res res)
 {
+	if (res == B6B_YIELD) {
+		b6b_yield(interp);
+		return B6B_OK;
+	}
+
+	++interp->qstep;
+
 	/* update _ of the calling frame */
 	if (b6b_unlikely(!b6b_local(interp, interp->_, interp->fg->_)))
 		return B6B_ERR;
 
-	/* switch to another thread upon B6B_YIELD or after each batch of
-	 * B6B_QUANT_LEN statements */
-	switch (res) {
-		case B6B_YIELD:
-			b6b_yield(interp);
-			return B6B_OK;
-
-		case B6B_EXIT:
-			/* signal all threads to stop */
-			interp->exit = 1;
-			return res;
-
-		default:
-			if (++interp->qstep == B6B_QUANT_LEN) {
-				interp->qstep = 0;
-				b6b_yield(interp);
-			}
+	if (res == B6B_EXIT) {
+		/* signal all threads to stop */
+		interp->exit = 1;
+		return res;
 	}
+
+	/* switch to another thread after each batch of B6B_QUANT_LEN statements */
+	if (interp->qstep == B6B_QUANT_LEN)
+		b6b_yield(interp);
 
 	return res;
 }
@@ -516,7 +514,6 @@ int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts)
 	struct b6b_thread *t;
 
 	t = b6b_thread_new(&interp->threads,
-	                   interp->fg,
 	                   stmts,
 	                   interp->global,
 	                   interp->null,
