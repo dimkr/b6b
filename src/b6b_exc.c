@@ -30,19 +30,21 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	res = b6b_call(interp, t);
-	o = b6b_ref(interp->fg->_);
 	if (res == B6B_ERR) {
 		/* silence the error thrown by the try block if there's no except
 		 * block */
 		if (argc == 2)
 			return B6B_OK;
 
+		o = b6b_ref(interp->fg->_);
 		eres = b6b_call(interp, e);
 		if (eres == B6B_ERR) {
 			b6b_unref(o);
 			o = b6b_ref(interp->fg->_);
 		}
 	}
+	else
+		o = b6b_ref(interp->fg->_);
 
 	if (argc == 4) {
 		fres = b6b_call(interp, f);
