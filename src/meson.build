@@ -16,7 +16,7 @@
 
 cc = meson.get_compiler('c')
 
-if get_option('buildtype').startswith('debug') and cc.has_header('valgrind/valgrind.h')
+if get_option('buildtype').startswith('debug') and cc.has_header('valgrind/valgrind.h') and cc.has_header('valgrind/memcheck.h')
 	add_project_arguments('-DB6B_HAVE_VALGRIND', language: 'c')
 endif
 

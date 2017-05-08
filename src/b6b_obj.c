@@ -18,6 +18,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#ifdef B6B_HAVE_VALGRIND
+#	include <valgrind/memcheck.h>
+#endif
 
 #include <b6b.h>
 
@@ -44,9 +47,9 @@ struct b6b_obj *b6b_new(void)
 	struct b6b_obj *o = (struct b6b_obj *)malloc(sizeof(*o));
 
 	if (o) {
-		memset(o, 0, sizeof(*o));
 		o->refc = 1;
 		o->proc = b6b_obj_proc;
+		o->del = NULL;
 	}
 
 	return o;
@@ -60,6 +63,10 @@ void b6b_destroy_l(struct b6b_obj *o)
 		b6b_unref(li->o);
 		free(li);
 	}
+
+#ifdef B6B_HAVE_VALGRIND
+	VALGRIND_MAKE_MEM_UNDEFINED(&o->l, sizeof(o->l));
+#endif
 }
 
 void b6b_destroy(struct b6b_obj *o)

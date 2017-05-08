@@ -19,6 +19,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
+#ifdef B6B_HAVE_VALGRIND
+#	include <valgrind/memcheck.h>
+#endif
 
 #include <b6b.h>
 
@@ -29,7 +32,7 @@ struct b6b_obj *b6b_list_new(void)
 	o = b6b_new();
 	if (o) {
 		TAILQ_INIT(&o->l);
-		o->flags |= B6B_OBJ_LIST;
+		o->flags = B6B_OBJ_LIST;
 	}
 
 	return o;
@@ -41,6 +44,12 @@ static void b6b_on_list_mod(struct b6b_obj *l)
 		free(l->s);
 
 	l->flags &= ~(B6B_OBJ_NUM | B6B_OBJ_STR | B6B_OBJ_HASHED);
+
+#ifdef B6B_HAVE_VALGRIND
+	VALGRIND_MAKE_MEM_UNDEFINED(&l->s, sizeof(l->s));
+	VALGRIND_MAKE_MEM_UNDEFINED(&l->n, sizeof(l->n));
+	VALGRIND_MAKE_MEM_UNDEFINED(&l->hash, sizeof(l->hash));
+#endif
 }
 
 int b6b_list_add(struct b6b_obj *l, struct b6b_obj *o)

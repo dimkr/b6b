@@ -27,7 +27,7 @@ struct b6b_obj *b6b_num_new(const b6b_num n)
 	o = b6b_new();
 	if (o) {
 		o->n = n;
-		o->flags |= B6B_OBJ_NUM;
+		o->flags = B6B_OBJ_NUM;
 	}
 
 	return o;

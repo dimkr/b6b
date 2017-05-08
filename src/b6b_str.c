@@ -50,7 +50,7 @@ struct b6b_obj *b6b_str_new(char *s, const size_t len)
 	if (b6b_likely(o)) {
 		o->s = s;
 		o->slen = len;
-		o->flags |= B6B_OBJ_STR;
+		o->flags = B6B_OBJ_STR;
 	}
 
 	return o;

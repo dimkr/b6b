@@ -125,7 +125,6 @@ int b6b_interp_new(struct b6b_interp *interp,
 		b6b_unref(a);
 	}
 
-	memset(interp, 0, sizeof(*interp));
 	b6b_thread_init(&interp->threads);
 
 	/* we allocate a small stack (just two pages, instead of the bigger
@@ -165,6 +164,9 @@ int b6b_interp_new(struct b6b_interp *interp,
 	    b6b_unlikely(!b6b_frame_start(interp, interp->global, args)))
 		goto bail;
 
+	interp->qstep = 0;
+	interp->exit = 0;
+
 	interp->fg = b6b_thread_new(&interp->threads,
 	                            NULL,
 	                            interp->global,
@@ -175,9 +177,6 @@ int b6b_interp_new(struct b6b_interp *interp,
 	if (!interp->fg)
 		goto bail;
 	b6b_thread_push(&interp->threads, interp->fg, NULL);
-
-	interp->qstep = 0;
-	interp->exit = 0;
 
 	for (e = b6b_ext_first; e < b6b_ext_last; ++e) {
 		for (j = 0; j < e->n; ++j) {
