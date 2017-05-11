@@ -95,7 +95,8 @@ int b6b_dict_unset(struct b6b_obj *d, struct b6b_obj *k)
 		li = b6b_list_next(vli);
 	}
 
-	return 0;
+	/* report success if the key was not found */
+	return 1;
 }
 
 static enum b6b_res b6b_dict_proc_get(struct b6b_interp *interp,
