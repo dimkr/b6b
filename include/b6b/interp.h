@@ -54,7 +54,7 @@ static inline int b6b_global(struct b6b_interp *interp,
 	return b6b_dict_set(interp->global->locals, k, v);
 }
 
-struct b6b_obj *b6b_get(struct b6b_interp *interp, const char *name);
+struct b6b_obj *b6b_get(struct b6b_interp *interp, struct b6b_obj *name);
 
 enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp);
 enum b6b_res b6b_call(struct b6b_interp *interp, struct b6b_obj *stmts);

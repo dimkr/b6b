@@ -293,19 +293,22 @@ enum b6b_res b6b_return_strerror(struct b6b_interp *interp, const int err)
 	return B6B_ERR;
 }
 
-struct b6b_obj *b6b_get(struct b6b_interp *interp, const char *name)
+struct b6b_obj *b6b_get(struct b6b_interp *interp, struct b6b_obj *name)
 {
 	struct b6b_frame *f = interp->fg->curr;
 	struct b6b_obj *o;
 
-	do {
-		if (b6b_dict_get(f->locals, name, &o))
-			return o;
+	if (b6b_as_str(name)) {
+		do {
+			if (b6b_dict_get(f->locals, name, &o))
+				return o;
 
-		f = f->prev;
-	} while (f);
+			f = f->prev;
+		} while (f);
 
-	b6b_return_fmt(interp, "no such obj: %s", name);
+		b6b_return_fmt(interp, "no such obj: %s", name->s);
+	}
+
 	return NULL;
 }
 
@@ -313,7 +316,7 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *, struct b6b_obj *);
 
 enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 {
-	struct b6b_obj *o, *stmt;
+	struct b6b_obj *name, *o, *stmt;
 	enum b6b_res res;
 
 	if (!b6b_as_str(exp))
@@ -322,7 +325,12 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	if (exp->slen) {
 		switch (exp->s[0]) {
 			case '$':
-				o = b6b_get(interp, &exp->s[1]);
+				name = b6b_str_copy(&exp->s[1], exp->slen - 1);
+				if (b6b_unlikely(!name))
+					return B6B_ERR;
+
+				o = b6b_get(interp, name);
+				b6b_destroy(name);
 				if (o)
 					return b6b_return(interp, b6b_ref(o));
 
@@ -680,7 +688,7 @@ static enum b6b_res b6b_interp_proc_export(struct b6b_interp *interp,
 			break;
 
 		case 2:
-			v = b6b_get(interp, k->s);
+			v = b6b_get(interp, k);
 			if (v)
 				break;
 

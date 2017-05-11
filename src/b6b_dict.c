@@ -53,26 +53,23 @@ int b6b_dict_set(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj *v)
 	return 1;
 }
 
-int b6b_dict_get(struct b6b_obj *d, const char *kn, struct b6b_obj **v)
+int b6b_dict_get(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj **v)
 {
-	struct b6b_litem *k, *vli;
-	uint32_t h = b6b_str_hash(kn, strlen(kn));
+	struct b6b_litem *kli, *vli;
+	int eq;
 
-	k = b6b_list_first(d);
-	while (k) {
-		if (!b6b_obj_hash(k->o))
+	kli = b6b_list_first(d);
+	while (kli) {
+		vli = b6b_list_next(kli);
+		if (!vli || !b6b_obj_eq(kli->o, k, &eq))
 			return 0;
 
-		vli = b6b_list_next(k);
-		if (!vli)
-			return 0;
-
-		if (k->o->hash == h) {
+		if (eq) {
 			*v = vli->o;
 			return 1;
 		}
 
-		k = b6b_list_next(vli);
+		kli = b6b_list_next(vli);
 	}
 
 	return 0;
@@ -81,20 +78,15 @@ int b6b_dict_get(struct b6b_obj *d, const char *kn, struct b6b_obj **v)
 int b6b_dict_unset(struct b6b_obj *d, struct b6b_obj *k)
 {
 	struct b6b_litem *li, *vli;
-
-	if (!b6b_obj_hash(k))
-		return 0;
+	int eq;
 
 	li = b6b_list_first(d);
 	while (li) {
-		if (!b6b_obj_hash(li->o))
-			return 0;
-
 		vli = b6b_list_next(li);
-		if (!vli)
+		if (!vli || !b6b_obj_eq(li->o, k, &eq))
 			return 0;
 
-		if (li->o->hash == k->hash) {
+		if (eq) {
 			b6b_unref(b6b_list_pop(d, li));
 			b6b_unref(b6b_list_pop(d, vli));
 			return 1;
@@ -114,7 +106,7 @@ static enum b6b_res b6b_dict_proc_get(struct b6b_interp *interp,
 	if (!b6b_proc_get_args(interp, args, "o l s |o", NULL, &d, &k, &f))
 		return B6B_ERR;
 
-	if (b6b_dict_get(d, k->s, &v))
+	if (b6b_dict_get(d, k, &v))
 		return b6b_return(interp, b6b_ref(v));
 
 	if (f)

@@ -83,7 +83,7 @@ void b6b_destroy(struct b6b_obj *o)
 	free(o);
 }
 
-int b6b_obj_hash(struct b6b_obj *o)
+static int b6b_obj_hash(struct b6b_obj *o)
 {
 	if (!(o->flags & B6B_OBJ_HASHED)) {
 		if (!b6b_as_str(o))
@@ -101,6 +101,8 @@ int b6b_obj_eq(struct b6b_obj *a, struct b6b_obj *b, int *eq)
 	if (!b6b_obj_hash(a) || !b6b_obj_hash(b))
 		return 0;
 
-	*eq = (a->hash == b->hash);
+	*eq = (a->hash == b->hash) &&
+	      (a->slen == b->slen) &&
+	      (memcmp(a->s, b->s, a->slen) == 0);
 	return 1;
 }

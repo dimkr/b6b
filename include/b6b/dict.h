@@ -17,6 +17,6 @@
  */
 
 #define b6b_dict_new b6b_list_new
-int b6b_dict_get(struct b6b_obj *d, const char *kn, struct b6b_obj **v);
+int b6b_dict_get(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj **v);
 int b6b_dict_set(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj *v);
 int b6b_dict_unset(struct b6b_obj *d, struct b6b_obj *k);

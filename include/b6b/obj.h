@@ -88,7 +88,6 @@ static inline void b6b_unref(struct b6b_obj *o)
 		b6b_destroy(o);
 }
 
-int b6b_obj_hash(struct b6b_obj *o);
 int b6b_obj_eq(struct b6b_obj *a, struct b6b_obj *b, int *eq);
 
 static inline int b6b_obj_isnull(const struct b6b_obj *o)
