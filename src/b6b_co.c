@@ -24,16 +24,14 @@
 	"{$proc co {" \
 		"{$list.append $_cos $1}\n" \
 		"{$if $_fco {" \
-			"{$map i {0 1 2} {" \
-				"{$spawn {" \
-					"{$while 1 {" \
-						"{$if $_cos {" \
-							"{$try {" \
-								"{$call [$list.pop $_cos 0]}" \
-							"}}" \
-						"} {" \
-							"{$yield}" \
+			"{$spawn {" \
+				"{$while 1 {" \
+					"{$if $_cos {" \
+						"{$try {" \
+							"{$call [$list.pop $_cos 0]}" \
 						"}}" \
+					"} {" \
+						"{$yield}" \
 					"}}" \
 				"}}" \
 			"}}\n" \
