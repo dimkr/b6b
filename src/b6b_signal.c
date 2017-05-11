@@ -32,6 +32,11 @@ struct b6b_signal {
 	sigset_t set;
 };
 
+static ssize_t b6b_signal_peeksz(struct b6b_interp *interp, void *priv)
+{
+	return sizeof("4294967295");
+}
+
 static ssize_t b6b_signal_read(struct b6b_interp *interp,
                                void *priv,
                                unsigned char *buf,
@@ -82,6 +87,7 @@ static void b6b_signal_close(void *priv)
 }
 
 static const struct b6b_strm_ops b6b_signal_ops = {
+	.peeksz = b6b_signal_peeksz,
 	.read = b6b_signal_read,
 	.fd = b6b_signal_fd,
 	.close = b6b_signal_close
