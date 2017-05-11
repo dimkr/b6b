@@ -40,16 +40,13 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 	req.tv_sec = (time_t)floor(i->n);
 	req.tv_nsec = labs((long)(1000000000 * (i->n - (b6b_num)req.tv_sec)));
 
-	do {
-		if (nanosleep(&req, &rem) == 0)
-			break;
-
+	while (nanosleep(&req, &rem) < 0) {
 		if (errno != EINTR)
 			return b6b_return_strerror(interp, errno);
 
 		req.tv_sec = rem.tv_sec;
 		req.tv_nsec = rem.tv_nsec;
-	} while (1);
+	}
 
 	return B6B_OK;
 }
