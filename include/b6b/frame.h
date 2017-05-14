@@ -20,13 +20,14 @@
 
 struct b6b_frame {
 	struct b6b_obj *locals;
+	struct b6b_obj *args;
 	struct b6b_frame *prev;
 };
 
 struct b6b_frame *b6b_frame_new(struct b6b_frame *prev);
-int b6b_frame_start(struct b6b_interp *interp,
-                    struct b6b_frame *f,
-                    struct b6b_obj *args);
+int b6b_frame_set_args(struct b6b_interp *interp,
+                       struct b6b_frame *f,
+                       struct b6b_obj *args);
 void b6b_frame_destroy(struct b6b_frame *f);
 
 struct b6b_frame *b6b_frame_push(struct b6b_interp *interp);

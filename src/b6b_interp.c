@@ -161,7 +161,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 
 	interp->global = b6b_frame_new(NULL);
 	if (b6b_unlikely(!interp->global) ||
-	    b6b_unlikely(!b6b_frame_start(interp, interp->global, args)))
+	    b6b_unlikely(!b6b_frame_set_args(interp, interp->global, args)))
 		goto bail;
 
 	interp->qstep = 0;
@@ -434,7 +434,7 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
                                   struct b6b_obj *stmt)
 {
 	struct b6b_litem *li;
-	struct b6b_obj *args;
+	struct b6b_frame *f;
 	enum b6b_res res = B6B_ERR;
 
 	/* if the interpreter is exiting, issue B6B_EXIT in the current thread;
@@ -442,35 +442,26 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 	if (interp->exit)
 		return B6B_EXIT;
 
-	if (b6b_unlikely(!b6b_frame_push(interp)))
+	f = b6b_frame_push(interp);
+	if (b6b_unlikely(!f))
 		goto out;
 
 	if (!b6b_as_list(stmt))
 		goto pop;
 
-	args = b6b_list_new();
-	if (b6b_unlikely(!args))
-		goto pop;
-
 	b6b_list_foreach(stmt, li) {
 		res = b6b_eval(interp, li->o);
 		if ((res != B6B_OK) ||
-		    b6b_unlikely(!b6b_list_add(args, interp->fg->_))) {
-			goto destroy;
+		    b6b_unlikely(!b6b_list_add(f->args, interp->fg->_))) {
+			goto pop;
 		}
 	}
-
-	if (!b6b_frame_start(interp, interp->fg->curr, args))
-		goto destroy;
 
 	/* reset the return value after argument evaluation */
 	b6b_unref(interp->fg->_);
 	interp->fg->_ = b6b_ref(interp->null);
 
-	res = b6b_list_first(args)->o->proc(interp, args);
-
-destroy:
-	b6b_unref(args);
+	res = b6b_list_first(f->args)->o->proc(interp, f->args);
 
 pop:
 	b6b_frame_pop(interp);

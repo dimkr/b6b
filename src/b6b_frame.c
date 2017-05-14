@@ -31,6 +31,13 @@ struct b6b_frame *b6b_frame_new(struct b6b_frame *prev)
 			return NULL;
 		}
 
+		f->args = b6b_list_new();
+		if (b6b_unlikely(!f->args)) {
+			b6b_destroy(f->locals);
+			free(f);
+			return NULL;
+		}
+
 		f->prev = prev;
 	}
 
@@ -39,6 +46,7 @@ struct b6b_frame *b6b_frame_new(struct b6b_frame *prev)
 
 void b6b_frame_destroy(struct b6b_frame *f)
 {
+	b6b_unref(f->args);
 	b6b_unref(f->locals);
 	free(f);
 }
@@ -63,9 +71,9 @@ struct b6b_frame *b6b_frame_push(struct b6b_interp *interp)
 	return f;
 }
 
-int b6b_frame_start(struct b6b_interp *interp,
-                    struct b6b_frame *f,
-                    struct b6b_obj *args)
+int b6b_frame_set_args(struct b6b_interp *interp,
+                       struct b6b_frame *f,
+                       struct b6b_obj *args)
 {
 	struct b6b_litem *li;
 	struct b6b_obj *n;
