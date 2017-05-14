@@ -25,11 +25,16 @@
 	"{$global evloop._fdoutp {}}\n" \
 	"{$global evloop._fderrp {}}\n" \
 	"{$proc evloop.remove {" \
-		"{$evloop._fdp remove $1}\n" \
-		"{$dict.unset $evloop._fdstrm $1}\n" \
-		"{$dict.unset $evloop._fderrp $1}\n" \
-		"{$dict.unset $evloop._fdoutp $1}\n" \
-		"{$dict.unset $evloop._fdintp $1}" \
+		"{$try {" \
+			"{$local fd [$1 fd]}\n" \
+			"{$evloop._fdp remove $fd}\n" \
+			"{$dict.unset $evloop._fdstrm $fd}\n" \
+			"{$dict.unset $evloop._fderrp $fd}\n" \
+			"{$dict.unset $evloop._fdoutp $fd}\n" \
+			"{$dict.unset $evloop._fdintp $fd}" \
+		"} {} {" \
+			"{$1 close}" \
+		"}}" \
 	"}}\n" \
 	"{$proc evloop.add {" \
 		"{$local fd [$1 fd]}\n" \
@@ -37,33 +42,73 @@
 		"{$dict.set $evloop._fdintp $fd $2}\n" \
 		"{$dict.set $evloop._fdoutp $fd $3}\n" \
 		"{$dict.set $evloop._fderrp $fd $4}\n" \
-		"{$evloop._fdp add $fd}" \
+		"{$if [$&& $2 $3] {" \
+			"{$evloop._fdp add $fd $POLLINOUT}" \
+		"} {" \
+			"{$if $1 {" \
+				"{$evloop._fdp add $fd $POLLIN}" \
+			"} {" \
+				"{$evloop._fdp add $fd $POLLOUT}" \
+			"}}" \
+		"}}" \
+	"}}\n" \
+	"{$proc evloop.update {" \
+		"{$evloop._fdp remove [$1 fd]}\n" \
+		"{$evloop.add $1 $2 $3 $4}" \
 	"}}\n" \
 	"{$proc evloop.after {" \
 		"{$local t [$timer $1]}\n" \
 		"{$local fd [$t fd]}\n" \
 		"{$dict.set $evloop._fdstrm $fd $t}\n" \
-		"{$dict.set $evloop._fdintp $fd $2}\n" \
+		"{$dict.set $evloop._fdintp $fd [$proc {} {" \
+			"{$try {" \
+				"{$call [$list.new [$list.new $.]]}" \
+			"} {" \
+				"{$throw}" \
+			"} {" \
+				"{$try {{$evloop.remove $1}}}\n" \
+			"}}" \
+		"} $2]}\n" \
 		"{$dict.set $evloop._fdoutp $fd {{$nop}}}\n" \
 		"{$dict.set $evloop._fderrp $fd {{$nop}}}\n" \
-		"{$evloop._fdp add $fd}" \
+		"{$evloop._fdp add $fd $POLLIN}" \
 	"}}\n" \
 	"{$proc evloop.wait {" \
-		"{$local to $1}\n" \
 		"{$while 1 {" \
 			"{$local n [$list.len $evloop._fdstrm]}\n" \
 			"{$if [$== $n 0] {" \
 				"{$break}" \
 			"}}\n" \
-			"{$local evs [$evloop._fdp wait [$* $n 1.5] $to]}\n" \
-			"{$map fd [$list.index $evs 0] {" \
-				"{$co [$list.new [$list.new $try [$list.new [$list.new [$dict.get $evloop._fdintp $fd] [$dict.get $evloop._fdstrm $fd]]] [$list.new [$list.new $evloop.remove $fd]]]]}" \
+			"{$local evs [$evloop._fdp wait [$* $n 1.5] $1]}\n" \
+			"{$map fd [$list.index $evs 2] {" \
+				"{$local strm [$dict.get $evloop._fdstrm $fd {}]}\n" \
+				"{$if $strm {" \
+					"{$try {" \
+						"{[$dict.get $evloop._fderrp $fd] $strm}" \
+					"} {} {" \
+						"{$evloop.remove $strm}" \
+					"}}" \
+				"}}" \
 			"}}\n" \
 			"{$map fd [$list.index $evs 1] {" \
-				"{$co [$list.new [$list.new $try [$list.new [$list.new [$dict.get $evloop._fdoutp $fd] [$dict.get $evloop._fdstrm $fd]]] [$list.new [$list.new $evloop.remove $fd]]]]}" \
+				"{$local strm [$dict.get $evloop._fdstrm $fd {}]}\n" \
+				"{$if $strm {" \
+					"{$try {" \
+						"{[$dict.get $evloop._fdoutp $fd] $strm}" \
+					"} {" \
+						"{$evloop.remove $strm}" \
+					"}}" \
+				"}}" \
 			"}}\n" \
-			"{$map fd [$list.index $evs 2] {" \
-				"{$co [$list.new [$list.new $try [$list.new [$list.new [$dict.get $evloop._fderrp $fd] [$dict.get $evloop._fdstrm $fd]]] [$list.new [$list.new $evloop.remove $fd]]]]}" \
+			"{$map fd [$list.index $evs 0] {" \
+				"{$local strm [$dict.get $evloop._fdstrm $fd {}]}\n" \
+				"{$if $strm {" \
+					"{$try {" \
+						"{[$dict.get $evloop._fdintp $fd] $strm}" \
+					"} {" \
+						"{$evloop.remove $strm}" \
+					"}}" \
+				"}}" \
 			"}}" \
 		"}}" \
 	"}}"

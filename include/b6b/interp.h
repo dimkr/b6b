@@ -35,6 +35,11 @@ struct b6b_interp {
 	uint8_t qstep;
 };
 
+static inline int b6b_threaded(struct b6b_interp *interp)
+{
+	return b6b_thread_next(b6b_thread_first(&interp->threads)) ? 1 : 0;
+}
+
 int b6b_interp_new(struct b6b_interp *interp,
                    const int argc,
                    const char *argv[]);
