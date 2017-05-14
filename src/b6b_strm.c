@@ -280,12 +280,6 @@ static struct b6b_obj *b6b_strm_new(struct b6b_interp *interp,
 			return NULL;
 		}
 
-		if (b6b_unlikely(!b6b_global(interp, o, o))) {
-			free(strm);
-			b6b_destroy(o);
-			return NULL;
-		}
-
 		strm->ops = ops;
 		strm->priv = priv;
 		strm->flags = 0;
