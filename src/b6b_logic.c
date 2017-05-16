@@ -42,6 +42,19 @@ static enum b6b_res b6b_logic_proc_eq(struct b6b_interp *interp,
 	return b6b_return_bool(interp, eq);
 }
 
+static enum b6b_res b6b_logic_proc_ne(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *a, *b;
+	int eq;
+
+	if (!b6b_proc_get_args(interp, args, "o o o", NULL, &a, &b) ||
+	    b6b_unlikely(!b6b_obj_eq(a, b, &eq)))
+		return B6B_ERR;
+
+	return b6b_return_bool(interp, !eq);
+}
+
 static enum b6b_res b6b_logic_proc_and(struct b6b_interp *interp,
                                       struct b6b_obj *args)
 {
@@ -112,6 +125,12 @@ static const struct b6b_ext_obj b6b_logic[] = {
 		.type = B6B_OBJ_STR,
 		.val.s = "==",
 		.proc = b6b_logic_proc_eq
+	},
+	{
+		.name = "!=",
+		.type = B6B_OBJ_STR,
+		.val.s = "!=",
+		.proc = b6b_logic_proc_ne
 	},
 	{
 		.name = "&&",
