@@ -59,12 +59,17 @@ static enum b6b_res b6b_proc_proc(struct b6b_interp *interp,
 {
 	struct b6b_litem *li = b6b_list_first(args);
 	struct b6b_proc *proc = (struct b6b_proc *)li->o->priv;
+	enum b6b_res res;
 
 	if (b6b_unlikely(!b6b_frame_set_args(interp, interp->fg->curr, args)) ||
 	    b6b_unlikely(!b6b_local(interp, interp->dot, proc->priv)))
 		return B6B_ERR;
 
-	return b6b_call(interp, proc->body);
+	res = b6b_call(interp, proc->body);
+	if (res == B6B_RET)
+		return B6B_OK;
+
+	return res;
 }
 
 static void b6b_proc_del(void *priv)
