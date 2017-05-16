@@ -20,20 +20,35 @@ if get_option('buildtype').startswith('debug') and cc.has_header('valgrind/valgr
 	add_project_arguments('-DB6B_HAVE_VALGRIND', language: 'c')
 endif
 
-libb6b = library('b6b',
-                 'b6b_obj.c', 'b6b_str.c', 'b6b_num.c', 'b6b_list.c', 'b6b_dict.c',
-                 'b6b_frame.c', 'b6b_thread.c', 'b6b_interp.c',
-                 'b6b_math.c', 'b6b_logic.c', 'b6b_loop.c', 'b6b_exc.c', 'b6b_proc.c', 'b6b_co.c',
-                 'b6b_strm.c', 'b6b_fdops.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sem.c', 'b6b_sh.c', 'b6b_poll.c', 'b6b_evloop.c',
-                 'b6b_time.c', 'b6b_path.c',
-                 'linenoise/linenoise.c', 'b6b_linenoise.c',
-                 'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c',
-                 include_directories: b6b_includes,
-                 dependencies: [cc.find_library('m', required: false)],
-                 install: true)
+libb6b_srcs = [
+	'b6b_obj.c', 'b6b_str.c', 'b6b_num.c', 'b6b_list.c', 'b6b_dict.c',
+	'b6b_frame.c', 'b6b_thread.c', 'b6b_interp.c',
+	'b6b_math.c', 'b6b_logic.c', 'b6b_loop.c', 'b6b_exc.c', 'b6b_proc.c', 'b6b_co.c',
+	'b6b_strm.c', 'b6b_fdops.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sem.c', 'b6b_sh.c', 'b6b_poll.c', 'b6b_evloop.c',
+	'b6b_time.c', 'b6b_path.c',
+	'linenoise/linenoise.c', 'b6b_linenoise.c',
+	'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c'
+]
+b6b_deps = [cc.find_library('m', required: false)]
 
-b6b = executable('b6b',
-                 'b6b.c',
-                 include_directories: b6b_includes,
-                 link_with: [libb6b],
-                 install: true)
+# b6b cannot be linked with a static libb6b due to the use of sections in
+# __b6b_ext and __b6b_init, which get lost in a static build
+if get_option('default_library') == 'static'
+	b6b = executable('b6b',
+	                 libb6b_srcs + ['b6b.c'],
+	                 include_directories: b6b_includes,
+	                 dependencies: b6b_deps,
+	                 install: true)
+else
+	libb6b = library('b6b',
+	                 libb6b_srcs,
+	                 include_directories: b6b_includes,
+	                 dependencies: b6b_deps,
+	                 install: true)
+
+	b6b = executable('b6b',
+	                 'b6b.c',
+	                 include_directories: b6b_includes,
+	                 link_with: [libb6b],
+	                 install: true)
+endif
