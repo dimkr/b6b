@@ -36,23 +36,16 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 		if (argc == 2)
 			return B6B_OK;
 
-		o = b6b_ref(interp->fg->_);
 		eres = b6b_call(interp, e);
-		if (eres == B6B_ERR) {
-			b6b_unref(o);
-			o = b6b_ref(interp->fg->_);
-		}
 	}
-	else
-		o = b6b_ref(interp->fg->_);
 
 	if (argc == 4) {
+		o = b6b_ref(interp->fg->_);
 		fres = b6b_call(interp, f);
-
 		b6b_unref(interp->fg->_);
 		interp->fg->_ = o;
 
-		if (res == B6B_EXIT)
+		if ((res == B6B_RET) || (res == B6B_EXIT))
 			return res;
 
 		if ((res == B6B_ERR) && (eres != B6B_OK))
@@ -60,9 +53,6 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 
 		return fres;
 	}
-
-	b6b_unref(interp->fg->_);
-	interp->fg->_ = o;
 
 	if (res == B6B_ERR)
 		return eres;
