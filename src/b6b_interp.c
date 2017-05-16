@@ -410,21 +410,20 @@ static enum b6b_res b6b_on_res(struct b6b_interp *interp,
 		return B6B_OK;
 	}
 
+	++interp->qstep;
+
 	/* update _ of the calling frame */
-	if (b6b_unlikely(!b6b_local(interp, interp->_, interp->fg->_))) {
-		++interp->qstep;
+	if (b6b_unlikely(!b6b_local(interp, interp->_, interp->fg->_)))
 		return B6B_ERR;
-	}
 
 	if (res == B6B_EXIT) {
 		/* signal all threads to stop */
 		interp->exit = 1;
-		++interp->qstep;
 		return res;
 	}
 
 	/* switch to another thread after each batch of B6B_QUANT_LEN statements */
-	if (++interp->qstep == B6B_QUANT_LEN)
+	if (interp->qstep == B6B_QUANT_LEN)
 		b6b_yield(interp);
 
 	return res;
@@ -452,9 +451,8 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 	b6b_list_foreach(stmt, li) {
 		res = b6b_eval(interp, li->o);
 		if ((res != B6B_OK) ||
-		    b6b_unlikely(!b6b_list_add(f->args, interp->fg->_))) {
+		    b6b_unlikely(!b6b_list_add(f->args, interp->fg->_)))
 			goto pop;
-		}
 	}
 
 	/* reset the return value after argument evaluation */
