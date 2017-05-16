@@ -322,8 +322,13 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 		free(f);
 		return 0;
 	}
-	b6b_unref(o);
 
+	if (b6b_unlikely(!b6b_global(interp, o, o))) {
+		b6b_destroy(o);
+		return 0;
+	}
+
+	b6b_unref(o);
 	return 1;
 }
 
