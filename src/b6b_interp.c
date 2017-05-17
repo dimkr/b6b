@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <time.h>
 
 #undef _GNU_SOURCE
 
@@ -177,6 +178,8 @@ int b6b_interp_new(struct b6b_interp *interp,
 	if (!interp->fg)
 		goto bail;
 	b6b_thread_push(&interp->threads, interp->fg, NULL);
+
+	interp->seed = (unsigned int)time(NULL);
 
 	for (e = b6b_ext_first; e < b6b_ext_last; ++e) {
 		for (j = 0; j < e->n; ++j) {
