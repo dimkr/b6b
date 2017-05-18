@@ -57,10 +57,7 @@
 		"{$evloop.add $1 $2 $3 $4}" \
 	"}}\n" \
 	"{$proc evloop.after {" \
-		"{$local t [$timer $1]}\n" \
-		"{$local fd [$t fd]}\n" \
-		"{$dict.set $evloop._fdstrm $fd $t}\n" \
-		"{$dict.set $evloop._fdintp $fd [$proc {} {" \
+		"{$evloop.add [$timer $1] [$proc : {" \
 			"{$try {" \
 				"{$call [$list.new [$list.new $.]]}" \
 			"} {" \
@@ -68,10 +65,13 @@
 			"} {" \
 				"{$try {{$evloop.remove $1}}}\n" \
 			"}}" \
-		"} $2]}\n" \
-		"{$dict.set $evloop._fdoutp $fd {{$nop}}}\n" \
-		"{$dict.set $evloop._fderrp $fd {{$nop}}}\n" \
-		"{$evloop._fdp add $fd $POLLIN}" \
+		"} $2] {} {}}" \
+	"}}\n" \
+	"{$proc evloop.every {" \
+		"{$evloop.add [$timer $1] [$proc : {" \
+			"{$1 read}\n" \
+			"{$call [$list.new [$list.new $.]]}" \
+		"} $2] {} {}}" \
 	"}}\n" \
 	"{$proc evloop.wait {" \
 		"{$while 1 {" \
