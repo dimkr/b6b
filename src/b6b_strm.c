@@ -18,6 +18,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
+#include <limits.h>
 
 #include <b6b.h>
 
@@ -54,7 +56,8 @@ static int b6b_strm_peeksz(struct b6b_interp *interp,
 }
 
 static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
-                                  struct b6b_strm *strm)
+                                  struct b6b_strm *strm,
+                                  ssize_t want)
 {
 	struct b6b_obj *o;
 	unsigned char *buf = NULL, *nbuf;
@@ -71,6 +74,9 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 	 * in one pass if it's accurate */
 	if (!b6b_strm_peeksz(interp, strm, &est))
 		return B6B_ERR;
+
+	if (est > want)
+		est = want;
 
 	do {
 		len += est;
@@ -105,11 +111,21 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 		else if (!more || !again)
 			break;
 
+		want -= more;
+		if (!want)
+			break;
+
 		if (!b6b_strm_peeksz(interp, strm, &est)) {
 			free(buf);
 			return B6B_ERR;
 		}
-	} while (est);
+
+		if (!est)
+			break;
+
+		if (est > want)
+			est = want;
+	} while (1);
 
 	buf[out] = '\0';
 	o = b6b_str_new((char *)buf, (size_t)out);
@@ -225,16 +241,18 @@ static enum b6b_res b6b_strm_fd(struct b6b_interp *interp,
 static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
                                   struct b6b_obj *args)
 {
-	struct b6b_obj *o, *op, *s;
+	struct b6b_obj *o, *op, *arg;
 	unsigned int argc;
 
-	argc = b6b_proc_get_args(interp, args, "o s |s", &o, &op, &s);
+	argc = b6b_proc_get_args(interp, args, "o s |o", &o, &op, &arg);
 
 	switch (argc) {
 		case 2:
-			if (strcmp(op->s, "read") == 0)
-				return b6b_strm_read(interp, (struct b6b_strm *)o->priv);
-			if (strcmp(op->s, "accept") == 0)
+			if (strcmp(op->s, "read") == 0) {
+				return b6b_strm_read(interp,
+				                     (struct b6b_strm *)o->priv,
+				                     SSIZE_MAX - 1);
+			} else if (strcmp(op->s, "accept") == 0)
 				return b6b_strm_accept(interp, (struct b6b_strm *)o->priv);
 			else if (strcmp(op->s, "peer") == 0)
 				return b6b_strm_peer(interp, (struct b6b_strm *)o->priv);
@@ -247,16 +265,35 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 			break;
 
 		case 3:
-			if (strcmp(op->s, "write") == 0)
+			if (strcmp(op->s, "read") == 0) {
+				if (!b6b_as_num(arg) ||
+				    (arg->n >= SSIZE_MAX) ||
+				    (arg->n <= 0) ||
+				    (roundf(arg->n) != arg->n))
+					return B6B_ERR;
+
+				return b6b_strm_read(interp,
+				                     (struct b6b_strm *)o->priv,
+				                     (ssize_t)arg->n);
+			}
+			else if (strcmp(op->s, "write") == 0) {
+				if (!b6b_as_str(arg))
+					return B6B_ERR;
+
 				return b6b_strm_write(interp,
 				                      (struct b6b_strm *)o->priv,
-				                      (const unsigned char *)s->s,
-				                      s->slen);
-			else if (strcmp(op->s, "writeln") == 0)
+				                      (const unsigned char *)arg->s,
+				                      arg->slen);
+			}
+			else if (strcmp(op->s, "writeln") == 0) {
+				if (!b6b_as_str(arg))
+					return B6B_ERR;
+
 				return b6b_strm_writeln(interp,
 				                        (struct b6b_strm *)o->priv,
-				                        s->s,
-				                        s->slen);
+				                        arg->s,
+				                        arg->slen);
+			}
 			break;
 	}
 
