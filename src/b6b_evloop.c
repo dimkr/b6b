@@ -45,7 +45,7 @@
 		"{$if [$&& $2 $3] {" \
 			"{$evloop._fdp add $fd $POLLINOUT}" \
 		"} {" \
-			"{$if $1 {" \
+			"{$if $2 {" \
 				"{$evloop._fdp add $fd $POLLIN}" \
 			"} {" \
 				"{$evloop._fdp add $fd $POLLOUT}" \
