@@ -16,6 +16,12 @@
  * limitations under the License.
  */
 
+/*
+ * these two structs are not packed, because we want them natively aligned -
+ * otherwise, on some architectures, the linker adds padding between structs and
+ * we cannot scan the sections containing them as arrays
+ */
+
 struct b6b_ext_obj {
 	const char *name;
 	b6b_procf proc;
@@ -30,7 +36,7 @@ struct b6b_ext_obj {
 struct b6b_ext {
 	const struct b6b_ext_obj *os;
 	uint8_t n;
-} __attribute__((packed));
+};
 
 #define __b6b_ext_name(os) b6b_ext_ ##os
 #define __b6b_ext(_os) \
