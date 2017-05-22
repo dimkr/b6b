@@ -57,21 +57,21 @@
 		"{$evloop.add $1 $2 $3 $4}" \
 	"}}\n" \
 	"{$proc evloop.after {" \
-		"{$evloop.add [$timer $1] [$proc : {" \
+		"{$evloop.add [$timer $1] [$proc _ {" \
 			"{$try {" \
-				"{$call [$list.new [$list.new $.]]}" \
+				"{$call $.}" \
 			"} {" \
 				"{$throw}" \
 			"} {" \
-				"{$try {{$evloop.remove $1}}}\n" \
+				"{$try {{$evloop.remove $1}}}" \
 			"}}" \
-		"} $2] {} {}}" \
+		"} [$list.new [$list.new $2]]] {} {}}" \
 	"}}\n" \
 	"{$proc evloop.every {" \
-		"{$evloop.add [$timer $1] [$proc : {" \
+		"{$evloop.add [$timer $1] [$proc _ {" \
 			"{$1 read}\n" \
-			"{$call [$list.new [$list.new $.]]}" \
-		"} $2] {} {}}" \
+			"{$call $.}" \
+		"} [$list.new [$list.new $2]]] {} {}}" \
 	"}}\n" \
 	"{$proc evloop.wait {" \
 		"{$while 1 {" \
