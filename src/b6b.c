@@ -20,11 +20,12 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <b6b.h>
 
 #define B6B_SHELL \
-	"{$local chld [$interp.new]}\n" \
+	"{$local chld [$interp.new $@]}\n" \
 	"{$while 1 {" \
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
 		"{$if [$str.len $stmt] {" \
@@ -43,34 +44,42 @@
 		"}}" \
 	"}}"
 
+static enum b6b_res repl(struct b6b_interp *interp)
+{
+	struct b6b_obj *s;
+	enum b6b_res res;
+
+	s = b6b_str_copy(B6B_SHELL, sizeof(B6B_SHELL) - 1);
+	if (!s)
+		return B6B_ERR;
+
+	res = b6b_call(interp, s);
+	b6b_unref(s);
+	return res;
+}
+
 int main(int argc, char *argv[]) {
 	struct b6b_interp interp;
-	struct b6b_obj *s;
 	enum b6b_res res;
 	int ret = EXIT_FAILURE;
 
-	if (argc == 2) {
+	if (argc == 1) {
 		setlocale(LC_ALL, "");
 
-		if (!b6b_interp_new(&interp, argc, (const char **)argv))
+		if (!b6b_interp_new_argv(&interp, argc, (const char **)argv))
 			return EXIT_FAILURE;
 
-		res = b6b_source(&interp, argv[1]);
-	}
-	else if (argc == 1) {
+		res = repl(&interp);
+	} else if (argc) {
 		setlocale(LC_ALL, "");
 
-		if (!b6b_interp_new(&interp, argc, (const char **)argv))
+		if (!b6b_interp_new_argv(&interp, argc - 1, (const char **)&argv[1]))
 			return EXIT_FAILURE;
 
-		s = b6b_str_copy(B6B_SHELL, sizeof(B6B_SHELL) - 1);
-		if (!s) {
-			b6b_interp_destroy(&interp);
-			return EXIT_FAILURE;
-		}
-
-		res = b6b_call(&interp, s);
-		b6b_unref(s);
+		if (strcmp(argv[1], "--"))
+			res = b6b_source(&interp, argv[1]);
+		else
+			res = repl(&interp);
 	} else {
 		fprintf(stderr, "Usage: %s [PATH]\n", argv[0]);
 		return EXIT_FAILURE;

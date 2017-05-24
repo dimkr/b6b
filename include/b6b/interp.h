@@ -41,9 +41,10 @@ static inline int b6b_threaded(struct b6b_interp *interp)
 	return b6b_thread_next(b6b_thread_first(&interp->threads)) ? 1 : 0;
 }
 
-int b6b_interp_new(struct b6b_interp *interp,
-                   const int argc,
-                   const char *argv[]);
+int b6b_interp_new(struct b6b_interp *interp, struct b6b_obj *args);
+int b6b_interp_new_argv(struct b6b_interp *interp,
+                        const int argc,
+                        const char *argv[]);
 void b6b_interp_destroy(struct b6b_interp *interp);
 
 static inline int b6b_local(struct b6b_interp *interp,

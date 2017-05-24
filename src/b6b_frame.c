@@ -93,10 +93,6 @@ int b6b_frame_set_args(struct b6b_interp *interp,
 		}
 		b6b_unref(n);
 
-		li = b6b_list_next(li);
-		if (!li)
-			break;
-
 		++i;
 	}
 

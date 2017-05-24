@@ -96,35 +96,11 @@ static int b6b_interp_new_ext_obj(struct b6b_interp *interp,
 	return 1;
 }
 
-int b6b_interp_new(struct b6b_interp *interp,
-                   const int argc,
-                   const char *argv[])
+int b6b_interp_new(struct b6b_interp *interp, struct b6b_obj *args)
 {
-	struct b6b_obj *args, *a;
 	const struct b6b_ext *e;
 	b6b_initf *ip;
-	int i;
 	unsigned int j;
-
-	args = b6b_list_new();
-	if (b6b_unlikely(!args))
-		return 0;
-
-	for (i = 0; i < argc; ++i) {
-		a = b6b_str_copy(argv[i], strlen(argv[i]));
-		if (b6b_unlikely(!a)) {
-			b6b_destroy(args);
-			return 0;
-		}
-
-		if (b6b_unlikely(!b6b_list_add(args, a))) {
-			b6b_destroy(a);
-			b6b_destroy(args);
-			return 0;
-		}
-
-		b6b_unref(a);
-	}
 
 	b6b_thread_init(&interp->threads);
 
@@ -193,13 +169,47 @@ int b6b_interp_new(struct b6b_interp *interp,
 			goto bail;
 	}
 
-	b6b_unref(args);
 	return 1;
 
 bail:
 	b6b_interp_destroy(interp);
-	b6b_unref(args);
 	return 0;
+}
+
+int b6b_interp_new_argv(struct b6b_interp *interp,
+                        const int argc,
+                        const char *argv[])
+{
+	struct b6b_obj *args, *a;
+	int i;
+
+	args = b6b_list_new();
+	if (b6b_unlikely(!args))
+		return 0;
+
+	for (i = 0; i < argc; ++i) {
+		a = b6b_str_copy(argv[i], strlen(argv[i]));
+		if (b6b_unlikely(!a)) {
+			b6b_destroy(args);
+			return 0;
+		}
+
+		if (b6b_unlikely(!b6b_list_add(args, a))) {
+			b6b_destroy(a);
+			b6b_destroy(args);
+			return 0;
+		}
+
+		b6b_unref(a);
+	}
+
+	if (!b6b_interp_new(interp, args)) {
+		b6b_destroy(args);
+		return 0;
+	}
+
+	b6b_unref(args);
+	return 1;
 }
 
 static void b6b_join(struct b6b_interp *interp)
@@ -531,7 +541,7 @@ int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts)
 enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 {
 	struct stat stbuf;
-	char *s;
+	char *s, *pos;
 	struct b6b_obj *stmts;
 	ssize_t len;
 	int fd;
@@ -541,7 +551,9 @@ enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 	if (fd < 0)
 		return B6B_ERR;
 
-	if ((fstat(fd, &stbuf) < 0) || (stbuf.st_size >= SSIZE_MAX)) {
+	if ((fstat(fd, &stbuf) < 0) ||
+	    !stbuf.st_size ||
+	    (stbuf.st_size >= SSIZE_MAX)) {
 		close(fd);
 		return B6B_ERR;
 	}
@@ -560,10 +572,26 @@ enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 	}
 	s[stbuf.st_size] = '\0';
 
-	stmts = b6b_str_new(s, (size_t)stbuf.st_size);
-	if (b6b_unlikely(!stmts)) {
+	/* if the file begins with a shebang, the code starts at the second line */
+	if ((s[0] != '#') || (stbuf.st_size < 2) || (s[1] != '!')) {
+		stmts = b6b_str_new(s, (size_t)stbuf.st_size);
+		if (b6b_unlikely(!stmts)) {
+			free(s);
+			return B6B_ERR;
+		}
+	}
+	else {
+		pos = strchr(s, '\n');
+		if (!pos) {
+			free(s);
+			return B6B_ERR;
+		}
+
+		++pos;
+		stmts = b6b_str_copy(pos, (size_t)(stbuf.st_size - (pos - s)));
 		free(s);
-		return B6B_ERR;
+		if (b6b_unlikely(!stmts))
+			return B6B_ERR;
 	}
 
 	res = b6b_call(interp, stmts);
@@ -751,9 +779,13 @@ static void b6b_interp_del(void *priv)
 static enum b6b_res b6b_interp_proc_interp(struct b6b_interp *interp,
                                            struct b6b_obj *args)
 {
-	struct b6b_obj *o;
-	struct b6b_interp *interp2 = (struct b6b_interp *)malloc(sizeof(*interp2));
+	struct b6b_obj *o, *l;
+	struct b6b_interp *interp2;
 
+	if (!b6b_proc_get_args(interp, args, "o l", NULL, &l))
+		return B6B_ERR;
+
+	interp2 = (struct b6b_interp *)malloc(sizeof(*interp2));
 	if (b6b_unlikely(!interp2))
 		return B6B_ERR;
 
@@ -763,7 +795,7 @@ static enum b6b_res b6b_interp_proc_interp(struct b6b_interp *interp,
 		return B6B_ERR;
 	}
 
-	if (!b6b_interp_new(interp2, 0, NULL)) {
+	if (!b6b_interp_new(interp2, l)) {
 		b6b_interp_destroy(interp2);
 		free(interp2);
 		b6b_destroy(o);
