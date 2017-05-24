@@ -24,11 +24,12 @@
 #include <b6b.h>
 
 #define B6B_SHELL \
+	"{$local chld [$interp.new]}\n" \
 	"{$while 1 {" \
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
 		"{$if [$str.len $stmt] {" \
 			"{$try {" \
-				"{$stdout writeln [$call [$list.new $stmt]]}" \
+				"{$stdout writeln [$chld eval [$list.new $stmt]]}" \
 			"} {" \
 				"{$local err $_}\n" \
 				"{$stdout write {Error: }}\n" \

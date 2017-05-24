@@ -731,10 +731,11 @@ static enum b6b_res b6b_interp_proc(struct b6b_interp *interp,
 	enum b6b_res res;
 
 	if (!b6b_proc_get_args(interp, args, "o s o", &i, &s, &o) ||
-	    (strcmp(o->s, "eval") != 0))
+	    (strcmp(s->s, "eval") != 0))
 		return B6B_ERR;
 
 	interp2 = (struct b6b_interp *)i->priv;
+
 	res = b6b_call(interp2, o);
 	b6b_unref(interp->fg->_);
 	interp->fg->_ = b6b_ref(interp2->fg->_);

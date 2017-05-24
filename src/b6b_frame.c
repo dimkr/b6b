@@ -82,8 +82,7 @@ int b6b_frame_set_args(struct b6b_interp *interp,
 	if (!b6b_as_list(args) || !b6b_dict_set(f->locals, interp->at, args))
 		return 0;
 
-	li = b6b_list_first(args);
-	do {
+	b6b_list_foreach(args, li) {
 		n = b6b_num_new(i);
 		if (b6b_unlikely(!n))
 			return 0;
@@ -99,7 +98,7 @@ int b6b_frame_set_args(struct b6b_interp *interp,
 			break;
 
 		++i;
-	} while (1);
+	}
 
 	return 1;
 }
