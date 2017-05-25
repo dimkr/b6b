@@ -14,15 +14,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project('b6b', 'c', version: '0.0.1', license: 'Apache-2.0')
-
-add_project_arguments('-Wall', '-Wno-overlength-strings', '-D_FILE_OFFSET_BITS=64',
-                      language: 'c')
-
-subdir('include')
-subdir('src')
-subdir('doc')
-subdir('examples')
-
-install_data('README', 'AUTHORS', 'COPYING',
-             install_dir: join_paths(get_option('datadir'), 'doc', 'b6b'))
+meson.add_install_script('install.sh')

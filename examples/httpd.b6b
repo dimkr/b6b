@@ -1,0 +1,211 @@
+#!/usr/bin/env b6b
+
+{#
+ This file is part of b6b.
+
+ Copyright 2017 Dima Krasner
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+}
+
+{$global http.req_min 16}
+{$global http.req_max 65536}
+
+{$global http.sess_ttl 10}
+{$global http.cache_ttl 600}
+{$global http.banner_ttl 300}
+
+{$global http.reqs {}}
+{$global http.req_hdrs {}}
+{$global http.req_urls {}}
+{$global http.reps {}}
+{$global http.body_cache {}}
+{$global http.cbody_cache {}}
+{$global http.deflate_hdr [$list.new Content-Encoding deflate]}
+
+{$global http.sep [$str.expand \r\n\r\n]}
+{$global http.eol [$str.expand \r\n]}
+
+{$global http.banners {Apache-Coyote/1.1 nginx/1.4.5 {Apache/1.3.41 (Ubuntu)} {Apache/2.2.26 (Ubuntu)} {Apache/2.0.52 (Ubuntu)} {Apache/2.0.63 (CentOS)}}}
+{$global http.banner [$choice $http.banners]}
+
+{$proc on_term {
+	{#
+		by reading, we unqueue the signal and it doesn't get delivered once the
+		signal stream is closed
+	}
+	{$1 read}
+	{$exit 0}
+}}
+
+{$proc parse_request {
+	{$local lines [$str.split [$list.index [$str.split $2 $http.sep] 0] $http.eol]}
+	{$local info [$str.split [$list.index $lines 0] { }]}
+	{$if [$!= [$list.index $info 0] GET] {
+		{$throw}
+	}}
+
+	{$local hdrs {}}
+	{$map line [$list.range $lines 1 [$- [$list.len $lines] 1]] {
+		{$local parts [$str.split $line {: }]}
+		{$dict.set $hdrs [$rtrim [$list.index $parts 0]] [$ltrim [$str.join : [$list.range $parts 1 [$list.len $parts]]]]}
+	}}
+
+	{$dict.set $http.req_urls $1 [$list.index $info 1]}
+	{$dict.set $http.req_hdrs $1 $hdrs}
+}}
+
+{$proc forget_client {
+	{$dict.unset $http.reps $1}
+	{$dict.unset $http.req_urls $1}
+	{$dict.unset $http.req_hdrs $1}
+	{$dict.unset $http.reqs $1}
+}}
+
+{$proc on_request {
+	{$local chunk [$1 read $.]}
+	{$if [$str.len $chunk] {
+		{$local fd [$1 fd]}
+		{$local data [$dict.get $http.reqs $fd {}]}
+
+		{$if [$> [$+ [$str.len $data] [$str.len $chunk]] $http.req_max] {
+			{$throw}
+		}}
+
+		{$local data [$str.join {} [$list.new $data $chunk]]}
+
+		{$try {
+			{$parse_request $fd $data}
+			{$evloop.update $1 {} $on_reply $on_error}
+		} {
+			{# if the request is big enough to be valid - drop the client}
+			{$if [$>= [$str.len $data] $http.req_min] {
+				{$throw}
+			}}
+
+			{$dict.set $http.reqs $fd $data}
+		}}
+	} {
+		{$throw}
+	}}
+} [$+ $http.req_max 1]}
+
+{$proc build_reply {
+	{$local code {500 Internal Server Error}}
+	{$try {
+		{$local url [$dict.get $http.req_urls $1]}
+		{$if [$== $url /] {
+			{$export url ./index.html}
+		} {
+			{$export url [$realpath [$str.join ./ [$list.new {} $url]]]}
+		}}
+
+		{$try {
+			{$export body [$dict.get $http.body_cache $url]}
+		} {
+			{$local body [[$open $url ru] read]}
+
+			{#
+				keep the file contents in memory, so we don't read the same
+				file over and over; however, we still want to read it from time
+				to time in case it was modified
+			}
+			{$evloop.after $http.cache_ttl [$proc _ {
+				{$dict.unset $http.body_cache $.}
+				{$dict.unset $http.cbody_cache $.}
+			} $url]}
+			{$dict.set $http.body_cache $url $body}
+			{$export body}
+		}}
+
+		{$local resp_hdrs [$list.new [$list.new Server $http.banner]]}
+
+		{# if the client understands compression, compress the body}
+		{$if [$list.in deflate [$map x [$str.split [$dict.get $hdrs Accept-Encoding {}] ,] {{$ltrim $x}}]] {
+			{$list.append $resp_hdrs $http.deflate_hdr}
+			{$local cbody [$dict.get $http.cbody_cache $url {}]}
+			{$if [$! [$str.len $cbody]] {
+				{$local cbody [$deflate $body 1]}
+				{# cache the compressed file contents, too}
+				{$dict.set $http.cbody_cache $url $cbody}
+				{$export cbody}
+			}}
+			{$export body $cbody}
+		}}
+
+		{$list.append $resp_hdrs [$list.new Content-Length [$str.len $body]]}
+		{$str.join {} [$list.new {HTTP/1.1 200 OK} $http.eol [$str.join $http.eol [$map pair $resp_hdrs {{$str.join {: } $pair}}]] $http.sep $body]}
+	} {
+		{$local err $_}
+		{$str.join {} [$list.new {HTTP/1.1 } $code $http.eol [$str.join {: } [$list.new Content-Length [$str.len $err]]] $http.sep $err]}
+	}}
+}}
+
+{$proc on_reply {
+	{$local fd [$1 fd]}
+	{$local hdrs [$dict.get $http.req_hdrs $fd {}]}
+	{$if $hdrs {
+		{$local data [$dict.get $http.reps $fd {}]}
+		{$if [$! [$str.len $data]] {
+			{$export data [$build_reply $fd]}
+		}}
+
+		{$local sent [$1 write $data]}
+		{$local rem [$str.len $data]}
+		{$if [$< $sent $rem] {
+			{$dict.set $http.reps $fd [$str.range $data $sent [$- $rem 1]]}
+		} {
+			{$forget_client $fd}
+			{$if [$== [$dict.get $hdrs Connection {}] close] {
+				{$throw}
+			} {
+				{#
+					if the client asked us to keep the connection or omitted the
+					Connection header, we keep it
+				}
+				{$evloop.update $1 $on_request {} $on_error}
+			}}
+		}}
+	}}
+}}
+
+{$proc on_error {
+	{$forget_client [$1 fd]}
+}}
+
+{$proc on_clients {
+	{$map client [$1 accept] {
+		{# register a timer stream, to close the connection after a while}
+		{$evloop.after $http.sess_ttl [$proc _ {
+			{$evloop.remove $.}
+		} $client]}
+
+		{$evloop.add $client $on_request {} $on_error}
+	}}
+}}
+
+{$proc on_banner {
+	{$global http.banner [$choice $http.banners]}
+}}
+
+{$if [$!= [$list.len $@] 4] {
+	{$stderr writeln {Usage: fdpd addr port backlog}}
+	{$exit 1}
+}}
+
+{$evloop.add [$signal $SIGTERM $SIGINT] $on_term {} {}}
+{$evloop.add [$stream.server $1 $2 $3] $on_clients {} {}}
+{# periodically change the server banner}
+{$evloop.every $http.banner_ttl $on_banner}
+
+{$evloop.wait -1}
