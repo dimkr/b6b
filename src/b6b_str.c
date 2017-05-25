@@ -363,17 +363,19 @@ static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
 static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
                                       struct b6b_obj *args)
 {
-	struct b6b_litem *d, *li;
+	struct b6b_obj *d, *l, *o;
+	struct b6b_litem *li;
 	char *s = NULL, *ms;
-	struct b6b_obj *o;
-	size_t len, mlen;
+	size_t len = 0, mlen;
 
-	d = b6b_list_next(b6b_list_first(args));
-	if (!b6b_as_str(d->o))
+	if (!b6b_proc_get_args(interp, args, "o s l", NULL, &d, &l))
 		return B6B_ERR;
 
-	li = b6b_list_next(d);
-	if (!li || !b6b_as_str(li->o))
+	li = b6b_list_first(l);
+	if (!li)
+		return b6b_return_str(interp, "", 0);
+
+	if (!b6b_as_str(li->o))
 		return B6B_ERR;
 
 	len = li->o->slen;
@@ -381,19 +383,15 @@ static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
 	if (b6b_unlikely(!s))
 		return B6B_ERR;
 
-	memcpy(s, li->o->s, len);
+	memcpy(s, li->o->s, li->o->slen);
 
-	do {
-		li = b6b_list_next(li);
-		if (!li)
-			break;
-
+	for (li = b6b_list_next(li); li; li = b6b_list_next(li)) {
 		if (!b6b_as_str(li->o)) {
 			free(s);
 			return B6B_ERR;
 		}
 
-		mlen = len + d->o->slen + li->o->slen;
+		mlen = len + d->slen + li->o->slen;
 
 		ms = (char *)realloc(s, mlen + 1);
 		if (b6b_unlikely(!ms)) {
@@ -401,12 +399,12 @@ static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
 			return B6B_ERR;
 		}
 
-		memcpy(ms + len, d->o->s, d->o->slen);
-		memcpy(ms + len + d->o->slen, li->o->s, li->o->slen);
+		memcpy(ms + len, d->s, d->slen);
+		memcpy(ms + len + d->slen, li->o->s, li->o->slen);
 
 		s = ms;
 		len = mlen;
-	} while (1);
+	}
 
 	s[len] = '\0';
 	o = b6b_str_new(s, len);
