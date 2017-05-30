@@ -27,7 +27,7 @@ static enum b6b_res b6b_math_proc_add(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n))
 		return b6b_return_num(interp, m->n + n->n);
 
 	return B6B_ERR;
@@ -38,7 +38,7 @@ static enum b6b_res b6b_math_proc_sub(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n))
 		return b6b_return_num(interp, m->n - n->n);
 
 	return B6B_ERR;
@@ -49,7 +49,7 @@ static enum b6b_res b6b_math_proc_mul(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n))
 		return b6b_return_num(interp, m->n * n->n);
 
 	return B6B_ERR;
@@ -60,7 +60,7 @@ static enum b6b_res b6b_math_proc_div(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n)) {
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n)) {
 		if (b6b_unlikely(n->n == 0)) {
 			b6b_return_str(interp, "/ by 0", sizeof("/ by 0") - 1);
 			return B6B_ERR;
@@ -78,7 +78,7 @@ static enum b6b_res b6b_math_proc_mod(struct b6b_interp *interp,
 	struct b6b_obj *m, *n;
 	double p;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n)) {
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n)) {
 		if (b6b_unlikely(n->n == 0)) {
 			b6b_return_str(interp, "% by 0", sizeof("% by 0") - 1);
 			return B6B_ERR;
@@ -99,7 +99,7 @@ static enum b6b_res b6b_math_proc_lt(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n))
 		return b6b_return_bool(interp, m->n < n->n);
 
 	return B6B_ERR;
@@ -110,7 +110,7 @@ static enum b6b_res b6b_math_proc_le(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n))
 		return b6b_return_bool(interp, m->n <= n->n);
 
 	return B6B_ERR;
@@ -121,7 +121,7 @@ static enum b6b_res b6b_math_proc_gt(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n))
 		return b6b_return_bool(interp, m->n > n->n);
 
 	return B6B_ERR;
@@ -132,7 +132,7 @@ static enum b6b_res b6b_math_proc_ge(struct b6b_interp *interp,
 {
 	struct b6b_obj *m, *n;
 
-	if (b6b_proc_get_args(interp, args, "o n n", NULL, &m, &n))
+	if (b6b_proc_get_args(interp, args, "onn", NULL, &m, &n))
 		return b6b_return_bool(interp, m->n >= n->n);
 
 	return B6B_ERR;

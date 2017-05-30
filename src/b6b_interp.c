@@ -616,7 +616,7 @@ static enum b6b_res b6b_interp_proc_return(struct b6b_interp *interp,
 {
 	struct b6b_obj *o;
 
-	switch (b6b_proc_get_args(interp, args, "o |o", NULL, &o)) {
+	switch (b6b_proc_get_args(interp, args, "o|o", NULL, &o)) {
 		case 2:
 			b6b_unref(interp->fg->_);
 			interp->fg->_ = b6b_ref(o);
@@ -645,7 +645,7 @@ static enum b6b_res b6b_interp_proc_throw(struct b6b_interp *interp,
 {
 	struct b6b_obj *o;
 
-	if (b6b_proc_get_args(interp, args, "o |o", NULL, &o) == 2) {
+	if (b6b_proc_get_args(interp, args, "o|o", NULL, &o) == 2) {
 		b6b_unref(interp->fg->_);
 		interp->fg->_ = b6b_ref(o);
 	}
@@ -658,7 +658,7 @@ static enum b6b_res b6b_interp_proc_exit(struct b6b_interp *interp,
 {
 	struct b6b_obj *o;
 
-	switch (b6b_proc_get_args(interp, args, "o |o", NULL, &o)) {
+	switch (b6b_proc_get_args(interp, args, "o|o", NULL, &o)) {
 		case 2:
 			b6b_return(interp, b6b_ref(o));
 
@@ -674,7 +674,7 @@ static enum b6b_res b6b_interp_proc_local(struct b6b_interp *interp,
 {
 	struct b6b_obj *k, *v;
 
-	if (b6b_proc_get_args(interp, args, "o o o", NULL, &k, &v) &&
+	if (b6b_proc_get_args(interp, args, "ooo", NULL, &k, &v) &&
 	    b6b_dict_set(interp->fg->curr->prev ?
 	                 interp->fg->curr->prev->locals :
 	                 interp->fg->curr->locals,
@@ -690,7 +690,7 @@ static enum b6b_res b6b_interp_proc_global(struct b6b_interp *interp,
 {
 	struct b6b_obj *k, *v;
 
-	if (b6b_proc_get_args(interp, args, "o o o", NULL, &k, &v) &&
+	if (b6b_proc_get_args(interp, args, "ooo", NULL, &k, &v) &&
 	    b6b_global(interp, k, v))
 		return B6B_OK;
 
@@ -703,7 +703,7 @@ static enum b6b_res b6b_interp_proc_export(struct b6b_interp *interp,
 	struct b6b_obj *k, *v;
 	const struct b6b_frame *f = interp->fg->curr->prev;
 
-	switch (b6b_proc_get_args(interp, args, "o s |o", NULL, &k, &v)) {
+	switch (b6b_proc_get_args(interp, args, "os|o", NULL, &k, &v)) {
 		case 3:
 			break;
 
@@ -732,7 +732,7 @@ static enum b6b_res b6b_interp_proc_eval(struct b6b_interp *interp,
 
 	struct b6b_obj *exp;
 
-	if (b6b_proc_get_args(interp, args, "o o", NULL, &exp))
+	if (b6b_proc_get_args(interp, args, "oo", NULL, &exp))
 		return b6b_eval(interp, exp);
 
 	return B6B_ERR;
@@ -745,7 +745,7 @@ static enum b6b_res b6b_interp_proc_call(struct b6b_interp *interp,
 
 	struct b6b_obj *stmts;
 
-	if (b6b_proc_get_args(interp, args, "o o", NULL, &stmts))
+	if (b6b_proc_get_args(interp, args, "oo", NULL, &stmts))
 		return b6b_call(interp, stmts);
 
 	return B6B_ERR;
@@ -758,7 +758,7 @@ static enum b6b_res b6b_interp_proc(struct b6b_interp *interp,
 	struct b6b_interp *interp2;
 	enum b6b_res res;
 
-	if (!b6b_proc_get_args(interp, args, "o s o", &i, &s, &o) ||
+	if (!b6b_proc_get_args(interp, args, "oso", &i, &s, &o) ||
 	    (strcmp(s->s, "eval") != 0))
 		return B6B_ERR;
 
@@ -782,7 +782,7 @@ static enum b6b_res b6b_interp_proc_interp(struct b6b_interp *interp,
 	struct b6b_obj *o, *l;
 	struct b6b_interp *interp2;
 
-	if (!b6b_proc_get_args(interp, args, "o l", NULL, &l))
+	if (!b6b_proc_get_args(interp, args, "ol", NULL, &l))
 		return B6B_ERR;
 
 	interp2 = (struct b6b_interp *)malloc(sizeof(*interp2));
@@ -813,7 +813,7 @@ static enum b6b_res b6b_interp_proc_spawn(struct b6b_interp *interp,
 {
 	struct b6b_obj *o;
 
-	if (b6b_proc_get_args(interp, args, "o o", NULL, &o) &&
+	if (b6b_proc_get_args(interp, args, "oo", NULL, &o) &&
 	    b6b_start(interp, o))
 		return B6B_OK;
 

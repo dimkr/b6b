@@ -324,7 +324,7 @@ static enum b6b_res b6b_str_proc_len(struct b6b_interp *interp,
 {
 	struct b6b_obj *s;
 
-	if (b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return b6b_return_num(interp, (b6b_num)s->slen);
 
 	return B6B_ERR;
@@ -335,7 +335,7 @@ static enum b6b_res b6b_str_proc_index(struct b6b_interp *interp,
 {
 	struct b6b_obj *s, *i;
 
-	if (!b6b_proc_get_args(interp, args, "o s i", NULL, &s, &i) ||
+	if (!b6b_proc_get_args(interp, args, "osi", NULL, &s, &i) ||
 	    (i->n >= s->slen))
 	    return B6B_ERR;
 
@@ -347,7 +347,7 @@ static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
 {
 	struct b6b_obj *s, *start, *end;
 
-	if (!b6b_proc_get_args(interp, args, "o s i i", NULL, &s, &start, &end) ||
+	if (!b6b_proc_get_args(interp, args, "osii", NULL, &s, &start, &end) ||
 	    (start->n < 0) ||
 	    (start->n >= s->slen) ||
 	    (end->n < 0) ||
@@ -368,7 +368,7 @@ static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
 	char *s = NULL, *ms;
 	size_t len = 0, mlen;
 
-	if (!b6b_proc_get_args(interp, args, "o s l", NULL, &d, &l))
+	if (!b6b_proc_get_args(interp, args, "osl", NULL, &d, &l))
 		return B6B_ERR;
 
 	li = b6b_list_first(l);
@@ -422,7 +422,7 @@ static enum b6b_res b6b_str_proc_split(struct b6b_interp *interp,
 	struct b6b_obj *s, *d, *l, *o;
 	const char *p, *end, *prev;
 
-	if (!b6b_proc_get_args(interp, args, "o s s", NULL, &s, &d))
+	if (!b6b_proc_get_args(interp, args, "oss", NULL, &s, &d))
 	    return B6B_ERR;
 
 	l = b6b_list_new();
@@ -485,7 +485,7 @@ static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
 	char *s2;
 	size_t i = 0, j = 0, last;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
 	s2 = (char *)malloc(s->slen + 1);
@@ -597,7 +597,7 @@ static enum b6b_res b6b_str_proc_rtrim(struct b6b_interp *interp,
 	struct b6b_obj *s;
 	ssize_t i, j;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s) ||
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s) ||
 	    (s->slen > SSIZE_MAX))
 		return B6B_ERR;
 
@@ -619,7 +619,7 @@ static enum b6b_res b6b_str_proc_ltrim(struct b6b_interp *interp,
 	struct b6b_obj *s;
 	size_t i;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
 	for (i = 0; i < s->slen; ++i) {

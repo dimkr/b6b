@@ -276,7 +276,7 @@ static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
 {
 	struct b6b_obj *p, *h, *s, *b, *o;
 
-	switch (b6b_proc_get_args(interp, args, "o s s |i", &p, &h, &s, &b)) {
+	switch (b6b_proc_get_args(interp, args, "oss|i", &p, &h, &s, &b)) {
 		case 3:
 			break;
 

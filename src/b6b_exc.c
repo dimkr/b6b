@@ -25,7 +25,7 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 	unsigned int argc;
 	enum b6b_res res, eres = B6B_ERR, fres;
 
-	argc = b6b_proc_get_args(interp, args, "o o |o o", NULL, &t, &e, &f);
+	argc = b6b_proc_get_args(interp, args, "oo|oo", NULL, &t, &e, &f);
 	if (!argc)
 		return B6B_ERR;
 

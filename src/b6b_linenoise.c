@@ -29,7 +29,7 @@ static enum b6b_res b6b_linenoise_proc_read(struct b6b_interp *interp,
 	struct b6b_obj *p, *o;
 	char *s;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &p))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &p))
 		return B6B_ERR;
 
 	s = linenoise(p->s);
@@ -51,7 +51,7 @@ static enum b6b_res b6b_linenoise_proc_add(struct b6b_interp *interp,
 {
 	struct b6b_obj *s;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
 	return linenoiseHistoryAdd(s->s) ? B6B_OK : B6B_ERR;
@@ -62,7 +62,7 @@ static enum b6b_res b6b_linenoise_proc_save(struct b6b_interp *interp,
 {
 	struct b6b_obj *s;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
 	return (linenoiseHistorySave(s->s) == 0) ? B6B_OK : B6B_ERR;
@@ -73,7 +73,7 @@ static enum b6b_res b6b_linenoise_proc_load(struct b6b_interp *interp,
 {
 	struct b6b_obj *s;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
 	return (linenoiseHistoryLoad(s->s) == 0) ? B6B_OK : B6B_ERR;

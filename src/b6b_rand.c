@@ -27,7 +27,7 @@ static enum b6b_res b6b_rand_proc_choice(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	int i, c;
 
-	if (!b6b_proc_get_args(interp, args, "o l", NULL, &l))
+	if (!b6b_proc_get_args(interp, args, "ol", NULL, &l))
 		return B6B_ERR;
 
 	li = b6b_list_first(l);

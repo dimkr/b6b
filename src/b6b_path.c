@@ -28,7 +28,7 @@ static enum b6b_res b6b_path_proc_realpath(struct b6b_interp *interp,
 	struct b6b_obj *s, *o;
 	char *abs;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
 	abs = realpath(s->s, NULL);

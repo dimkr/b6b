@@ -23,7 +23,7 @@ static enum b6b_res b6b_logic_proc_not(struct b6b_interp *interp,
 {
 	struct b6b_obj *o;
 
-	if (b6b_proc_get_args(interp, args, "o o", NULL, &o))
+	if (b6b_proc_get_args(interp, args, "oo", NULL, &o))
 		return b6b_return_bool(interp, !b6b_obj_istrue(o));
 
 	return B6B_ERR;
@@ -35,7 +35,7 @@ static enum b6b_res b6b_logic_proc_eq(struct b6b_interp *interp,
 	struct b6b_obj *a, *b;
 	int eq;
 
-	if (!b6b_proc_get_args(interp, args, "o o o", NULL, &a, &b) ||
+	if (!b6b_proc_get_args(interp, args, "ooo", NULL, &a, &b) ||
 	    b6b_unlikely(!b6b_obj_eq(a, b, &eq)))
 		return B6B_ERR;
 
@@ -48,7 +48,7 @@ static enum b6b_res b6b_logic_proc_ne(struct b6b_interp *interp,
 	struct b6b_obj *a, *b;
 	int eq;
 
-	if (!b6b_proc_get_args(interp, args, "o o o", NULL, &a, &b) ||
+	if (!b6b_proc_get_args(interp, args, "ooo", NULL, &a, &b) ||
 	    b6b_unlikely(!b6b_obj_eq(a, b, &eq)))
 		return B6B_ERR;
 
@@ -60,7 +60,7 @@ static enum b6b_res b6b_logic_proc_and(struct b6b_interp *interp,
 {
 	struct b6b_obj *a, *b;
 
-	if (b6b_proc_get_args(interp, args, "o o o", NULL, &a, &b))
+	if (b6b_proc_get_args(interp, args, "ooo", NULL, &a, &b))
 		return b6b_return_bool(interp, b6b_obj_istrue(a) && b6b_obj_istrue(b));
 
 	return B6B_ERR;
@@ -71,7 +71,7 @@ static enum b6b_res b6b_logic_proc_or(struct b6b_interp *interp,
 {
 	struct b6b_obj *a, *b;
 
-	if (b6b_proc_get_args(interp, args, "o o o", NULL, &a, &b))
+	if (b6b_proc_get_args(interp, args, "ooo", NULL, &a, &b))
 		return b6b_return_bool(interp, b6b_obj_istrue(a) || b6b_obj_istrue(b));
 
 	return B6B_ERR;
@@ -82,7 +82,7 @@ static enum b6b_res b6b_logic_proc_xor(struct b6b_interp *interp,
 {
 	struct b6b_obj *a, *b;
 
-	if (b6b_proc_get_args(interp, args, "o o o", NULL, &a, &b) == 3)
+	if (b6b_proc_get_args(interp, args, "ooo", NULL, &a, &b) == 3)
 		return b6b_return_bool(interp, b6b_obj_istrue(a) ^ b6b_obj_istrue(b));
 
 	return B6B_ERR;
@@ -94,7 +94,7 @@ static enum b6b_res b6b_logic_proc_if(struct b6b_interp *interp,
 	struct b6b_obj *b, *t, *f;
 	unsigned int argc = b6b_proc_get_args(interp,
 	                                      args,
-	                                      "o o o |o",
+	                                      "ooo|o",
 	                                      NULL,
 	                                      &b,
 	                                      &t,

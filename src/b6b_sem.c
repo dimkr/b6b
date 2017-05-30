@@ -84,7 +84,7 @@ static enum b6b_res b6b_sem_proc_sem(struct b6b_interp *interp,
 	struct b6b_obj *n, *o;
 	int fd;
 
-	if (!b6b_proc_get_args(interp, args, "o i", NULL, &n) ||
+	if (!b6b_proc_get_args(interp, args, "oi", NULL, &n) ||
 	    (n->n > UINT_MAX))
 		return B6B_ERR;
 

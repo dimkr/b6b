@@ -244,7 +244,7 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 	struct b6b_obj *o, *op, *arg;
 	unsigned int argc;
 
-	argc = b6b_proc_get_args(interp, args, "o s |o", &o, &op, &arg);
+	argc = b6b_proc_get_args(interp, args, "os|o", &o, &op, &arg);
 
 	switch (argc) {
 		case 2:

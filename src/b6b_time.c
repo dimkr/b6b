@@ -30,7 +30,7 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 	struct timespec req, rem;
 	struct b6b_obj *i;
 
-	if (!b6b_proc_get_args(interp, args, "o n", NULL, &i))
+	if (!b6b_proc_get_args(interp, args, "on", NULL, &i))
 		return B6B_ERR;
 
 	/* we assume sizeof(time_t) == 4 */

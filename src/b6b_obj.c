@@ -29,7 +29,7 @@ static enum b6b_res b6b_obj_proc(struct b6b_interp *interp,
 {
 	struct b6b_obj *s, *op, *o;
 
-	if (!b6b_proc_get_args(interp, args, "s s", &s, &op))
+	if (!b6b_proc_get_args(interp, args, "ss", &s, &op))
 		return B6B_ERR;
 
 	if (strcmp(op->s, "decode"))

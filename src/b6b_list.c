@@ -308,7 +308,7 @@ static enum b6b_res b6b_list_proc_len(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	b6b_num len = 0;
 
-	if (b6b_proc_get_args(interp, args, "o l", NULL, &l)) {
+	if (b6b_proc_get_args(interp, args, "ol", NULL, &l)) {
 		b6b_list_foreach(l, li)
 			++len;
 
@@ -323,7 +323,7 @@ static enum b6b_res b6b_list_proc_append(struct b6b_interp *interp,
 {
 	struct b6b_obj *l, *o;
 
-	if (b6b_proc_get_args(interp, args, "o l o", NULL, &l, &o)) {
+	if (b6b_proc_get_args(interp, args, "olo", NULL, &l, &o)) {
 		if (b6b_list_add(l, o))
 			return B6B_OK;
 	}
@@ -337,7 +337,7 @@ static enum b6b_res b6b_list_proc_extend(struct b6b_interp *interp,
 	struct b6b_obj *l, *l2;
 	struct b6b_litem *li;
 
-	if (b6b_proc_get_args(interp, args, "o l l", NULL, &l, &l2)) {
+	if (b6b_proc_get_args(interp, args, "oll", NULL, &l, &l2)) {
 		b6b_list_foreach(l2, li) {
 			if (!b6b_list_add(l, li->o))
 				return B6B_ERR;
@@ -356,7 +356,7 @@ static enum b6b_res b6b_list_proc_index(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	b6b_num i;
 
-	if (b6b_proc_get_args(interp, args, "o l n", NULL, &l, &n)) {
+	if (b6b_proc_get_args(interp, args, "oln", NULL, &l, &n)) {
 		li = b6b_list_first(l);
 		if (!li)
 			return B6B_ERR;
@@ -380,7 +380,7 @@ static enum b6b_res b6b_list_proc_range(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	b6b_num i;
 
-	if (!b6b_proc_get_args(interp, args, "o l n n", NULL, &l, &start, &end))
+	if (!b6b_proc_get_args(interp, args, "olnn", NULL, &l, &start, &end))
 		return B6B_ERR;
 
 	if (b6b_unlikely(start->n < 0) ||
@@ -429,7 +429,7 @@ static enum b6b_res b6b_list_proc_in(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	int eq;
 
-	if (!b6b_proc_get_args(interp, args, "o o l", NULL, &o, &l))
+	if (!b6b_proc_get_args(interp, args, "ool", NULL, &o, &l))
 		return B6B_ERR;
 
 	b6b_list_foreach(l, li) {
@@ -450,7 +450,7 @@ static enum b6b_res b6b_list_proc_pop(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	b6b_num i;
 
-	if (!b6b_proc_get_args(interp, args, "o l n", NULL, &l, &n) ||
+	if (!b6b_proc_get_args(interp, args, "oln", NULL, &l, &n) ||
 	    b6b_unlikely(n->n < 0))
 		return B6B_ERR;
 

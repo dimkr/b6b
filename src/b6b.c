@@ -44,20 +44,6 @@
 		"}}" \
 	"}}"
 
-static enum b6b_res repl(struct b6b_interp *interp)
-{
-	struct b6b_obj *s;
-	enum b6b_res res;
-
-	s = b6b_str_copy(B6B_SHELL, sizeof(B6B_SHELL) - 1);
-	if (!s)
-		return B6B_ERR;
-
-	res = b6b_call(interp, s);
-	b6b_unref(s);
-	return res;
-}
-
 int main(int argc, char *argv[]) {
 	struct b6b_interp interp;
 	enum b6b_res res;
@@ -69,8 +55,9 @@ int main(int argc, char *argv[]) {
 		if (!b6b_interp_new_argv(&interp, argc, (const char **)argv))
 			return EXIT_FAILURE;
 
-		res = repl(&interp);
-	} else if (argc) {
+		res = b6b_call_copy(&interp, B6B_SHELL, sizeof(B6B_SHELL) - 1);
+	}
+	else {
 		setlocale(LC_ALL, "");
 
 		if (!b6b_interp_new_argv(&interp, argc - 1, (const char **)&argv[1]))
@@ -79,10 +66,7 @@ int main(int argc, char *argv[]) {
 		if (strcmp(argv[1], "--"))
 			res = b6b_source(&interp, argv[1]);
 		else
-			res = repl(&interp);
-	} else {
-		fprintf(stderr, "Usage: %s [PATH]\n", argv[0]);
-		return EXIT_FAILURE;
+			res = b6b_call_copy(&interp, B6B_SHELL, sizeof(B6B_SHELL) - 1);
 	}
 
 	switch (res) {

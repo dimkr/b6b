@@ -38,7 +38,7 @@ static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
 	int level = MZ_DEFAULT_COMPRESSION;
 	mz_uint rem;
 
-	switch (b6b_proc_get_args(interp, args, "o s |i", NULL, &s, &l)) {
+	switch (b6b_proc_get_args(interp, args, "os|i", NULL, &s, &l)) {
 		case 3:
 			if ((l->n < INT_MIN) || (l->n > INT_MAX))
 				return B6B_ERR;
@@ -126,7 +126,7 @@ static enum b6b_res b6b_zlib_proc_inflate(struct b6b_interp *interp,
 	unsigned char *src, *dst = NULL, *mdst;
 	mz_uint rem;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
 	if (s->slen > UINT32_MAX)

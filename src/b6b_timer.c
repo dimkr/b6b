@@ -71,7 +71,7 @@ static enum b6b_res b6b_timer_proc_timer(struct b6b_interp *interp,
 	struct b6b_obj *i, *o;
 	int fd, err;
 
-	if (!b6b_proc_get_args(interp, args, "o n", NULL, &i))
+	if (!b6b_proc_get_args(interp, args, "on", NULL, &i))
 		return B6B_ERR;
 
 	fd = timerfd_create(CLOCK_MONOTONIC, 0);

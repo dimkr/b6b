@@ -104,7 +104,7 @@ static enum b6b_res b6b_dict_proc_get(struct b6b_interp *interp,
 {
 	struct b6b_obj *d, *k, *v, *f = NULL;
 
-	if (!b6b_proc_get_args(interp, args, "o l s |o", NULL, &d, &k, &f))
+	if (!b6b_proc_get_args(interp, args, "ols|o", NULL, &d, &k, &f))
 		return B6B_ERR;
 
 	if (b6b_dict_get(d, k, &v))
@@ -121,7 +121,7 @@ static enum b6b_res b6b_dict_proc_set(struct b6b_interp *interp,
 {
 	struct b6b_obj *d, *k, *v;
 
-	if (!b6b_proc_get_args(interp, args, "o l o o", NULL, &d, &k, &v) ||
+	if (!b6b_proc_get_args(interp, args, "oloo", NULL, &d, &k, &v) ||
 	    b6b_unlikely(!b6b_dict_set(d, k, v)))
 		return B6B_ERR;
 
@@ -133,7 +133,7 @@ static enum b6b_res b6b_dict_proc_unset(struct b6b_interp *interp,
 {
 	struct b6b_obj *d, *k;
 
-	if (!b6b_proc_get_args(interp, args, "o l o", NULL, &d, &k) ||
+	if (!b6b_proc_get_args(interp, args, "olo", NULL, &d, &k) ||
 	    !b6b_dict_unset(d, k))
 		return B6B_ERR;
 

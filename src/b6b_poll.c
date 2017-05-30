@@ -34,7 +34,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 	int i, j = 0, out, err, r, w, e, to[2];
 	unsigned int argc;
 
-	argc = b6b_proc_get_args(interp, args, "o s n |i", &p, &op, &n, &t);
+	argc = b6b_proc_get_args(interp, args, "osn|i", &p, &op, &n, &t);
 	if (!argc || (n->n > INT_MAX))
 		return B6B_ERR;
 

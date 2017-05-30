@@ -26,9 +26,11 @@ unsigned int b6b_proc_get_args(struct b6b_interp *interp,
                                const char *fmt,
                                ...)
 {
+	static char buf[16];
 	va_list ap;
 	struct b6b_litem *li;
-	unsigned int argc;
+	unsigned int argc, i = 0;
+	const char *c = fmt + 1;
 
 	va_start(ap, fmt);
 	argc = b6b_list_vparse(l, fmt, ap);
@@ -38,11 +40,27 @@ unsigned int b6b_proc_get_args(struct b6b_interp *interp,
 		li = b6b_list_first(l);
 
 		if (b6b_as_str(li->o) && b6b_as_str(l)) {
+			buf[0] = '\0';
+
+			while (c[0]) {
+				buf[i] = c[0];
+
+				if (c[1]) {
+					buf[i + 1] = ' ';
+					i += 2;
+					++c;
+				}
+				else {
+					buf[i + 1] = '\0';
+					break;
+				}
+			}
+
 			b6b_return_fmt(interp,
-			               "bad call: '%s', expect '%s%s'",
+			               "bad call: '%s', expect '%s %s'",
 			               l->s,
 			               li->o->s,
-			               &fmt[1]);
+			               buf);
 		}
 	}
 
@@ -88,7 +106,7 @@ static enum b6b_res b6b_proc_proc_proc(struct b6b_interp *interp,
 	struct b6b_obj *o, *n, *b, *p;
 	unsigned int argc = b6b_proc_get_args(interp,
 	                                      args,
-	                                      "o s o |o",
+	                                      "oso|o",
 	                                      NULL,
 	                                      &n,
 	                                      &b,

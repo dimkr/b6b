@@ -249,7 +249,7 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 	FILE *fp;
 	int fd, fl, err, bmode = _IONBF;
 
-	switch (b6b_proc_get_args(interp, args, "o s s", NULL, &path, &mode)) {
+	switch (b6b_proc_get_args(interp, args, "oss", NULL, &path, &mode)) {
 		case 3:
 			if (!b6b_as_str(mode))
 				return B6B_ERR;

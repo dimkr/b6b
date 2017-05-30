@@ -25,7 +25,7 @@ static enum b6b_res b6b_loop_proc_map(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	enum b6b_res res;
 
-	if (!b6b_proc_get_args(interp, args, "o o l o", NULL, &k, &l, &b))
+	if (!b6b_proc_get_args(interp, args, "oolo", NULL, &k, &l, &b))
 		return B6B_ERR;
 
 	r = b6b_list_new();
@@ -72,7 +72,7 @@ static enum b6b_res b6b_loop_proc_while(struct b6b_interp *interp,
 	struct b6b_obj *c, *b;
 	enum b6b_res res = B6B_OK;
 
-	if (!b6b_proc_get_args(interp, args, "o o o", NULL, &c, &b))
+	if (!b6b_proc_get_args(interp, args, "ooo", NULL, &c, &b))
 		return B6B_ERR;
 
 	do {
@@ -96,7 +96,7 @@ static enum b6b_res b6b_loop_proc_range(struct b6b_interp *interp,
 
 	switch (b6b_proc_get_args(interp,
 	                          args,
-	                          "o n n |n",
+	                          "onn|n",
 	                          NULL,
 	                          &start,
 	                          &end,

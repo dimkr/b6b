@@ -92,7 +92,7 @@ static enum b6b_res b6b_sh_proc_sh(struct b6b_interp *interp,
 	struct b6b_sh *s;
 	int fds[2], err;
 
-	if (!b6b_proc_get_args(interp, args, "o s", NULL, &cmd))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &cmd))
 		return B6B_ERR;
 
 	s = (struct b6b_sh *)malloc(sizeof(*s));
