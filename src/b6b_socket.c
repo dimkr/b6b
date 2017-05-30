@@ -234,7 +234,7 @@ static struct b6b_obj *b6b_client_socket_new(struct b6b_interp *interp,
 		return NULL;
 
 	fd = socket(res->ai_family,
-	            res->ai_socktype | SOCK_NONBLOCK,
+	            res->ai_socktype | SOCK_NONBLOCK | SOCK_CLOEXEC,
 	            res->ai_protocol);
 	if (fd < 0) {
 		err = errno;
@@ -357,7 +357,7 @@ static struct b6b_obj *b6b_server_socket_new(struct b6b_interp *interp,
 		return NULL;
 
 	fd = socket(res->ai_family,
-	            res->ai_socktype | SOCK_NONBLOCK,
+	            res->ai_socktype | SOCK_NONBLOCK | SOCK_CLOEXEC,
 	            res->ai_protocol);
 	if (fd < 0) {
 		err = errno;

@@ -133,7 +133,7 @@ static enum b6b_res b6b_signal_proc_signal(struct b6b_interp *interp,
 		return b6b_return_strerror(interp, err);
 	}
 
-	sig->fd = signalfd(-1, &sig->set, SFD_NONBLOCK);
+	sig->fd = signalfd(-1, &sig->set, SFD_NONBLOCK | SFD_CLOEXEC);
 	if (sig->fd < 0) {
 		err = errno;
 		free(sig);

@@ -265,7 +265,9 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 
 			fd = fileno(fp);
 			fl = fcntl(fd, F_GETFL);
-			if ((fl < 0) || (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0)) {
+			if ((fl < 0) ||
+			     (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0) ||
+			     (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0)) {
 				err = errno;
 				fclose(fp);
 				return b6b_return_strerror(interp, err);

@@ -88,7 +88,8 @@ static enum b6b_res b6b_sem_proc_sem(struct b6b_interp *interp,
 	    (n->n > UINT_MAX))
 		return B6B_ERR;
 
-	fd = eventfd((unsigned int)n->n, EFD_NONBLOCK | EFD_SEMAPHORE);
+	fd = eventfd((unsigned int)n->n,
+	              EFD_NONBLOCK | EFD_CLOEXEC | EFD_SEMAPHORE);
 	if (fd < 0)
 		return b6b_return_strerror(interp, errno);
 

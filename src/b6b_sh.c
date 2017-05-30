@@ -101,7 +101,10 @@ static enum b6b_res b6b_sh_proc_sh(struct b6b_interp *interp,
 
 	/* we redirect both stdin and stdout to a Unix socket, so the stream we
 	 * create can be polled for both input and output */
-	if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, fds) < 0) {
+	if (socketpair(AF_UNIX,
+	               SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,
+	               0,
+	               fds) < 0) {
 		err = errno;
 		free(s);
 		return b6b_return_strerror(interp, err);
