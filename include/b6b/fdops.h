@@ -44,3 +44,15 @@ ssize_t b6b_fd_send(struct b6b_interp *interp,
 
 int b6b_fd_fd(void *priv);
 void b6b_fd_close(void *priv);
+
+ssize_t b6b_fd_peeksz_u64(struct b6b_interp *interp, void *priv);
+ssize_t b6b_fd_read_u64(struct b6b_interp *interp,
+                        void *priv,
+                        unsigned char *buf,
+                        const size_t len,
+                        int *eof,
+                        int *again);
+ssize_t b6b_fd_write_u64(struct b6b_interp *interp,
+                         void *priv,
+                         const unsigned char *buf,
+                         const size_t len);

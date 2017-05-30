@@ -20,60 +20,13 @@
 #include <errno.h>
 #include <limits.h>
 #include <unistd.h>
-#include <stdlib.h>
 
 #include <b6b.h>
 
-static ssize_t b6b_sem_peeksz(struct b6b_interp *interp, void *priv)
-{
-	return sizeof(uint64_t);
-}
-
-static ssize_t b6b_sem_read(struct b6b_interp *interp,
-                            void *priv,
-                            unsigned char *buf,
-                            const size_t len,
-                            int *eof,
-                            int *again)
-{
-	uint64_t c;
-	ssize_t out;
-
-	out = b6b_fd_read(interp, priv, (unsigned char *)&c, sizeof(c), eof, again);
-	if (out <= 0)
-		return out;
-
-	*again = 0;
-	return 0;
-}
-
-static ssize_t b6b_sem_write(struct b6b_interp *interp,
-                             void *priv,
-                             const unsigned char *buf,
-                             const size_t len)
-{
-	unsigned long long ull;
-	char *end;
-	uint64_t c;
-	ssize_t out;
-
-	errno = 0;
-	ull = strtoull((const char *)buf, &end, 0);
-	if (errno || (end == (char *)buf) || *end || (ull > UINT64_MAX))
-		return -1;
-
-	c = (uint64_t)ull;
-	out = b6b_fd_write(interp, priv, (const unsigned char *)&c, sizeof(c));
-	if (out == sizeof(c))
-		return (ssize_t)len;
-
-	return -1;
-}
-
 static const struct b6b_strm_ops b6b_sem_ops = {
-	.peeksz = b6b_sem_peeksz,
-	.read = b6b_sem_read,
-	.write = b6b_sem_write,
+	.peeksz = b6b_fd_peeksz_u64,
+	.read = b6b_fd_read_u64,
+	.write = b6b_fd_write_u64,
 	.fd = b6b_fd_fd,
 	.close = b6b_fd_close
 };

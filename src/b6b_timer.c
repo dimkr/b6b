@@ -16,50 +16,17 @@
  * limitations under the License.
  */
 
-#include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 #include <errno.h>
-#include <stdio.h>
 
 #include <b6b.h>
 
-static ssize_t b6b_timer_peeksz(struct b6b_interp *interp, void *priv)
-{
-	return sizeof("18446744073709551615");
-}
-
-static ssize_t b6b_timer_read(struct b6b_interp *interp,
-                              void *priv,
-                              unsigned char *buf,
-                              const size_t len,
-                              int *eof,
-                              int *again)
-{
-	uint64_t u;
-	ssize_t out;
-	int outc;
-
-	out = b6b_fd_read(interp, priv, (unsigned char *)&u, sizeof(u), eof, again);
-	if (out <= 0)
-		return out;
-
-	if (out != sizeof(u))
-		return -1;
-
-	outc = snprintf((char *)buf, len, "%"PRIu64, u);
-	if ((outc >= len) || (outc < 0))
-		return -1;
-
-	*again = 0;
-	return (ssize_t)outc;
-}
-
 static const struct b6b_strm_ops b6b_timer_ops = {
-	.peeksz = b6b_timer_peeksz,
-	.read = b6b_timer_read,
+	.peeksz = b6b_fd_peeksz_u64,
+	.read = b6b_fd_read_u64,
 	.fd = b6b_fd_fd,
 	.close = b6b_fd_close
 };

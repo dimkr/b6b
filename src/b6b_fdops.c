@@ -22,6 +22,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <stdlib.h>
+#include <inttypes.h>
+#include <stdio.h>
 
 #include <b6b.h>
 
@@ -107,4 +110,58 @@ int b6b_fd_fd(void *priv)
 void b6b_fd_close(void *priv)
 {
 	close((int)(intptr_t)priv);
+}
+
+ssize_t b6b_fd_peeksz_u64(struct b6b_interp *interp, void *priv)
+{
+	return sizeof("18446744073709551615");
+}
+
+ssize_t b6b_fd_read_u64(struct b6b_interp *interp,
+                        void *priv,
+                        unsigned char *buf,
+                        const size_t len,
+                        int *eof,
+                        int *again)
+{
+	uint64_t u;
+	ssize_t out;
+	int outc;
+
+	out = b6b_fd_read(interp, priv, (unsigned char *)&u, sizeof(u), eof, again);
+	if (out <= 0)
+		return out;
+
+	if (out != sizeof(u))
+		return -1;
+
+	outc = snprintf((char *)buf, len, "%"PRIu64, u);
+	if ((outc >= len) || (outc < 0))
+		return -1;
+
+	*again = 0;
+	return (ssize_t)outc;
+}
+
+ssize_t b6b_fd_write_u64(struct b6b_interp *interp,
+                         void *priv,
+                         const unsigned char *buf,
+                         const size_t len)
+{
+	unsigned long long ull;
+	char *end;
+	uint64_t c;
+	ssize_t out;
+
+	errno = 0;
+	ull = strtoull((const char *)buf, &end, 0);
+	if (errno || (end == (char *)buf) || *end || (ull > UINT64_MAX))
+		return -1;
+
+	c = (uint64_t)ull;
+	out = b6b_fd_write(interp, priv, (const unsigned char *)&c, sizeof(c));
+	if (out == sizeof(c))
+		return (ssize_t)len;
+
+	return -1;
 }
