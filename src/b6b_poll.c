@@ -188,7 +188,7 @@ static enum b6b_res b6b_poll_proc_poll(struct b6b_interp *interp,
 	if (!b6b_proc_get_args(interp, args, "o", NULL))
 		return B6B_ERR;
 
-	fd = epoll_create1(0);
+	fd = epoll_create1(EPOLL_CLOEXEC);
 	if (fd < 0)
 		return b6b_return_strerror(interp, errno);
 
