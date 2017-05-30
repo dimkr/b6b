@@ -24,6 +24,11 @@
 
 #include <b6b.h>
 
+static ssize_t b6b_sem_peeksz(struct b6b_interp *interp, void *priv)
+{
+	return sizeof(uint64_t);
+}
+
 static ssize_t b6b_sem_read(struct b6b_interp *interp,
                             void *priv,
                             unsigned char *buf,
@@ -66,6 +71,7 @@ static ssize_t b6b_sem_write(struct b6b_interp *interp,
 }
 
 static const struct b6b_strm_ops b6b_sem_ops = {
+	.peeksz = b6b_sem_peeksz,
 	.read = b6b_sem_read,
 	.write = b6b_sem_write,
 	.fd = b6b_fd_fd,
