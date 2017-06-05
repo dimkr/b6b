@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <getopt.h>
 
 #include <b6b.h>
 
@@ -47,26 +48,48 @@
 int main(int argc, char *argv[]) {
 	struct b6b_interp interp;
 	enum b6b_res res;
-	int ret = EXIT_FAILURE;
+	int opt, ret = EXIT_FAILURE;
+	uint8_t opts = 0;
 
-	if (argc == 1) {
-		setlocale(LC_ALL, "");
+	setlocale(LC_ALL, "");
 
-		if (!b6b_interp_new_argv(&interp, argc, (const char **)argv))
+	do {
+		opt = getopt(argc, argv, "xc");
+		switch (opt) {
+			case 'c':
+				opts |= B6B_OPT_CMD;
+				break;
+
+			case 'x':
+				opts |= B6B_OPT_TRACE;
+				break;
+
+			case -1:
+				goto done;
+
+			default:
+				return EXIT_FAILURE;
+		}
+	} while (1);
+
+done:
+	if (optind < argc) {
+		if (!b6b_interp_new_argv(&interp,
+		                         argc - optind - 1,
+		                         (const char **)&argv[optind + 1],
+		                         opts))
+			return EXIT_FAILURE;
+
+		if (opts & B6B_OPT_CMD)
+			res = b6b_call_copy(&interp, argv[optind], strlen(argv[optind]));
+		else
+			res = b6b_source(&interp, argv[optind]);
+	}
+	else {
+		if (!b6b_interp_new_argv(&interp, argc, (const char **)argv, opts))
 			return EXIT_FAILURE;
 
 		res = b6b_call_copy(&interp, B6B_SHELL, sizeof(B6B_SHELL) - 1);
-	}
-	else {
-		setlocale(LC_ALL, "");
-
-		if (!b6b_interp_new_argv(&interp, argc - 1, (const char **)&argv[1]))
-			return EXIT_FAILURE;
-
-		if (strcmp(argv[1], "--"))
-			res = b6b_source(&interp, argv[1]);
-		else
-			res = b6b_call_copy(&interp, B6B_SHELL, sizeof(B6B_SHELL) - 1);
 	}
 
 	switch (res) {

@@ -20,6 +20,11 @@
 
 #define B6B_QUANT_LEN 16
 
+enum b6b_interp_opts {
+	B6B_OPT_CMD   = 1,
+	B6B_OPT_TRACE = 1 << 1
+};
+
 struct b6b_interp {
 	struct b6b_threads threads;
 	struct b6b_thread *fg;
@@ -34,6 +39,7 @@ struct b6b_interp {
 	int exit;
 	unsigned int seed;
 	uint8_t qstep;
+	uint8_t opts;
 };
 
 static inline int b6b_threaded(struct b6b_interp *interp)
@@ -41,10 +47,13 @@ static inline int b6b_threaded(struct b6b_interp *interp)
 	return b6b_thread_next(b6b_thread_first(&interp->threads)) ? 1 : 0;
 }
 
-int b6b_interp_new(struct b6b_interp *interp, struct b6b_obj *args);
+int b6b_interp_new(struct b6b_interp *interp,
+                   struct b6b_obj *args,
+                   const uint8_t opts);
 int b6b_interp_new_argv(struct b6b_interp *interp,
                         const int argc,
-                        const char *argv[]);
+                        const char *argv[],
+                        const uint8_t opts);
 void b6b_interp_destroy(struct b6b_interp *interp);
 
 static inline int b6b_local(struct b6b_interp *interp,

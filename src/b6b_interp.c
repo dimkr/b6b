@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <time.h>
+#include <stdio.h>
 
 #undef _GNU_SOURCE
 
@@ -96,7 +97,9 @@ static int b6b_interp_new_ext_obj(struct b6b_interp *interp,
 	return 1;
 }
 
-int b6b_interp_new(struct b6b_interp *interp, struct b6b_obj *args)
+int b6b_interp_new(struct b6b_interp *interp,
+                   struct b6b_obj *args,
+                   const uint8_t opts)
 {
 	const struct b6b_ext *e;
 	b6b_initf *ip;
@@ -156,6 +159,7 @@ int b6b_interp_new(struct b6b_interp *interp, struct b6b_obj *args)
 	b6b_thread_push(&interp->threads, interp->fg, NULL);
 
 	interp->seed = (unsigned int)time(NULL);
+	interp->opts = 0;
 
 	for (e = b6b_ext_first; e < b6b_ext_last; ++e) {
 		for (j = 0; j < e->n; ++j) {
@@ -169,6 +173,8 @@ int b6b_interp_new(struct b6b_interp *interp, struct b6b_obj *args)
 			goto bail;
 	}
 
+	interp->opts = opts;
+
 	return 1;
 
 bail:
@@ -178,7 +184,8 @@ bail:
 
 int b6b_interp_new_argv(struct b6b_interp *interp,
                         const int argc,
-                        const char *argv[])
+                        const char *argv[],
+                        const uint8_t opts)
 {
 	struct b6b_obj *args, *a;
 	int i;
@@ -203,7 +210,7 @@ int b6b_interp_new_argv(struct b6b_interp *interp,
 		b6b_unref(a);
 	}
 
-	if (!b6b_interp_new(interp, args)) {
+	if (!b6b_interp_new(interp, args, opts)) {
 		b6b_destroy(args);
 		return 0;
 	}
@@ -467,6 +474,11 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 		    b6b_unlikely(!b6b_list_add(f->args, interp->fg->_)))
 			goto pop;
 	}
+
+	if ((interp->opts & B6B_OPT_TRACE) &&
+	    (!b6b_as_str(f->args) ||
+	     (fprintf(stderr, "+ %s\n", f->args->s) <= 0)))
+		goto pop;
 
 	/* reset the return value after argument evaluation */
 	b6b_unref(interp->fg->_);
@@ -795,7 +807,7 @@ static enum b6b_res b6b_interp_proc_interp(struct b6b_interp *interp,
 		return B6B_ERR;
 	}
 
-	if (!b6b_interp_new(interp2, l)) {
+	if (!b6b_interp_new(interp2, l, interp->opts)) {
 		b6b_interp_destroy(interp2);
 		free(interp2);
 		b6b_destroy(o);
