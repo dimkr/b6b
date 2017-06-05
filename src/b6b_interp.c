@@ -680,7 +680,7 @@ static enum b6b_res b6b_interp_proc_local(struct b6b_interp *interp,
 	                 interp->fg->curr->locals,
 	                 k,
 	                 v))
-		return B6B_OK;
+		return b6b_return(interp, b6b_ref(v));
 
 	return B6B_ERR;
 }
@@ -692,7 +692,7 @@ static enum b6b_res b6b_interp_proc_global(struct b6b_interp *interp,
 
 	if (b6b_proc_get_args(interp, args, "ooo", NULL, &k, &v) &&
 	    b6b_global(interp, k, v))
-		return B6B_OK;
+		return b6b_return(interp, b6b_ref(v));
 
 	return B6B_ERR;
 }
@@ -720,7 +720,7 @@ static enum b6b_res b6b_interp_proc_export(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	if (b6b_dict_set(f->prev->locals, k, v))
-		return B6B_OK;
+		return b6b_return(interp, b6b_ref(v));
 
 	return B6B_ERR;
 }
