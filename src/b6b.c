@@ -51,8 +51,6 @@ int main(int argc, char *argv[]) {
 	int opt, ret = EXIT_FAILURE;
 	uint8_t opts = 0;
 
-	setlocale(LC_ALL, "");
-
 	do {
 		opt = getopt(argc, argv, "xc");
 		switch (opt) {
@@ -73,6 +71,8 @@ int main(int argc, char *argv[]) {
 	} while (1);
 
 done:
+	setlocale(LC_ALL, "");
+
 	if (optind < argc) {
 		if (!b6b_interp_new_argv(&interp,
 		                         argc - optind - 1,
@@ -102,9 +102,8 @@ done:
 				ret = EXIT_SUCCESS;
 			else if (b6b_as_num(interp.fg->_) &&
 			         (interp.fg->_->n >= INT_MIN) &&
-			         (interp.fg->_->n <= INT_MAX)) {
+			         (interp.fg->_->n <= INT_MAX))
 				ret = (int)interp.fg->_->n;
-			}
 
 		default:
 			break;
