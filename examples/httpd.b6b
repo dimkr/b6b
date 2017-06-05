@@ -18,6 +18,8 @@
  limitations under the License.
 }
 
+{$global http.loop [$evloop]}
+
 {$global http.req_min 16}
 {$global http.req_max 65536}
 
@@ -86,7 +88,7 @@
 
 		{$try {
 			{$parse_request $fd $data}
-			{$evloop.update $1 {} $on_reply $on_error}
+			{$http.loop update $1 {} $on_reply $on_error}
 		} {
 			{# if the request is big enough to be valid - drop the client}
 			{$if [$>= [$str.len $data] $http.req_min] {
@@ -120,7 +122,7 @@
 				file over and over; however, we still want to read it from time
 				to time in case it was modified
 			}
-			{$evloop.after $http.cache_ttl [$proc _ {
+			{$http.loop after $http.cache_ttl [$proc _ {
 				{$dict.unset $http.body_cache $.}
 				{$dict.unset $http.cbody_cache $.}
 			} $url]}
@@ -173,7 +175,7 @@
 					if the client asked us to keep the connection or omitted the
 					Connection header, we keep it
 				}
-				{$evloop.update $1 $on_request {} $on_error}
+				{$http.loop update $1 $on_request {} $on_error}
 			}}
 		}}
 	}}
@@ -186,11 +188,11 @@
 {$proc on_clients {
 	{$map client [$1 accept] {
 		{# register a timer stream, to close the connection after a while}
-		{$evloop.after $http.sess_ttl [$proc _ {
-			{$evloop.remove $.}
+		{$http.loop after $http.sess_ttl [$proc _ {
+			{$http.loop remove $.}
 		} $client]}
 
-		{$evloop.add $client $on_request {} $on_error}
+		{$http.loop add $client $on_request {} $on_error}
 	}}
 }}
 
@@ -203,9 +205,9 @@
 	{$exit 1}
 }}
 
-{$evloop.add [$signal $SIGTERM $SIGINT] $on_term {} {}}
-{$evloop.add [$stream.server $1 $2 $3] $on_clients {} {}}
+{$http.loop add [$signal $SIGTERM $SIGINT] $on_term {} {}}
+{$http.loop add [$stream.server $1 $2 $3] $on_clients {} {}}
 {# periodically change the server banner}
-{$evloop.every $http.banner_ttl $on_banner}
+{$http.loop every $http.banner_ttl $on_banner}
 
-{$evloop.wait -1}
+{$http.loop wait -1}

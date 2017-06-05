@@ -18,99 +18,123 @@
 
 #include <b6b.h>
 
-#define B6B_EVLOOP_BODY \
-	"{$global evloop._fdp [$poll]}\n" \
-	"{$global evloop._fdstrm {}}\n" \
-	"{$global evloop._fdintp {}}\n" \
-	"{$global evloop._fdoutp {}}\n" \
-	"{$global evloop._fderrp {}}\n" \
-	"{$proc evloop.remove {" \
-		"{$try {" \
-			"{$local fd [$1 fd]}\n" \
-			"{$evloop._fdp remove $fd}\n" \
-			"{$dict.unset $evloop._fdstrm $fd}\n" \
-			"{$dict.unset $evloop._fderrp $fd}\n" \
-			"{$dict.unset $evloop._fdoutp $fd}\n" \
-			"{$dict.unset $evloop._fdintp $fd}" \
-		"} {} {" \
-			"{$1 close}" \
+#define B6B_EVLOOP_REMOVE \
+	"{$try {" \
+		"{$local fd [$2 fd]}\n" \
+		"{[$list.index $. 0] remove $fd}\n" \
+		"{$map d [$list.range $. 1 5] {" \
+			"{$dict.unset $d $fd}" \
 		"}}" \
-	"}}\n" \
-	"{$proc evloop.add {" \
-		"{$local fd [$1 fd]}\n" \
-		"{$dict.set $evloop._fdstrm $fd $1}\n" \
-		"{$dict.set $evloop._fdintp $fd $2}\n" \
-		"{$dict.set $evloop._fdoutp $fd $3}\n" \
-		"{$dict.set $evloop._fderrp $fd $4}\n" \
-		"{$if [$&& $2 $3] {" \
-			"{$evloop._fdp add $fd $POLLINOUT}" \
+	"} {} {" \
+		"{$2 close}" \
+	"}}"
+
+#define B6B_EVLOOP_ADD \
+	"{$local fd [$2 fd]}\n" \
+	"{$dict.set [$list.index $. 1] $fd $2}\n" \
+	"{$dict.set [$list.index $. 2] $fd $3}\n" \
+	"{$dict.set [$list.index $. 3] $fd $4}\n" \
+	"{$dict.set [$list.index $. 4] $fd $5}\n" \
+	"{$if [$&& $3 $4] {" \
+		"{[$list.index $. 0] add $fd $POLLINOUT}" \
+	"} {" \
+		"{$if $3 {" \
+			"{[$list.index $. 0] add $fd $POLLIN}" \
 		"} {" \
-			"{$if $2 {" \
-				"{$evloop._fdp add $fd $POLLIN}" \
-			"} {" \
-				"{$evloop._fdp add $fd $POLLOUT}" \
-			"}}" \
+			"{[$list.index $. 0] add $fd $POLLOUT}" \
 		"}}" \
-	"}}\n" \
-	"{$proc evloop.update {" \
-		"{$evloop._fdp remove [$1 fd]}\n" \
-		"{$evloop.add $1 $2 $3 $4}" \
-	"}}\n" \
-	"{$proc evloop.after {" \
-		"{$evloop.add [$timer $1] [$proc _ {" \
-			"{$try {" \
-				"{$call $.}" \
-			"} {" \
-				"{$throw}" \
-			"} {" \
-				"{$try {{$evloop.remove $1}}}" \
+	"}}"
+
+#define B6B_EVLOOP_UPDATE \
+	"{[$list.index $. 0] remove [$2 fd]}\n" \
+	"{$0 add $2 $3 $4 $5}"
+
+#define B6B_EVLOOP_AFTER \
+	"{$0 add [$timer $2] [$proc _ {" \
+		"{$try {" \
+			"{$call [$list.index $. 0]}" \
+		"} {" \
+			"{$throw}" \
+		"} {" \
+			"{$try {{[$list.index $. 1] remove $1}}}" \
+		"}}" \
+	"} [$list.new [$list.new [$list.new $3]] $0]] {} {}}"
+
+#define B6B_EVLOOP_EVERY \
+	"{$0 add [$timer $2] [$proc _ {" \
+		"{$1 read}\n" \
+		"{$call $.}" \
+	"} [$list.new [$list.new $3]]] {} {}}"
+
+#define B6B_EVLOOP_WAIT \
+	"{$while 1 {" \
+		"{$local strms [$list.index $. 1]}\n" \
+		"{$local n [$list.len $strms]}\n" \
+		"{$if [$== $n 0] {" \
+			"{$break}" \
+		"}}\n" \
+		"{$local evs [[$list.index $. 0] wait [$* $n 1.5] $2]}\n" \
+		"{$map fd [$list.index $evs 2] {" \
+			"{$local strm [$dict.get $strms $fd {}]}\n" \
+			"{$if $strm {" \
+				"{$try {" \
+					"{[$dict.get [$list.index $. 4] $fd] $strm}" \
+				"} {} {" \
+					"{$0 remove $strm}" \
+				"}}" \
 			"}}" \
-		"} [$list.new [$list.new $2]]] {} {}}" \
-	"}}\n" \
-	"{$proc evloop.every {" \
-		"{$evloop.add [$timer $1] [$proc _ {" \
-			"{$1 read}\n" \
-			"{$call $.}" \
-		"} [$list.new [$list.new $2]]] {} {}}" \
-	"}}\n" \
-	"{$proc evloop.wait {" \
-		"{$while 1 {" \
-			"{$local n [$list.len $evloop._fdstrm]}\n" \
-			"{$if [$== $n 0] {" \
-				"{$break}" \
-			"}}\n" \
-			"{$local evs [$evloop._fdp wait [$* $n 1.5] $1]}\n" \
-			"{$map fd [$list.index $evs 2] {" \
-				"{$local strm [$dict.get $evloop._fdstrm $fd {}]}\n" \
-				"{$if $strm {" \
-					"{$try {" \
-						"{[$dict.get $evloop._fderrp $fd] $strm}" \
-					"} {} {" \
-						"{$evloop.remove $strm}" \
-					"}}" \
+		"}}\n" \
+		"{$map fd [$list.index $evs 1] {" \
+			"{$local strm [$dict.get $strms $fd {}]}\n" \
+			"{$if $strm {" \
+				"{$try {" \
+					"{[$dict.get [$list.index $. 3] $fd] $strm}" \
+				"} {" \
+					"{$0 remove $strm}" \
 				"}}" \
-			"}}\n" \
-			"{$map fd [$list.index $evs 1] {" \
-				"{$local strm [$dict.get $evloop._fdstrm $fd {}]}\n" \
-				"{$if $strm {" \
-					"{$try {" \
-						"{[$dict.get $evloop._fdoutp $fd] $strm}" \
-					"} {" \
-						"{$evloop.remove $strm}" \
-					"}}" \
-				"}}" \
-			"}}\n" \
-			"{$map fd [$list.index $evs 0] {" \
-				"{$local strm [$dict.get $evloop._fdstrm $fd {}]}\n" \
-				"{$if $strm {" \
-					"{$try {" \
-						"{[$dict.get $evloop._fdintp $fd] $strm}" \
-					"} {" \
-						"{$evloop.remove $strm}" \
-					"}}" \
+			"}}" \
+		"}}\n" \
+		"{$map fd [$list.index $evs 0] {" \
+			"{$local strm [$dict.get $strms $fd {}]}\n" \
+			"{$if $strm {" \
+				"{$try {" \
+					"{[$dict.get [$list.index $. 2] $fd] $strm}" \
+				"} {" \
+					"{$0 remove $strm}" \
 				"}}" \
 			"}}" \
 		"}}" \
+	"}}"
+
+#define B6B_EVLOOP_BODY \
+	"{$proc evloop {" \
+		"{$proc _ {" \
+			"{$if [$== $1 remove] {" \
+				B6B_EVLOOP_REMOVE \
+			"} {" \
+				"{$if [$== $1 add] {" \
+					B6B_EVLOOP_ADD \
+				"} {" \
+					"{$if [$== $1 update] {" \
+						B6B_EVLOOP_UPDATE \
+					"} {" \
+						"{$if [$== $1 after] {" \
+							B6B_EVLOOP_AFTER \
+						"} {" \
+							"{$if [$== $1 every] {" \
+								B6B_EVLOOP_EVERY \
+							"} {" \
+								"{$if [$== $1 wait] {" \
+									B6B_EVLOOP_WAIT \
+								"} {" \
+									"{$throw {bad evloop op}}" \
+								"}}" \
+							"}}" \
+						"}}" \
+					"}}" \
+				"}}" \
+			"}}" \
+		"} [$list.new [$poll] {} {} {} {}]}" \
 	"}}"
 
 static int b6b_evloop_init(struct b6b_interp *interp)
