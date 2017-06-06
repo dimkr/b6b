@@ -4,8 +4,18 @@
 \- b6b script interpreter
 .SH SYNOPSIS
 .B b6b
-[\fB\-x\fR] [{-c \fIscript\fR | \fIpath\fR}] [\fIarg\fR...]
+[\fIoption\fR]... [\fIscript\fR] [\fIarg\fR]...
 .SH DESCRIPTION
-Runs a \fBb6b\fR script.
+Runs \fIscript\fR or an interactive scripting shell.
+.SH OPTIONS
+.TP
+.B -c
+Run \fIscript\fR instead of running statements in the file at \fIscript\fR.
+.TP
+.B -x
+Write each statement before it is executed.
+.TP
+.B -e
+Propagate errors caught by \fBtry\fR blocks.
 .SH AUTHOR
 Dima Krasner (dima@dimakrasner.com)

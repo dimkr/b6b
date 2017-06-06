@@ -31,12 +31,23 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 
 	res = b6b_call(interp, t);
 	if (res == B6B_ERR) {
-		/* silence the error thrown by the try block if there's no except
-		 * block */
-		if (argc == 2)
-			return B6B_OK;
+		if (interp->opts & B6B_OPT_RAISE) {
+			if (argc == 2)
+				return res;
 
-		eres = b6b_call(interp, e);
+			eres = b6b_call(interp, e);
+
+			if (eres != B6B_EXIT)
+				eres = B6B_ERR;
+		}
+		else {
+			/* silence the error thrown by the try block if there's no except
+			 * block */
+			if (argc == 2)
+				return B6B_OK;
+
+			eres = b6b_call(interp, e);
+		}
 	}
 
 	if (argc == 4) {

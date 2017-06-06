@@ -22,7 +22,8 @@
 
 enum b6b_interp_opts {
 	B6B_OPT_CMD   = 1,
-	B6B_OPT_TRACE = 1 << 1
+	B6B_OPT_RAISE = 1 << 1,
+	B6B_OPT_TRACE = 1 << 2
 };
 
 struct b6b_interp {
