@@ -750,6 +750,47 @@ static enum b6b_res b6b_interp_proc_eval(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
+static enum b6b_res b6b_interp_proc_repr(struct b6b_interp *interp,
+                                         struct b6b_obj *args)
+{
+	struct b6b_obj *s, *s2;
+	char *buf;
+	size_t i, len;
+
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
+		return B6B_OK;
+
+	if (s->slen) {
+		for (i = 0; i < s->slen; ++i) {
+			if (!b6b_isspace(s->s[i]))
+				continue;
+
+			len = s->slen + 2;
+
+			buf = (char *)malloc(len + 1);
+			if (b6b_unlikely(!buf))
+				return B6B_ERR;
+
+			buf[0] = '{';
+			memcpy(&buf[1], s->s, s->slen);
+			buf[s->slen + 1] = '}';
+			buf[len] = '\0';
+
+			s2 = b6b_str_new(buf, len);
+			if (b6b_unlikely(!s2)) {
+				free(buf);
+				return B6B_ERR;
+			}
+
+			return b6b_return(interp, s2);
+		}
+
+		return b6b_return(interp, b6b_ref(s));
+	}
+
+	return b6b_return_str(interp, "{}", 2);
+}
+
 static enum b6b_res b6b_interp_proc_call(struct b6b_interp *interp,
                                          struct b6b_obj *args)
 {
@@ -898,6 +939,12 @@ static const struct b6b_ext_obj b6b_interp[] = {
 		.type = B6B_OBJ_STR,
 		.val.s = "eval",
 		.proc = b6b_interp_proc_eval
+	},
+	{
+		.name = "repr",
+		.type = B6B_OBJ_STR,
+		.val.s = "repr",
+		.proc = b6b_interp_proc_repr
 	},
 	{
 		.name = "call",

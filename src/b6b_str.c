@@ -95,11 +95,6 @@ struct b6b_obj *b6b_str_fmt(const char *fmt, ...)
 	return s;
 }
 
-static int b6b_isspace(const char c)
-{
-	return ((c == ' ') || (c == '\t') || (c == '\n') || (c == '\r'));
-}
-
 static int b6b_spaced(const char *s, const size_t len)
 {
 	size_t i;

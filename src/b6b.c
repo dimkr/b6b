@@ -31,12 +31,11 @@
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
 		"{$if [$str.len $stmt] {" \
 			"{$try {" \
-				"{$stdout writeln [$chld eval [$list.new $stmt]]}" \
+				"{$stdout writeln [$repr [$chld eval [$list.new $stmt]]]}" \
 			"} {" \
 				"{$local err $_}\n" \
 				"{$stdout write {Error: }}\n" \
-				"{$stdout write $err}\n" \
-				"{$stdout write {\n}}" \
+				"{$stdout writeln [$repr $err]}" \
 			"} {" \
 				"{$try {" \
 					"{$linenoise.add $stmt}" \

@@ -35,3 +35,8 @@ __attribute__((nonnull(1)))
 uint32_t b6b_str_hash(const char *s, const size_t len);
 
 struct b6b_obj *b6b_str_decode(const char *s, size_t len);
+
+static inline int b6b_isspace(const char c)
+{
+	return ((c == ' ') || (c == '\t') || (c == '\n') || (c == '\r'));
+}
