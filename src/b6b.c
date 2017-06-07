@@ -82,8 +82,8 @@ done:
 
 	if (optind < argc) {
 		if (!b6b_interp_new_argv(&interp,
-		                         argc - optind - 1,
-		                         (const char **)&argv[optind + 1],
+		                         argc - optind,
+		                         (const char **)&argv[optind],
 		                         opts))
 			return EXIT_FAILURE;
 
