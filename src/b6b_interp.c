@@ -159,7 +159,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 	b6b_thread_push(&interp->threads, interp->fg, NULL);
 
 	interp->seed = (unsigned int)time(NULL);
-	interp->opts = 0;
+	interp->opts = opts & B6B_OPT_NBF;
 
 	for (e = b6b_ext_first; e < b6b_ext_last; ++e) {
 		for (j = 0; j < e->n; ++j) {

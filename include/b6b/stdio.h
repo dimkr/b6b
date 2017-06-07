@@ -16,22 +16,24 @@
  * limitations under the License.
  */
 
-#ifndef _B6B_H_INCLUDED
-#	define _B6B_H_INCLUDED
+#include <stdio.h>
 
-#	include <b6b/core.h>
-#	include <b6b/obj.h>
-#	include <b6b/str.h>
-#	include <b6b/num.h>
-#	include <b6b/list.h>
-#	include <b6b/dict.h>
-#	include <b6b/frame.h>
-#	include <b6b/thread.h>
-#	include <b6b/interp.h>
-#	include <b6b/proc.h>
-#	include <b6b/ext.h>
-#	include <b6b/strm.h>
-#	include <b6b/fdops.h>
-#	include <b6b/stdio.h>
+struct b6b_stdio_strm {
+	FILE *fp;
+	void *buf;
+	int fd;
+};
 
-#endif
+ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv);
+ssize_t b6b_stdio_read(struct b6b_interp *interp,
+                       void *priv,
+                       unsigned char *buf,
+                       const size_t len,
+                       int *eof,
+                       int *again);
+ssize_t b6b_stdio_write(struct b6b_interp *interp,
+                        void *priv,
+                        const unsigned char *buf,
+                        const size_t len);
+int b6b_stdio_fd(void *priv);
+void b6b_stdio_close(void *priv);

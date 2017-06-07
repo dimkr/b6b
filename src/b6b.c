@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 	uint8_t opts = 0;
 
 	do {
-		opt = getopt(argc, argv, "cex");
+		opt = getopt(argc, argv, "ceux");
 		switch (opt) {
 			case 'c':
 				opts |= B6B_OPT_CMD;
@@ -60,6 +60,10 @@ int main(int argc, char *argv[]) {
 
 			case 'e':
 				opts |= B6B_OPT_RAISE;
+				break;
+
+			case 'u':
+				opts |= B6B_OPT_NBF;
 				break;
 
 			case 'x':

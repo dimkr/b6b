@@ -12,10 +12,13 @@ Runs \fIscript\fR or an interactive scripting shell.
 .B -c
 Run \fIscript\fR instead of running statements in the file at \fIscript\fR.
 .TP
-.B -x
-Write each statement before it is executed.
-.TP
 .B -e
 Propagate errors caught by \fBtry\fR blocks.
+.TP
+.B -u
+Disable buffering of input and output through standard input pipes.
+.TP
+.B -x
+Write each statement before it is executed.
 .SH AUTHOR
 Dima Krasner (dima@dimakrasner.com)
