@@ -68,39 +68,41 @@
 
 #define B6B_EVLOOP_WAIT \
 	"{$while 1 {" \
-		"{$local strms [$list.index $. 1]}\n" \
-		"{$local n [$list.len $strms]}\n" \
-		"{$if [$== $n 0] {" \
-			"{$break}" \
-		"}}\n" \
-		"{$local evs [[$list.index $. 0] wait [$* $n 1.5] $2]}\n" \
-		"{$map fd [$list.index $evs 2] {" \
-			"{$local strm [$dict.get $strms $fd {}]}\n" \
-			"{$if $strm {" \
-				"{$try {" \
-					"{[$dict.get [$list.index $. 4] $fd] $strm}" \
-				"} {} {" \
-					"{$0 remove $strm}" \
-				"}}" \
-			"}}" \
-		"}}\n" \
-		"{$map fd [$list.index $evs 1] {" \
-			"{$local strm [$dict.get $strms $fd {}]}\n" \
-			"{$if $strm {" \
-				"{$try {" \
-					"{[$dict.get [$list.index $. 3] $fd] $strm}" \
-				"} {" \
-					"{$0 remove $strm}" \
-				"}}" \
-			"}}" \
-		"}}\n" \
-		"{$map fd [$list.index $evs 0] {" \
-			"{$local strm [$dict.get $strms $fd {}]}\n" \
-			"{$if $strm {" \
-				"{$try {" \
-					"{[$dict.get [$list.index $. 2] $fd] $strm}" \
-				"} {" \
-					"{$0 remove $strm}" \
+		"{$map {p strms inps outps errps} $. {" \
+			"{$local n [$list.len $strms]}\n" \
+			"{$if [$== $n 0] {" \
+				"{$return}" \
+			"}}\n" \
+			"{$map {rfds wfds efds} [$p wait [$* $n 1.5] $2] {" \
+				"{$map fd $efds {" \
+					"{$local strm [$dict.get $strms $fd {}]}\n" \
+					"{$if $strm {" \
+						"{$try {" \
+							"{[$dict.get $errps $fd] $strm}" \
+						"} {} {" \
+							"{$0 remove $strm}" \
+						"}}" \
+					"}}" \
+				"}}\n" \
+				"{$map fd $wfds {" \
+					"{$local strm [$dict.get $strms $fd {}]}\n" \
+					"{$if $strm {" \
+						"{$try {" \
+							"{[$dict.get $outps $fd] $strm}" \
+						"} {" \
+							"{$0 remove $strm}" \
+						"}}" \
+					"}}" \
+				"}}\n" \
+				"{$map fd $rfds {" \
+					"{$local strm [$dict.get $strms $fd {}]}\n" \
+					"{$if $strm {" \
+						"{$try {" \
+							"{[$dict.get $inps $fd] $strm}" \
+						"} {" \
+							"{$0 remove $strm}" \
+						"}}" \
+					"}}" \
 				"}}" \
 			"}}" \
 		"}}" \

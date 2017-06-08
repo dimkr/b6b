@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-#define B6B_MAX_NESTING 32
+#define B6B_MAX_NESTING 64
 
 struct b6b_frame {
 	struct b6b_obj *locals;

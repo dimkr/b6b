@@ -21,11 +21,14 @@
 static enum b6b_res b6b_loop_proc_map(struct b6b_interp *interp,
                                       struct b6b_obj *args)
 {
-	struct b6b_obj *k, *l, *b, *r;
-	struct b6b_litem *li;
+	struct b6b_obj *ks, *l, *b, *r;
+	struct b6b_litem *li, *kli;
 	enum b6b_res res;
 
-	if (!b6b_proc_get_args(interp, args, "oolo", NULL, &k, &l, &b))
+	if (!b6b_proc_get_args(interp, args, "ollo", NULL, &ks, &l, &b))
+		return B6B_ERR;
+
+	if (b6b_list_empty(ks))
 		return B6B_ERR;
 
 	r = b6b_list_new();
@@ -34,9 +37,23 @@ static enum b6b_res b6b_loop_proc_map(struct b6b_interp *interp,
 
 	li = b6b_list_first(l);
 	while (li) {
-		if (b6b_unlikely(!b6b_local(interp, k, li->o))) {
-			b6b_destroy(r);
-			return B6B_ERR;
+		kli = b6b_list_first(ks);
+		while (kli) {
+			if (!li) {
+				b6b_destroy(r);
+				b6b_return_str(interp,
+				               "not enough items",
+				               sizeof("not enough items") - 1);
+				return B6B_ERR;
+			}
+
+			if (b6b_unlikely(!b6b_local(interp, kli->o, li->o))) {
+				b6b_destroy(r);
+				return B6B_ERR;
+			}
+
+			li = b6b_list_next(li);
+			kli = b6b_list_next(kli);
 		}
 
 		res = b6b_call(interp, b);
@@ -50,15 +67,14 @@ static enum b6b_res b6b_loop_proc_map(struct b6b_interp *interp,
 			/* ignore the current iteration's return value on B6B_CONT, to allow
 			 * long-running loops without increase in memory usage */
 			case B6B_CONT:
-				li = b6b_list_next(li);
 				break;
+
+			case B6B_BREAK:
+				goto done;
 
 			default:
 				b6b_destroy(r);
 				return res;
-
-			case B6B_BREAK:
-				goto done;
 		}
 	}
 
