@@ -138,7 +138,7 @@ static struct b6b_obj *b6b_socket_peer(struct b6b_interp *interp, void *priv)
 	}
 	b6b_unref(o);
 
-	o = b6b_num_new((b6b_num)port);
+	o = b6b_int_new((b6b_int)port);
 	if (b6b_unlikely(!o)) {
 		b6b_destroy(l);
 		return NULL;
@@ -283,10 +283,10 @@ static enum b6b_res b6b_socket_proc(struct b6b_interp *interp,
 		case 4:
 			/* the 4th parameter shall not be passed if listen() is not
 			 * called */
-			if (!backlog || ((b->n < 0) || (b->n > INT_MAX)))
+			if (!backlog || ((b->i < 0) || (b->i > INT_MAX)))
 				return B6B_ERR;
 
-			backlog = (int)b->n;
+			backlog = (int)b->i;
 			break;
 
 		default:
@@ -463,25 +463,25 @@ static enum b6b_res b6b_socket_proc_dgram_server(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_socket[] = {
 	{
 		.name = "stream.client",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "stream.client",
 		.proc = b6b_socket_proc_stream_client
 	},
 	{
 		.name = "dgram.client",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "dgram.client",
 		.proc = b6b_socket_proc_dgram_client
 	},
 	{
 		.name = "stream.server",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "stream.server",
 		.proc = b6b_socket_proc_stream_server
 	},
 	{
 		.name = "dgram.server",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "dgram.server",
 		.proc = b6b_socket_proc_dgram_server
 	}

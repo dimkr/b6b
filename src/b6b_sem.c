@@ -38,10 +38,10 @@ static enum b6b_res b6b_sem_proc_sem(struct b6b_interp *interp,
 	int fd;
 
 	if (!b6b_proc_get_args(interp, args, "oi", NULL, &n) ||
-	    (n->n > UINT_MAX))
+	    (n->i > UINT_MAX))
 		return B6B_ERR;
 
-	fd = eventfd((unsigned int)n->n,
+	fd = eventfd((unsigned int)n->i,
 	              EFD_NONBLOCK | EFD_CLOEXEC | EFD_SEMAPHORE);
 	if (fd < 0)
 		return b6b_return_strerror(interp, errno);
@@ -58,7 +58,7 @@ static enum b6b_res b6b_sem_proc_sem(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_sem[] = {
 	{
 		.name = "sem",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "sem",
 		.proc = b6b_sem_proc_sem
 	}

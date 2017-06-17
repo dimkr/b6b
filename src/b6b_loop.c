@@ -107,21 +107,21 @@ static enum b6b_res b6b_loop_proc_while(struct b6b_interp *interp,
 static enum b6b_res b6b_loop_proc_range(struct b6b_interp *interp,
                                         struct b6b_obj *args)
 {
-	struct b6b_obj *start, *end, *stepo, *l, *n;
-	b6b_num i, step = 1;
+	struct b6b_obj *start, *end, *stepo, *l, *io;
+	b6b_int i, step = 1;
 
 	switch (b6b_proc_get_args(interp,
 	                          args,
-	                          "onn|n",
+	                          "oii|i",
 	                          NULL,
 	                          &start,
 	                          &end,
 	                          &stepo)) {
 		case 4:
-			step = stepo->n;
+			step = stepo->i;
 
 		case 3:
-			if (start->n > end->n)
+			if (start->i > end->i)
 				return B6B_ERR;
 			break;
 
@@ -134,20 +134,20 @@ static enum b6b_res b6b_loop_proc_range(struct b6b_interp *interp,
 	if (b6b_unlikely(!l))
 		return B6B_ERR;
 
-	for (i = start->n; i <= end->n; i += step) {
-		n = b6b_num_new(i);
-		if (b6b_unlikely(!n)) {
+	for (i = start->i; i <= end->i; i += step) {
+		io = b6b_int_new(i);
+		if (b6b_unlikely(!io)) {
 			b6b_destroy(l);
 			return B6B_ERR;
 		}
 
-		if (b6b_unlikely(!b6b_list_add(l, n))) {
-			b6b_destroy(n);
+		if (b6b_unlikely(!b6b_list_add(l, io))) {
+			b6b_destroy(io);
 			b6b_destroy(l);
 			return B6B_ERR;
 		}
 
-		b6b_unref(n);
+		b6b_unref(io);
 	}
 
 	return b6b_return(interp, l);
@@ -156,19 +156,19 @@ static enum b6b_res b6b_loop_proc_range(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_loop[] = {
 	{
 		.name = "map",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "map",
 		.proc = b6b_loop_proc_map
 	},
 	{
 		.name = "while",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "while",
 		.proc = b6b_loop_proc_while
 	},
 	{
 		.name = "range",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "range",
 		.proc = b6b_loop_proc_range
 	}

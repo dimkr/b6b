@@ -74,7 +74,7 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_exc[] = {
 	{
 		.name = "try",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "try",
 		.proc = b6b_exc_proc_try
 	}

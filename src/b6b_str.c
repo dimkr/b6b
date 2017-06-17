@@ -23,7 +23,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
-#include <stdint.h>
 #include <wchar.h>
 
 #undef _GNU_SOURCE
@@ -50,7 +49,7 @@ struct b6b_obj *b6b_str_new(char *s, const size_t len)
 	if (b6b_likely(o)) {
 		o->s = s;
 		o->slen = len;
-		o->flags = B6B_OBJ_STR;
+		o->flags = B6B_TYPE_STR;
 	}
 
 	return o;
@@ -114,10 +113,10 @@ int b6b_as_str(struct b6b_obj *o)
 	size_t nlen;
 	int out, i;
 
-	if (o->flags & B6B_OBJ_STR)
+	if (o->flags & B6B_TYPE_STR)
 		return 1;
 
-	if (o->flags & B6B_OBJ_LIST) {
+	if (o->flags & B6B_TYPE_LIST) {
 		o->s = NULL;
 
 		b6b_list_foreach(o, li) {
@@ -225,10 +224,22 @@ int b6b_as_str(struct b6b_obj *o)
 			o->slen = 2;
 		}
 
-		o->flags |= B6B_OBJ_STR;
+		o->flags |= B6B_TYPE_STR;
+		return 1;
 	}
-	else if (o->flags & B6B_OBJ_NUM) {
-		out = asprintf(&o->s, B6B_NUM_FMT, o->n);
+
+	if (o->flags & B6B_TYPE_INT) {
+		out = asprintf(&o->s, B6B_INT_FMT, o->i);
+		if (out < 0)
+			return 0;
+
+		if (out == 0) {
+			free(o->s);
+			return 0;
+		}
+	}
+	else {
+		out = asprintf(&o->s, B6B_FLOAT_FMT, o->f);
 		if (out < 0)
 			return 0;
 
@@ -249,11 +260,10 @@ int b6b_as_str(struct b6b_obj *o)
 				break;
 			}
 		}
-
-		o->slen = (size_t)out;
-		o->flags |= B6B_OBJ_STR;
 	}
 
+	o->slen = (size_t)out;
+	o->flags |= B6B_TYPE_STR;
 	return 1;
 }
 
@@ -320,7 +330,7 @@ static enum b6b_res b6b_str_proc_len(struct b6b_interp *interp,
 	struct b6b_obj *s;
 
 	if (b6b_proc_get_args(interp, args, "os", NULL, &s))
-		return b6b_return_num(interp, (b6b_num)s->slen);
+		return b6b_return_int(interp, (b6b_int)s->slen);
 
 	return B6B_ERR;
 }
@@ -331,10 +341,10 @@ static enum b6b_res b6b_str_proc_index(struct b6b_interp *interp,
 	struct b6b_obj *s, *i;
 
 	if (!b6b_proc_get_args(interp, args, "osi", NULL, &s, &i) ||
-	    (i->n >= s->slen))
+	    (i->i >= s->slen))
 	    return B6B_ERR;
 
-	return b6b_return_str(interp, &s->s[(ptrdiff_t)i->n], 1);
+	return b6b_return_str(interp, &s->s[i->i], 1);
 }
 
 static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
@@ -343,16 +353,16 @@ static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
 	struct b6b_obj *s, *start, *end;
 
 	if (!b6b_proc_get_args(interp, args, "osii", NULL, &s, &start, &end) ||
-	    (start->n < 0) ||
-	    (start->n >= s->slen) ||
-	    (end->n < 0) ||
-	    (end->n >= s->slen) ||
-	    (start->n > end->n))
+	    (start->i < 0) ||
+	    (start->i >= s->slen) ||
+	    (end->i < 0) ||
+	    (end->i >= s->slen) ||
+	    (start->i > end->i))
 	    return B6B_ERR;
 
 	return b6b_return_str(interp,
-	                      &s->s[(ptrdiff_t)start->n],
-	                      end->n - start->n);
+	                      &s->s[(ptrdiff_t)start->i],
+	                      end->i - start->i);
 }
 
 static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
@@ -628,49 +638,49 @@ static enum b6b_res b6b_str_proc_ltrim(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_str[] = {
 	{
 		.name = "str.len",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "str.len",
 		.proc = b6b_str_proc_len
 	},
 	{
 		.name = "str.index",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "str.index",
 		.proc = b6b_str_proc_index
 	},
 	{
 		.name = "str.range",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "str.range",
 		.proc = b6b_str_proc_range
 	},
 	{
 		.name = "str.join",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "str.join",
 		.proc = b6b_str_proc_join
 	},
 	{
 		.name = "str.split",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "str.split",
 		.proc = b6b_str_proc_split
 	},
 	{
 		.name = "str.expand",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "str.expand",
 		.proc = b6b_str_proc_expand
 	},
 	{
 		.name = "rtrim",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "rtrim",
 		.proc = b6b_str_proc_rtrim
 	},
 	{
 		.name = "ltrim",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "ltrim",
 		.proc = b6b_str_proc_ltrim
 	}

@@ -57,7 +57,7 @@ static enum b6b_res b6b_rand_proc_choice(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_rand[] = {
 	{
 		.name = "choice",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "choice",
 		.proc = b6b_rand_proc_choice
 	}

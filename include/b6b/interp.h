@@ -90,7 +90,8 @@ static inline enum b6b_res b6b_return(struct b6b_interp *interp,
 	return B6B_OK;
 }
 
-enum b6b_res b6b_return_num(struct b6b_interp *interp, const b6b_num n);
+enum b6b_res b6b_return_int(struct b6b_interp *interp, const b6b_int i);
+enum b6b_res b6b_return_float(struct b6b_interp *interp, const b6b_float f);
 
 static inline enum b6b_res b6b_return_true(struct b6b_interp *interp)
 {

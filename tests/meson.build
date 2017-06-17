@@ -14,16 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project('b6b', 'c', version: '0.0.1', license: 'Apache-2.0')
-
-add_project_arguments('-Wall', '-Wno-overlength-strings', '-D_FILE_OFFSET_BITS=64',
-                      language: 'c')
-
-subdir('include')
-subdir('src')
-subdir('tests')
-subdir('doc')
-subdir('examples')
-
-install_data('README', 'AUTHORS', 'COPYING',
-             install_dir: join_paths(get_option('datadir'), 'doc', 'b6b'))
+if get_option('default_library') != 'static'
+	b6b_test_cast = executable('b6b_test_cast',
+	                           'b6b_test_cast.c',
+	                           include_directories: b6b_includes,
+	                           link_with: [libb6b])
+	test('b6b_test_cast', b6b_test_cast)
+endif

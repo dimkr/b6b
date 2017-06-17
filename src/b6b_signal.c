@@ -116,10 +116,10 @@ static enum b6b_res b6b_signal_proc_signal(struct b6b_interp *interp,
 	}
 
 	do {
-		if (!b6b_as_num(li->o) ||
-		    (li->o->n < 1) ||
-		    (li->o->n > INT_MAX) ||
-		    (sigaddset(&sig->set, (int)li->o->n) < 0)) {
+		if (!b6b_as_int(li->o) ||
+		    (li->o->i < 1) ||
+		    (li->o->i > INT_MAX) ||
+		    (sigaddset(&sig->set, (int)li->o->i) < 0)) {
 			free(sig);
 			return B6B_ERR;
 		}
@@ -152,52 +152,52 @@ static enum b6b_res b6b_signal_proc_signal(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_signal[] = {
 	{
 		.name = "SIGINT",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGINT
+		.type = B6B_TYPE_INT,
+		.val.i = SIGINT
 	},
 	{
 		.name = "SIGTERM",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGTERM
+		.type = B6B_TYPE_INT,
+		.val.i = SIGTERM
 	},
 	{
 		.name = "SIGHUP",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGHUP
+		.type = B6B_TYPE_INT,
+		.val.i = SIGHUP
 	},
 	{
 		.name = "SIGALRM",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGALRM
+		.type = B6B_TYPE_INT,
+		.val.i = SIGALRM
 	},
 	{
 		.name = "SIGSTOP",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGSTOP
+		.type = B6B_TYPE_INT,
+		.val.i = SIGSTOP
 	},
 	{
 		.name = "SIGCONT",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGCONT
+		.type = B6B_TYPE_INT,
+		.val.i = SIGCONT
 	},
 	{
 		.name = "SIGIO",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGIO
+		.type = B6B_TYPE_INT,
+		.val.i = SIGIO
 	},
 	{
 		.name = "SIGUSR1",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGUSR1
+		.type = B6B_TYPE_INT,
+		.val.i = SIGUSR1
 	},
 	{
 		.name = "SIGUSR2",
-		.type = B6B_OBJ_NUM,
-		.val.n = SIGUSR2
+		.type = B6B_TYPE_INT,
+		.val.i = SIGUSR2
 	},
 	{
 		.name = "signal",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "signal",
 		.proc = b6b_signal_proc_signal
 	}

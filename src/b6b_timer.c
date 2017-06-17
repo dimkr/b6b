@@ -35,19 +35,19 @@ static enum b6b_res b6b_timer_proc_timer(struct b6b_interp *interp,
                                          struct b6b_obj *args)
 {
 	struct itimerspec its;
-	struct b6b_obj *i, *o;
+	struct b6b_obj *f, *o;
 	int fd, err;
 
-	if (!b6b_proc_get_args(interp, args, "on", NULL, &i))
+	if (!b6b_proc_get_args(interp, args, "of", NULL, &f))
 		return B6B_ERR;
 
 	fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
 	if (fd < 0)
 		return b6b_return_strerror(interp, errno);
 
-	its.it_value.tv_sec = (time_t)floor(i->n);
+	its.it_value.tv_sec = (time_t)floor(f->f);
 	its.it_value.tv_nsec = labs(
-	                (long)(1000000000 * (i->n - (b6b_num)its.it_value.tv_sec)));
+	              (long)(1000000000 * (f->f - (b6b_float)its.it_value.tv_sec)));
 	its.it_interval.tv_sec = its.it_value.tv_sec;
 	its.it_interval.tv_nsec = its.it_value.tv_nsec;
 	if (timerfd_settime(fd, 0, &its, NULL) < 0) {
@@ -68,7 +68,7 @@ static enum b6b_res b6b_timer_proc_timer(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_timer[] = {
 	{
 		.name = "timer",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "timer",
 		.proc = b6b_timer_proc_timer
 	}

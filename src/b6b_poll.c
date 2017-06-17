@@ -34,17 +34,17 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 	int i, j = 0, out, err, r, w, e, to[2];
 	unsigned int argc;
 
-	argc = b6b_proc_get_args(interp, args, "osn|i", &p, &op, &n, &t);
-	if (!argc || (n->n > INT_MAX))
+	argc = b6b_proc_get_args(interp, args, "osi|i", &p, &op, &n, &t);
+	if (!argc || (n->i > INT_MAX))
 		return B6B_ERR;
 
 	if ((argc == 3) && (strcmp(op->s, "remove") == 0)) {
-		if (n->n < 0)
+		if (n->i < 0)
 			return B6B_ERR;
 
 		if ((epoll_ctl((int)(intptr_t)p->priv,
 		               EPOLL_CTL_DEL,
-		               (int)n->n,
+		               (int)n->i,
 		               NULL) < 0) &&
 		    (errno != ENOENT))
 			return b6b_return_strerror(interp, errno);
@@ -53,11 +53,11 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 
 	} else if (argc == 4) {
 		if (strcmp(op->s, "add") == 0) {
-			if (n->n < 0)
+			if (n->i < 0)
 				return B6B_ERR;
 
-			ev.events = ((int)t->n & (EPOLLIN | EPOLLOUT));
-			ev.data.fd = (int)n->n;
+			ev.events = ((int)t->i & (EPOLLIN | EPOLLOUT));
+			ev.data.fd = (int)n->i;
 
 			if ((epoll_ctl((int)(intptr_t)p->priv,
 			               EPOLL_CTL_ADD,
@@ -68,7 +68,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 
 			return B6B_OK;
 		} else if (strcmp(op->s, "wait") == 0) {
-			if ((n->n <= 0) || (t->n < INT_MIN) || (t->n > INT_MAX))
+			if ((n->i <= 0) || (t->i < INT_MIN) || (t->i > INT_MAX))
 				return B6B_ERR;
 
 			l = b6b_list_new();
@@ -97,7 +97,8 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 				b6b_unref(fds[i]);
 			}
 
-			evs = (struct epoll_event *)malloc(sizeof(struct epoll_event) * n->n);
+			evs = (struct epoll_event *)malloc(
+			                                 sizeof(struct epoll_event) * n->i);
 			if (!evs) {
 				b6b_destroy(l);
 				return B6B_ERR;
@@ -110,9 +111,9 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			 * available event, let other threads run before we try again and
 			 * block */
 			to[0] = 0;
-			to[1] = (int)t->n;
+			to[1] = (int)t->i;
 			for (i = !b6b_threaded(interp); i < 2; ++i) {
-				out = epoll_wait((int)(intptr_t)p->priv, evs, (int)n->n, to[i]);
+				out = epoll_wait((int)(intptr_t)p->priv, evs, (int)n->i, to[i]);
 				if (out < 0) {
 					err = errno;
 					b6b_unref(p);
@@ -125,7 +126,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 				b6b_yield(interp);
 			}
 
-			for (i = 0; (j < out) && (i < n->n); ++i) {
+			for (i = 0; (j < out) && (i < n->i); ++i) {
 				if (!evs[i].events)
 					continue;
 
@@ -141,7 +142,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 					e = 1;
 
 				if (r || w || e) {
-					fd = b6b_num_new((b6b_num)evs[i].data.fd);
+					fd = b6b_int_new((b6b_int)evs[i].data.fd);
 					if (b6b_unlikely(!fd))
 						goto err;
 
@@ -208,24 +209,24 @@ static enum b6b_res b6b_poll_proc_poll(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_poll[] = {
 	{
 		.name = "poll",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "poll",
 		.proc = b6b_poll_proc_poll
 	},
 	{
 		.name = "POLLIN",
-		.type = B6B_OBJ_NUM,
-		.val.n = EPOLLIN
+		.type = B6B_TYPE_INT,
+		.val.i = EPOLLIN
 	},
 	{
 		.name = "POLLOUT",
-		.type = B6B_OBJ_NUM,
-		.val.n = EPOLLOUT
+		.type = B6B_TYPE_INT,
+		.val.i = EPOLLOUT
 	},
 	{
 		.name = "POLLINOUT",
-		.type = B6B_OBJ_NUM,
-		.val.n = EPOLLIN | EPOLLOUT
+		.type = B6B_TYPE_INT,
+		.val.i = EPOLLIN | EPOLLOUT
 	},
 };
 __b6b_ext(b6b_poll);

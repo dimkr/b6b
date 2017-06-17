@@ -21,7 +21,7 @@ if get_option('buildtype').startswith('debug') and cc.has_header('valgrind/valgr
 endif
 
 libb6b_srcs = [
-	'b6b_obj.c', 'b6b_str.c', 'b6b_num.c', 'b6b_list.c', 'b6b_dict.c',
+	'b6b_obj.c', 'b6b_str.c', 'b6b_int.c', 'b6b_float.c', 'b6b_list.c', 'b6b_dict.c',
 	'b6b_frame.c', 'b6b_thread.c', 'b6b_interp.c',
 	'b6b_math.c', 'b6b_logic.c', 'b6b_loop.c', 'b6b_exc.c', 'b6b_proc.c', 'b6b_co.c',
 	'b6b_strm.c', 'b6b_fdops.c', 'b6b_stdio.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sem.c', 'b6b_sh.c', 'b6b_poll.c', 'b6b_evloop.c',
@@ -29,7 +29,11 @@ libb6b_srcs = [
 	'linenoise/linenoise.c', 'b6b_linenoise.c',
 	'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c'
 ]
-b6b_deps = [cc.find_library('m', required: false)]
+b6b_deps = [
+	cc.find_library('m', required: true),
+	cc.find_library('dl', required: true),
+	cc.find_library('ffi', required: true)
+]
 
 # b6b cannot be linked with a static libb6b due to the use of sections in
 # __b6b_ext and __b6b_init, which get lost in a static build

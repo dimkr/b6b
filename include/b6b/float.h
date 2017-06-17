@@ -16,23 +16,5 @@
  * limitations under the License.
  */
 
-#ifndef _B6B_H_INCLUDED
-#	define _B6B_H_INCLUDED
-
-#	include <b6b/core.h>
-#	include <b6b/obj.h>
-#	include <b6b/str.h>
-#	include <b6b/int.h>
-#	include <b6b/float.h>
-#	include <b6b/list.h>
-#	include <b6b/dict.h>
-#	include <b6b/frame.h>
-#	include <b6b/thread.h>
-#	include <b6b/interp.h>
-#	include <b6b/proc.h>
-#	include <b6b/ext.h>
-#	include <b6b/strm.h>
-#	include <b6b/fdops.h>
-#	include <b6b/stdio.h>
-
-#endif
+struct b6b_obj *b6b_float_new(const b6b_float f);
+int b6b_as_float(struct b6b_obj *o);

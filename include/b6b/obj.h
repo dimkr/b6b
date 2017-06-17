@@ -22,8 +22,11 @@
 #include <sys/queue.h>
 #include <assert.h>
 
-typedef double b6b_num;
-#define B6B_NUM_FMT "%.12f"
+typedef long long b6b_int;
+#define B6B_INT_FMT "%lld"
+
+typedef double b6b_float;
+#define B6B_FLOAT_FMT "%.12f"
 
 struct b6b_obj;
 
@@ -36,10 +39,11 @@ struct b6b_litem {
 struct b6b_interp;
 
 enum b6b_obj_flags {
-	B6B_OBJ_LIST   = 1,
-	B6B_OBJ_STR    = 1 << 1,
-	B6B_OBJ_NUM    = 1 << 2,
-	B6B_OBJ_HASHED = 1 << 3
+	B6B_TYPE_LIST  = 1,
+	B6B_TYPE_STR   = 1 << 1,
+	B6B_TYPE_INT   = 1 << 2,
+	B6B_TYPE_FLOAT = 1 << 3,
+	B6B_OBJ_HASHED = 1 << 4
 };
 
 typedef enum b6b_res (*b6b_procf)(struct b6b_interp *, struct b6b_obj *);
@@ -48,7 +52,8 @@ typedef void (*b6b_delf)(void *);
 struct b6b_obj {
 	struct b6b_lhead l;
 	char *s;
-	b6b_num n;
+	b6b_int i;
+	b6b_float f;
 	size_t slen;
 	b6b_procf proc;
 	b6b_delf del;
@@ -92,10 +97,10 @@ int b6b_obj_eq(struct b6b_obj *a, struct b6b_obj *b, int *eq);
 
 static inline int b6b_obj_isnull(const struct b6b_obj *o)
 {
-	if (o->flags & B6B_OBJ_STR)
+	if (o->flags & B6B_TYPE_STR)
 		return o->slen ? 0 : 1;
 
-	if (o->flags & B6B_OBJ_LIST)
+	if (o->flags & B6B_TYPE_LIST)
 		return b6b_list_empty(o) ? 1 : 0;
 
 	return 0;
@@ -103,11 +108,14 @@ static inline int b6b_obj_isnull(const struct b6b_obj *o)
 
 static inline int b6b_obj_istrue(const struct b6b_obj *o)
 {
-	if (o->flags & B6B_OBJ_LIST)
+	if (o->flags & B6B_TYPE_LIST)
 		return b6b_list_empty(o) ? 0 : 1;
 
-	if (o->flags & B6B_OBJ_STR)
+	if (o->flags & B6B_TYPE_STR)
 		return ((o->slen > 1) || ((o->slen == 1) && (o->s[0] != '0')));
 
-	return o->n ? 1 : 0;
+	if (o->flags & B6B_TYPE_INT)
+		return o->i ? 1 : 0;
+
+	return o->f ? 1 : 0;
 }

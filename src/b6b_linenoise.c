@@ -82,25 +82,25 @@ static enum b6b_res b6b_linenoise_proc_load(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_linenoise[] = {
 	{
 		.name = "linenoise.read",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "linenoise.read",
 		.proc = b6b_linenoise_proc_read
 	},
 	{
 		.name = "linenoise.add",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "linenoise.add",
 		.proc = b6b_linenoise_proc_add
 	},
 	{
 		.name = "linenoise.save",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "linenoise.save",
 		.proc = b6b_linenoise_proc_save
 	},
 	{
 		.name = "linenoise.load",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "linenoise.load",
 		.proc = b6b_linenoise_proc_load
 	}

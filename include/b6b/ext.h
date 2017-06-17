@@ -28,7 +28,7 @@ struct b6b_ext_obj {
 	b6b_delf del;
 	union {
 		const char *s;
-		b6b_num n;
+		b6b_int i;
 	} val;
 	uint8_t type;
 };

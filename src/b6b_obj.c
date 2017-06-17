@@ -71,10 +71,10 @@ void b6b_destroy_l(struct b6b_obj *o)
 
 void b6b_destroy(struct b6b_obj *o)
 {
-	if (o->flags & B6B_OBJ_LIST)
+	if (o->flags & B6B_TYPE_LIST)
 		b6b_destroy_l(o);
 
-	if (o->flags & B6B_OBJ_STR)
+	if (o->flags & B6B_TYPE_STR)
 		free(o->s);
 
 	if (o->del)

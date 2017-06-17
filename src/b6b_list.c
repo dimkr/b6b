@@ -32,7 +32,7 @@ struct b6b_obj *b6b_list_new(void)
 	o = b6b_new();
 	if (o) {
 		TAILQ_INIT(&o->l);
-		o->flags = B6B_OBJ_LIST;
+		o->flags = B6B_TYPE_LIST;
 	}
 
 	return o;
@@ -40,14 +40,18 @@ struct b6b_obj *b6b_list_new(void)
 
 static void b6b_on_list_mod(struct b6b_obj *l)
 {
-	if (l->flags & B6B_OBJ_STR)
+	if (l->flags & B6B_TYPE_STR)
 		free(l->s);
 
-	l->flags &= ~(B6B_OBJ_NUM | B6B_OBJ_STR | B6B_OBJ_HASHED);
+	l->flags &= ~(B6B_TYPE_INT |
+	              B6B_TYPE_FLOAT |
+	              B6B_TYPE_STR |
+	              B6B_OBJ_HASHED);
 
 #ifdef B6B_HAVE_VALGRIND
 	VALGRIND_MAKE_MEM_UNDEFINED(&l->s, sizeof(l->s));
-	VALGRIND_MAKE_MEM_UNDEFINED(&l->n, sizeof(l->n));
+	VALGRIND_MAKE_MEM_UNDEFINED(&l->i, sizeof(l->i));
+	VALGRIND_MAKE_MEM_UNDEFINED(&l->f, sizeof(l->f));
 	VALGRIND_MAKE_MEM_UNDEFINED(&l->hash, sizeof(l->hash));
 #endif
 }
@@ -92,7 +96,7 @@ int b6b_as_list(struct b6b_obj *o)
 	size_t i, tlen = 0;
 	int nbrac = 0, nbrak = 0, trim = 0;
 
-	if (!(o->flags & B6B_OBJ_LIST)) {
+	if (!(o->flags & B6B_TYPE_LIST)) {
 		if (!b6b_as_str(o))
 			return 0;
 
@@ -178,7 +182,7 @@ int b6b_as_list(struct b6b_obj *o)
 			nbrak = 0;
 		}
 
-		o->flags |= B6B_OBJ_LIST;
+		o->flags |= B6B_TYPE_LIST;
 	}
 
 	return 1;
@@ -239,13 +243,13 @@ unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap)
 						return 0;
 					break;
 
-				case 'n':
-					if (!b6b_as_num(li->o))
+				case 'i':
+					if (!b6b_as_int(li->o))
 						return 0;
 					break;
 
-				case 'i':
-					if (!b6b_as_num(li->o) || (roundf(li->o->n) != li->o->n))
+				case 'f':
+					if (!b6b_as_float(li->o))
 						return 0;
 					break;
 
@@ -306,13 +310,13 @@ static enum b6b_res b6b_list_proc_len(struct b6b_interp *interp,
 {
 	struct b6b_obj *l;
 	struct b6b_litem *li;
-	b6b_num len = 0;
+	b6b_int len = 0;
 
 	if (b6b_proc_get_args(interp, args, "ol", NULL, &l)) {
 		b6b_list_foreach(l, li)
 			++len;
 
-		return b6b_return_num(interp, len);
+		return b6b_return_int(interp, len);
 	}
 
 	return B6B_ERR;
@@ -352,16 +356,16 @@ static enum b6b_res b6b_list_proc_extend(struct b6b_interp *interp,
 static enum b6b_res b6b_list_proc_index(struct b6b_interp *interp,
                                         struct b6b_obj *args)
 {
-	struct b6b_obj *l, *n;
+	struct b6b_obj *l, *i;
 	struct b6b_litem *li;
-	b6b_num i;
+	b6b_int j;
 
-	if (b6b_proc_get_args(interp, args, "oln", NULL, &l, &n)) {
+	if (b6b_proc_get_args(interp, args, "oli", NULL, &l, &i)) {
 		li = b6b_list_first(l);
 		if (!li)
 			return B6B_ERR;
 
-		for (i = 0; i < n->n; ++i) {
+		for (j = 0; j < i->i; ++j) {
 			li = b6b_list_next(li);
 			if (!li)
 				return B6B_ERR;
@@ -378,21 +382,21 @@ static enum b6b_res b6b_list_proc_range(struct b6b_interp *interp,
 {
 	struct b6b_obj *l, *r, *start, *end;
 	struct b6b_litem *li;
-	b6b_num i;
+	b6b_int i;
 
-	if (!b6b_proc_get_args(interp, args, "olnn", NULL, &l, &start, &end))
+	if (!b6b_proc_get_args(interp, args, "olii", NULL, &l, &start, &end))
 		return B6B_ERR;
 
-	if (b6b_unlikely(start->n < 0) ||
-	    b6b_unlikely(end->n < 0) ||
-	    b6b_unlikely(start->n >= end->n))
+	if (b6b_unlikely(start->i < 0) ||
+	    b6b_unlikely(end->i < 0) ||
+	    b6b_unlikely(start->i >= end->i))
 		return B6B_ERR;
 
 	li = b6b_list_first(l);
 	if (!li)
 		return B6B_ERR;
 
-	for (i = 1; i <= start->n; ++i) {
+	for (i = 1; i <= start->i; ++i) {
 		li = b6b_list_next(li);
 		if (!li)
 			return B6B_ERR;
@@ -409,7 +413,7 @@ static enum b6b_res b6b_list_proc_range(struct b6b_interp *interp,
 		}
 
 		++i;
-		if (i > end->n)
+		if (i > end->i)
 			break;
 
 		li = b6b_list_next(li);
@@ -446,12 +450,12 @@ static enum b6b_res b6b_list_proc_in(struct b6b_interp *interp,
 static enum b6b_res b6b_list_proc_pop(struct b6b_interp *interp,
                                       struct b6b_obj *args)
 {
-	struct b6b_obj *l, *n, *o;
+	struct b6b_obj *l, *i, *o;
 	struct b6b_litem *li;
-	b6b_num i;
+	b6b_int j;
 
-	if (!b6b_proc_get_args(interp, args, "oln", NULL, &l, &n) ||
-	    b6b_unlikely(n->n < 0))
+	if (!b6b_proc_get_args(interp, args, "oli", NULL, &l, &i) ||
+	    b6b_unlikely(i->i < 0))
 		return B6B_ERR;
 
 	li = b6b_list_first(l);
@@ -460,7 +464,7 @@ static enum b6b_res b6b_list_proc_pop(struct b6b_interp *interp,
 		return B6B_ERR;
 	}
 
-	for (i = 1; i <= n->n; ++i) {
+	for (j = 1; j <= i->i; ++j) {
 		li = b6b_list_next(li);
 		if (!li)
 			return B6B_ERR;
@@ -475,49 +479,49 @@ static enum b6b_res b6b_list_proc_pop(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_list[] = {
 	{
 		.name = "list.new",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.new",
 		.proc = b6b_list_proc_new
 	},
 	{
 		.name = "list.len",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.len",
 		.proc = b6b_list_proc_len
 	},
 	{
 		.name = "list.append",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.append",
 		.proc = b6b_list_proc_append
 	},
 	{
 		.name = "list.extend",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.extend",
 		.proc = b6b_list_proc_extend
 	},
 	{
 		.name = "list.index",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.index",
 		.proc = b6b_list_proc_index
 	},
 	{
 		.name = "list.range",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.range",
 		.proc = b6b_list_proc_range
 	},
 	{
 		.name = "list.in",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.in",
 		.proc = b6b_list_proc_in
 	},
 	{
 		.name = "list.pop",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "list.pop",
 		.proc = b6b_list_proc_pop
 	}

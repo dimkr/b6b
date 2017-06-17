@@ -28,17 +28,17 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
                                         struct b6b_obj *args)
 {
 	struct timespec req, rem;
-	struct b6b_obj *i;
+	struct b6b_obj *f;
 
-	if (!b6b_proc_get_args(interp, args, "on", NULL, &i))
+	if (!b6b_proc_get_args(interp, args, "of", NULL, &f))
 		return B6B_ERR;
 
 	/* we assume sizeof(time_t) == 4 */
-	if ((i->n < 0) || (i->n > UINT_MAX))
+	if ((f->f < 0) || (f->f > UINT_MAX))
 		return B6B_ERR;
 
-	req.tv_sec = (time_t)floor(i->n);
-	req.tv_nsec = labs((long)(1000000000 * (i->n - (b6b_num)req.tv_sec)));
+	req.tv_sec = (time_t)floor(f->f);
+	req.tv_nsec = labs((long)(1000000000 * (f->f - (b6b_float)req.tv_sec)));
 
 	while (nanosleep(&req, &rem) < 0) {
 		if (errno != EINTR)
@@ -54,7 +54,7 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_time[] = {
 	{
 		.name = "sleep",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "sleep",
 		.proc = b6b_time_proc_sleep
 	}

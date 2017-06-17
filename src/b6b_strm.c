@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <limits.h>
 
 #include <b6b.h>
@@ -158,7 +157,7 @@ static enum b6b_res b6b_strm_write(struct b6b_interp *interp,
 		out += chunk;
 	}
 
-	return b6b_return_num(interp, (b6b_num)out);
+	return b6b_return_int(interp, (b6b_int)out);
 }
 
 static enum b6b_res b6b_strm_writeln(struct b6b_interp *interp,
@@ -235,7 +234,7 @@ static enum b6b_res b6b_strm_fd(struct b6b_interp *interp,
 	if (strm->flags & B6B_STRM_CLOSED)
 		return B6B_ERR;
 
-	return b6b_return_num(interp, (b6b_num)strm->ops->fd(strm->priv));
+	return b6b_return_int(interp, (b6b_int)strm->ops->fd(strm->priv));
 }
 
 static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
@@ -266,15 +265,12 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 
 		case 3:
 			if (strcmp(op->s, "read") == 0) {
-				if (!b6b_as_num(arg) ||
-				    (arg->n >= SSIZE_MAX) ||
-				    (arg->n <= 0) ||
-				    (roundf(arg->n) != arg->n))
+				if (!b6b_as_int(arg) || (arg->i >= SSIZE_MAX) || (arg->i <= 0))
 					return B6B_ERR;
 
 				return b6b_strm_read(interp,
 				                     (struct b6b_strm *)o->priv,
-				                     (ssize_t)arg->n);
+				                     (ssize_t)arg->i);
 			}
 			else if (strcmp(op->s, "write") == 0) {
 				if (!b6b_as_str(arg))

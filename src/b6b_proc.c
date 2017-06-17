@@ -144,7 +144,7 @@ static enum b6b_res b6b_proc_proc_proc(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_proc[] = {
 	{
 		.name = "proc",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "proc",
 		.proc = b6b_proc_proc_proc
 	}

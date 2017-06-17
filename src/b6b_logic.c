@@ -56,7 +56,7 @@ static enum b6b_res b6b_logic_proc_ne(struct b6b_interp *interp,
 }
 
 static enum b6b_res b6b_logic_proc_and(struct b6b_interp *interp,
-                                      struct b6b_obj *args)
+                                       struct b6b_obj *args)
 {
 	struct b6b_obj *a, *b;
 
@@ -116,43 +116,43 @@ static enum b6b_res b6b_logic_proc_if(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_logic[] = {
 	{
 		.name = "!",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "!",
 		.proc = b6b_logic_proc_not
 	},
 	{
 		.name = "==",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "==",
 		.proc = b6b_logic_proc_eq
 	},
 	{
 		.name = "!=",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "!=",
 		.proc = b6b_logic_proc_ne
 	},
 	{
 		.name = "&&",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "&&",
 		.proc = b6b_logic_proc_and
 	},
 	{
 		.name = "||",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "||",
 		.proc = b6b_logic_proc_or
 	},
 	{
 		.name = "^",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "^",
 		.proc = b6b_logic_proc_xor
 	},
 	{
 		.name = "if",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "if",
 		.proc = b6b_logic_proc_if
 	}

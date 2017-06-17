@@ -64,12 +64,12 @@ static int b6b_interp_new_ext_obj(struct b6b_interp *interp,
 		return 0;
 
 	switch (eo->type) {
-		case B6B_OBJ_STR:
+		case B6B_TYPE_STR:
 			v = b6b_str_copy(eo->val.s, strlen(eo->val.s));
 			break;
 
-		case B6B_OBJ_NUM:
-			v = b6b_num_new(eo->val.n);
+		case B6B_TYPE_INT:
+			v = b6b_int_new(eo->val.i);
 			break;
 
 		default:
@@ -119,11 +119,11 @@ int b6b_interp_new(struct b6b_interp *interp,
 	if (b6b_unlikely(!interp->null))
 		goto bail;
 
-	interp->zero = b6b_num_new(0);
+	interp->zero = b6b_int_new(0);
 	if (b6b_unlikely(!interp->zero))
 		goto bail;
 
-	interp->one = b6b_num_new(1);
+	interp->one = b6b_int_new(1);
 	if (b6b_unlikely(!interp->one))
 		goto bail;
 
@@ -259,9 +259,19 @@ void b6b_interp_destroy(struct b6b_interp *interp)
 		b6b_unref(interp->null);
 }
 
-enum b6b_res b6b_return_num(struct b6b_interp *interp, const b6b_num n)
+enum b6b_res b6b_return_int(struct b6b_interp *interp, const b6b_int i)
 {
-	struct b6b_obj *o = b6b_num_new(n);
+	struct b6b_obj *o = b6b_int_new(i);
+
+	if (o)
+		return b6b_return(interp, o);
+
+	return B6B_ERR;
+}
+
+enum b6b_res b6b_return_float(struct b6b_interp *interp, const b6b_float f)
+{
+	struct b6b_obj *o = b6b_float_new(f);
 
 	if (o)
 		return b6b_return(interp, o);
@@ -876,91 +886,91 @@ static enum b6b_res b6b_interp_proc_spawn(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_interp[] = {
 	{
 		.name = "nop",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "nop",
 		.proc = b6b_interp_proc_nop
 	},
 	{
 		.name = "yield",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "yield",
 		.proc = b6b_interp_proc_yield
 	},
 	{
 		.name = "return",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "return",
 		.proc = b6b_interp_proc_return
 	},
 	{
 		.name = "continue",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "continue",
 		.proc = b6b_interp_proc_continue
 	},
 	{
 		.name = "break",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "break",
 		.proc = b6b_interp_proc_break
 	},
 	{
 		.name = "throw",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "throw",
 		.proc = b6b_interp_proc_throw
 	},
 	{
 		.name = "exit",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "exit",
 		.proc = b6b_interp_proc_exit
 	},
 	{
 		.name = "local",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "local",
 		.proc = b6b_interp_proc_local
 	},
 	{
 		.name = "global",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "global",
 		.proc = b6b_interp_proc_global
 	},
 	{
 		.name = "export",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "export",
 		.proc = b6b_interp_proc_export
 	},
 	{
 		.name = "eval",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "eval",
 		.proc = b6b_interp_proc_eval
 	},
 	{
 		.name = "repr",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "repr",
 		.proc = b6b_interp_proc_repr
 	},
 	{
 		.name = "call",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "call",
 		.proc = b6b_interp_proc_call
 	},
 	{
 		.name = "interp.new",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "interp.new",
 		.proc = b6b_interp_proc_interp
 	},
 	{
 		.name = "spawn",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "spawn",
 		.proc = b6b_interp_proc_spawn
 	}

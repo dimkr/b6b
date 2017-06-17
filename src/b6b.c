@@ -107,10 +107,10 @@ done:
 		case B6B_EXIT:
 			if (b6b_obj_isnull(interp.fg->_))
 				ret = EXIT_SUCCESS;
-			else if (b6b_as_num(interp.fg->_) &&
-			         (interp.fg->_->n >= INT_MIN) &&
-			         (interp.fg->_->n <= INT_MAX))
-				ret = (int)interp.fg->_->n;
+			else if (b6b_as_int(interp.fg->_) &&
+			         (interp.fg->_->i >= INT_MIN) &&
+			         (interp.fg->_->i <= INT_MAX))
+				ret = (int)interp.fg->_->i;
 
 		default:
 			break;

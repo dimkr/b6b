@@ -16,5 +16,5 @@
  * limitations under the License.
  */
 
-struct b6b_obj *b6b_num_new(const b6b_num n);
-int b6b_as_num(struct b6b_obj *o);
+struct b6b_obj *b6b_int_new(const b6b_int i);
+int b6b_as_int(struct b6b_obj *o);

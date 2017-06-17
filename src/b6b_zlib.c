@@ -40,9 +40,9 @@ static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
 
 	switch (b6b_proc_get_args(interp, args, "os|i", NULL, &s, &l)) {
 		case 3:
-			if ((l->n < INT_MIN) || (l->n > INT_MAX))
+			if ((l->i < INT_MIN) || (l->i > INT_MAX))
 				return B6B_ERR;
-			level = (int)l->n;
+			level = (int)l->i;
 
 		case 2:
 			break;
@@ -210,13 +210,13 @@ flush:
 static const struct b6b_ext_obj b6b_zlib[] = {
 	{
 		.name = "deflate",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "deflate",
 		.proc = b6b_zlib_proc_deflate
 	},
 	{
 		.name = "inflate",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "inflate",
 		.proc = b6b_zlib_proc_inflate
 	}

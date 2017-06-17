@@ -17,36 +17,38 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
+#include <fenv.h>
 
 #include <b6b.h>
 
-struct b6b_obj *b6b_num_new(const b6b_num n)
+struct b6b_obj *b6b_int_new(const b6b_int i)
 {
 	struct b6b_obj *o;
 
 	o = b6b_new();
 	if (o) {
-		o->n = n;
-		o->flags = B6B_OBJ_NUM;
+		o->i = i;
+		o->f = (b6b_float)i;
+		o->flags = B6B_TYPE_INT | B6B_TYPE_FLOAT;
 	}
 
 	return o;
 }
 
-int b6b_as_num(struct b6b_obj *o)
+int b6b_as_int(struct b6b_obj *o)
 {
-	char *p = NULL;
+	if (o->flags & B6B_TYPE_INT)
+		return 1;
 
-	if (!(o->flags & B6B_OBJ_NUM)) {
-		if (!b6b_as_str(o))
-			return 0;
+	if (!b6b_as_float(o))
+		return 0;
 
-		o->n = strtod(o->s, &p);
-		if (*p)
-			return 0;
+	feclearexcept(FE_ALL_EXCEPT);
+	o->i = llround(o->f);
+	if (fetestexcept(FE_INVALID))
+		return 0;
 
-		o->flags |= B6B_OBJ_NUM;
-	}
-
+	o->flags |= B6B_TYPE_INT;
 	return 1;
 }

@@ -143,7 +143,7 @@ static enum b6b_res b6b_sh_proc_sh(struct b6b_interp *interp,
 static const struct b6b_ext_obj b6b_sh[] = {
 	{
 		.name = "sh",
-		.type = B6B_OBJ_STR,
+		.type = B6B_TYPE_STR,
 		.val.s = "sh",
 		.proc = b6b_sh_proc_sh
 	}

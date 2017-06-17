@@ -76,22 +76,22 @@ int b6b_frame_set_args(struct b6b_interp *interp,
                        struct b6b_obj *args)
 {
 	struct b6b_litem *li;
-	struct b6b_obj *n;
-	b6b_num i = 0;
+	struct b6b_obj *io;
+	b6b_int i = 0;
 
 	if (!b6b_as_list(args) || !b6b_dict_set(f->locals, interp->at, args))
 		return 0;
 
 	b6b_list_foreach(args, li) {
-		n = b6b_num_new(i);
-		if (b6b_unlikely(!n))
+		io = b6b_int_new(i);
+		if (b6b_unlikely(!io))
 			return 0;
 
-		if (b6b_unlikely(!b6b_dict_set(f->locals, n, li->o))) {
-			b6b_destroy(n);
+		if (b6b_unlikely(!b6b_dict_set(f->locals, io, li->o))) {
+			b6b_destroy(io);
 			return 0;
 		}
-		b6b_unref(n);
+		b6b_unref(io);
 
 		++i;
 	}
