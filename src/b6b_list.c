@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
-#include <math.h>
 #ifdef B6B_HAVE_VALGRIND
 #	include <valgrind/memcheck.h>
 #endif
