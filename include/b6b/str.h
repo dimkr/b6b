@@ -19,6 +19,8 @@
 #include <sys/types.h>
 #include <stdarg.h>
 
+char *b6b_strndup(const char *s, const size_t len);
+
 __attribute__((nonnull(1)))
 struct b6b_obj *b6b_str_new(char *s, const size_t len);
 

@@ -30,7 +30,7 @@
 #include <b6b.h>
 
 /* a strndup() that always copies len bytes without searching for \0 */
-static char *b6b_strndup(const char *s, const size_t len)
+char *b6b_strndup(const char *s, const size_t len)
 {
 	char *s2 = (char *)malloc(len + 1);
 

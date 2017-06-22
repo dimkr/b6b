@@ -15,9 +15,12 @@
 # limitations under the License.
 
 if get_option('default_library') != 'static'
-	b6b_test_cast = executable('b6b_test_cast',
-	                           'b6b_test_cast.c',
-	                           include_directories: b6b_includes,
-	                           link_with: [libb6b])
-	test('b6b_test_cast', b6b_test_cast)
+	foreach component: ['cast', 'list_parse']
+		test_name = 'b6b_test_@0@'.format(component)
+		test_exe = executable(test_name,
+		                      '@0@.c'.format(test_name),
+		                      include_directories: b6b_includes,
+		                      link_with: [libb6b])
+		test(test_name, test_exe)
+	endforeach
 endif

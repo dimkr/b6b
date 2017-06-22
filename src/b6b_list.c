@@ -37,6 +37,43 @@ struct b6b_obj *b6b_list_new(void)
 	return o;
 }
 
+static int b6b_list_do_add(struct b6b_obj *l, struct b6b_obj *o)
+{
+	struct b6b_litem *li;
+
+	li = (struct b6b_litem *)malloc(sizeof(*li));
+	if (b6b_unlikely(!li))
+		return 0;
+
+	li->o = b6b_ref(o);
+	TAILQ_INSERT_TAIL(&l->l, li, ents);
+
+	return 1;
+}
+
+struct b6b_obj *b6b_list_build(struct b6b_obj *o, ...)
+{
+	va_list ap;
+	struct b6b_obj *l;
+
+	l = b6b_list_new();
+	if (b6b_unlikely(!l))
+		return NULL;
+
+	va_start(ap, o);
+	while (o) {
+		if (!b6b_list_do_add(l, o)) {
+			b6b_destroy(l);
+			return NULL;
+		}
+
+		o = va_arg(ap, struct b6b_obj *);
+	}
+	va_end(ap);
+
+	return l;
+}
+
 static void b6b_on_list_mod(struct b6b_obj *l)
 {
 	if (l->flags & B6B_TYPE_STR)
@@ -57,14 +94,8 @@ static void b6b_on_list_mod(struct b6b_obj *l)
 
 int b6b_list_add(struct b6b_obj *l, struct b6b_obj *o)
 {
-	struct b6b_litem *li;
-
-	li = (struct b6b_litem *)malloc(sizeof(*li));
-	if (b6b_unlikely(!li))
+	if (!b6b_list_do_add(l, o))
 		return 0;
-
-	li->o = b6b_ref(o);
-	TAILQ_INSERT_TAIL(&l->l, li, ents);
 
 	b6b_on_list_mod(l);
 	return 1;
@@ -195,7 +226,7 @@ unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap)
 {
 	const char *p = fmt;
 	struct b6b_litem *li;
-	struct b6b_obj **o;
+	void *arg;
 	int opt = 0;
 	unsigned int n = 0;
 
@@ -204,8 +235,6 @@ unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap)
 		switch (*p) {
 			case '|':
 				opt = 1;
-
-			case ' ':
 				++p;
 				continue;
 
@@ -226,8 +255,8 @@ unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap)
 			return 0;
 		}
 
-		o = va_arg(ap, struct b6b_obj **);
-		if (o) {
+		arg = va_arg(ap, void *);
+		if (arg) {
 			switch (*p) {
 				case 'o':
 					break;
@@ -252,11 +281,15 @@ unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap)
 						return 0;
 					break;
 
+				case '*':
+					*(struct b6b_litem **)arg = li;
+					return n + 1;
+
 				default:
 					return 0;
 			}
 
-			*o = li->o;
+			*(struct b6b_obj **)arg = li->o;
 		}
 
 		li = b6b_list_next(li);

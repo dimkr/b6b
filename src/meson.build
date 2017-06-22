@@ -27,7 +27,8 @@ libb6b_srcs = [
 	'b6b_strm.c', 'b6b_fdops.c', 'b6b_stdio.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sem.c', 'b6b_sh.c', 'b6b_poll.c', 'b6b_evloop.c',
 	'b6b_time.c', 'b6b_path.c', 'b6b_rand.c',
 	'linenoise/linenoise.c', 'b6b_linenoise.c',
-	'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c'
+	'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c',
+	'b6b_ffi.c'
 ]
 b6b_deps = [
 	cc.find_library('m', required: true),
