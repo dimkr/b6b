@@ -16,6 +16,7 @@
 
 project('b6b', 'c', version: '0.0.1', license: 'Apache-2.0')
 
+docdir = join_paths(get_option('datadir'), 'doc', 'b6b')
 add_project_arguments('-Wall', '-Wno-overlength-strings', '-D_FILE_OFFSET_BITS=64',
                       language: 'c')
 
