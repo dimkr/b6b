@@ -101,6 +101,19 @@ int b6b_list_add(struct b6b_obj *l, struct b6b_obj *o)
 	return 1;
 }
 
+int b6b_list_extend(struct b6b_obj *l, struct b6b_obj *l2)
+{
+	struct b6b_litem *li;
+
+	b6b_list_foreach(l2, li) {
+		if (b6b_unlikely(!b6b_list_do_add(l, li->o)))
+			return 0;
+	}
+
+	b6b_on_list_mod(l);
+	return 1;
+}
+
 struct b6b_obj *b6b_list_pop(struct b6b_obj *l, struct b6b_litem *li)
 {
 	struct b6b_obj *o;
@@ -371,16 +384,10 @@ static enum b6b_res b6b_list_proc_extend(struct b6b_interp *interp,
                                          struct b6b_obj *args)
 {
 	struct b6b_obj *l, *l2;
-	struct b6b_litem *li;
 
-	if (b6b_proc_get_args(interp, args, "oll", NULL, &l, &l2)) {
-		b6b_list_foreach(l2, li) {
-			if (!b6b_list_add(l, li->o))
-				return B6B_ERR;
-		}
-
+	if (b6b_proc_get_args(interp, args, "oll", NULL, &l, &l2) &&
+	    b6b_list_extend(l, l2))
 		return B6B_OK;
-	}
 
 	return B6B_ERR;
 }
