@@ -92,6 +92,9 @@ static enum b6b_res b6b_loop_proc_while(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	do {
+		if (b6b_unlikely(!b6b_as_str(c)))
+			return res;
+
 		res = b6b_eval(interp, c);
 		if ((res != B6B_OK) || !b6b_obj_istrue(interp->fg->_))
 			break;
@@ -128,7 +131,6 @@ static enum b6b_res b6b_loop_proc_range(struct b6b_interp *interp,
 		default:
 			return B6B_ERR;
 	}
-
 
 	l = b6b_list_new();
 	if (b6b_unlikely(!l))

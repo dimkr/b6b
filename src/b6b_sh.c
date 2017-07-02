@@ -86,7 +86,7 @@ static const struct b6b_strm_ops b6b_sh_ops = {
 };
 
 static enum b6b_res b6b_sh_proc_sh(struct b6b_interp *interp,
-                                       struct b6b_obj *args)
+                                   struct b6b_obj *args)
 {
 	struct b6b_obj *cmd, *o;
 	struct b6b_sh *s;

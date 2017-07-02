@@ -349,9 +349,6 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	struct b6b_obj *name, *o, *stmt;
 	enum b6b_res res;
 
-	if (!b6b_as_str(exp))
-		return B6B_ERR;
-
 	if (exp->slen) {
 		switch (exp->s[0]) {
 			case '$':
@@ -479,6 +476,9 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 		goto pop;
 
 	b6b_list_foreach(stmt, li) {
+		if (!b6b_as_str(li->o))
+			goto pop;
+
 		res = b6b_eval(interp, li->o);
 		if ((res != B6B_OK) ||
 		    b6b_unlikely(!b6b_list_add(f->args, interp->fg->_)))
