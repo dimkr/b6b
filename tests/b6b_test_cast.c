@@ -25,21 +25,56 @@ int main()
 {
 	struct b6b_obj *o, *s;
 
-	o = b6b_int_new(1337);
+	o = b6b_float_new(1337.4);
 	assert(o);
-
 	assert(o->flags & B6B_TYPE_FLOAT);
+
+	assert(b6b_as_int(o));
+	assert(o->flags & (B6B_TYPE_INT | B6B_TYPE_FLOAT));
+	assert(o->f == 1337.4);
+	assert(o->i == 1337);
+
+	assert(b6b_as_float(o));
+	assert(o->flags & (B6B_TYPE_INT | B6B_TYPE_FLOAT));
+	assert(o->f == 1337.4);
+	assert(o->i == 1337);
+	b6b_unref(o);
+
+	o = b6b_str_copy("1337.4", sizeof("1337.4") - 1);
+	assert(o);
+	assert(o->flags & B6B_TYPE_STR);
+
 	assert(b6b_as_float(o));
 	assert(o->flags & B6B_TYPE_FLOAT);
-	assert(o->f == 1337);
+	assert(o->f == 1337.4);
+
+	assert(b6b_as_int(o));
+	assert(o->flags & (B6B_TYPE_INT | B6B_TYPE_FLOAT));
+	assert(o->f == 1337.4);
+	assert(o->i == 1337);
+	b6b_unref(o);
+
+	o = b6b_float_new(1337.6);
+	assert(o);
+	assert(o->flags & B6B_TYPE_FLOAT);
+
+	assert(b6b_as_int(o));
+	assert(o->flags & (B6B_TYPE_INT | B6B_TYPE_FLOAT));
+	assert(o->f == 1337.6);
+	assert(o->i == 1337);
+
+	assert(b6b_as_float(o));
+	assert(o->flags & (B6B_TYPE_INT | B6B_TYPE_FLOAT));
+	assert(o->f == 1337.6);
+	assert(o->i == 1337);
 
 	assert(b6b_as_str(o));
-	assert(strcmp(o->s, "1337") == 0);
+	assert(strcmp(o->s, "1337.6") == 0);
 
 	assert(b6b_as_list(o));
 	assert(!b6b_list_empty(o));
 	assert(b6b_as_str(b6b_list_first(o)->o));
-	assert(strcmp(b6b_list_first(o)->o->s, "1337") == 0);
+	assert(strcmp(b6b_list_first(o)->o->s, "1337.6") == 0);
 
 	s = b6b_str_copy("1338", 4);
 	assert(s);
@@ -52,6 +87,8 @@ int main()
 	assert(b6b_as_int(o));
 	assert(o->i == 1338);
 
+	b6b_unref(s);
+
 	s = b6b_float_new(1339.333);
 	assert(s);
 
@@ -63,6 +100,9 @@ int main()
 	assert(o->i == 1339);
 	assert(b6b_as_float(o));
 	assert(o->f == 1339.333);
+
+	b6b_unref(s);
+	b6b_unref(o);
 
 	return EXIT_SUCCESS;
 }

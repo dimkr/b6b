@@ -45,7 +45,7 @@ int b6b_as_int(struct b6b_obj *o)
 		return 0;
 
 	feclearexcept(FE_ALL_EXCEPT);
-	o->i = llround(o->f);
+	o->i = (b6b_int)floor(o->f);
 	if (fetestexcept(FE_INVALID))
 		return 0;
 

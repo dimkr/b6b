@@ -93,6 +93,35 @@ int main()
 	assert(of == f);
 
 	oa = ob = oc = od = oe = of = NULL;
+	assert(b6b_list_parse(args, "isflli|*", &oa, &ob, &oc, &od, &oe, &of, &li) == 6);
+	assert(oa == a);
+	assert(ob == b);
+	assert(oc == c);
+	assert(od == d);
+	assert(oe == e);
+	assert(of == f);
+
+	oa = ob = oc = od = oe = of = NULL;
+	li = NULL;
+	assert(b6b_list_parse(args, "isfll*", &oa, &ob, &oc, &od, &oe, &li) == 6);
+	assert(oa == a);
+	assert(ob == b);
+	assert(oc == c);
+	assert(od == d);
+	assert(oe == e);
+	assert(li->o == f);
+
+	oa = ob = oc = od = oe = of = NULL;
+	li = NULL;
+	assert(b6b_list_parse(args, "isfll|*", &oa, &ob, &oc, &od, &oe, &li) == 6);
+	assert(oa == a);
+	assert(ob == b);
+	assert(oc == c);
+	assert(od == d);
+	assert(oe == e);
+	assert(li->o == f);
+
+	oa = ob = oc = od = oe = of = NULL;
 	assert(!b6b_list_parse(args, "isfll", &oa, &ob, &oc, &od, &oe));
 	assert(oa == a);
 	assert(ob == b);

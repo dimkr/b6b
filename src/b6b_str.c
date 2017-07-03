@@ -228,17 +228,7 @@ int b6b_as_str(struct b6b_obj *o)
 		return 1;
 	}
 
-	if (o->flags & B6B_TYPE_INT) {
-		out = asprintf(&o->s, B6B_INT_FMT, o->i);
-		if (out < 0)
-			return 0;
-
-		if (out == 0) {
-			free(o->s);
-			return 0;
-		}
-	}
-	else {
+	if (o->flags & B6B_TYPE_FLOAT) {
 		out = asprintf(&o->s, B6B_FLOAT_FMT, o->f);
 		if (out < 0)
 			return 0;
@@ -259,6 +249,16 @@ int b6b_as_str(struct b6b_obj *o)
 				o->s[out] = '\0';
 				break;
 			}
+		}
+	}
+	else {
+		out = asprintf(&o->s, B6B_INT_FMT, o->i);
+		if (out < 0)
+			return 0;
+
+		if (out == 0) {
+			free(o->s);
+			return 0;
 		}
 	}
 
