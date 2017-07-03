@@ -206,7 +206,7 @@
 }}
 
 {$http.loop add [$signal $SIGTERM $SIGINT] $on_term {} {}}
-{$http.loop add [$stream.server $1 $2 $3] $on_clients {} {}}
+{$http.loop add [$inet.server tcp $1 $2 $3] $on_clients {} {}}
 {# periodically change the server banner}
 {$http.loop every $http.banner_ttl $on_banner}
 
