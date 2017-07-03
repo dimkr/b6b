@@ -229,12 +229,21 @@ static enum b6b_res b6b_strm_peer(struct b6b_interp *interp,
 }
 
 static enum b6b_res b6b_strm_fd(struct b6b_interp *interp,
-                                struct b6b_strm *strm)
+                                struct b6b_strm *strm,
+                                struct b6b_obj *o)
 {
+	struct b6b_obj *fdo;
+
 	if (strm->flags & B6B_STRM_CLOSED)
 		return B6B_ERR;
 
-	return b6b_return_int(interp, (b6b_int)strm->ops->fd(strm->priv));
+	fdo = b6b_int_new((b6b_int)strm->ops->fd(strm->priv));
+	if (b6b_unlikely(!fdo))
+		return B6B_ERR;
+
+	fdo->priv = b6b_ref(o);
+	fdo->del = (b6b_delf)b6b_unref;
+	return b6b_return(interp, fdo);
 }
 
 static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
@@ -256,7 +265,7 @@ static enum b6b_res b6b_strm_proc(struct b6b_interp *interp,
 			else if (strcmp(op->s, "peer") == 0)
 				return b6b_strm_peer(interp, (struct b6b_strm *)o->priv);
 			else if (strcmp(op->s, "fd") == 0)
-				return b6b_strm_fd(interp, (struct b6b_strm *)o->priv);
+				return b6b_strm_fd(interp, (struct b6b_strm *)o->priv, o);
 			else if (strcmp(op->s, "close") == 0) {
 				b6b_strm_close((struct b6b_strm *)o->priv);
 				return B6B_OK;
