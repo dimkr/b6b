@@ -640,8 +640,7 @@ static enum b6b_res b6b_interp_proc_return(struct b6b_interp *interp,
 
 	switch (b6b_proc_get_args(interp, args, "o|o", NULL, &o)) {
 		case 2:
-			b6b_unref(interp->fg->_);
-			interp->fg->_ = b6b_ref(o);
+			b6b_return(interp, b6b_ref(o));
 
 		case 1:
 			return B6B_RET;
@@ -754,7 +753,7 @@ static enum b6b_res b6b_interp_proc_eval(struct b6b_interp *interp,
 
 	struct b6b_obj *exp;
 
-	if (b6b_proc_get_args(interp, args, "oo", NULL, &exp))
+	if (b6b_proc_get_args(interp, args, "oo", NULL, &exp) && b6b_as_str(exp))
 		return b6b_eval(interp, exp);
 
 	return B6B_ERR;
