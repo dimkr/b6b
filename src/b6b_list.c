@@ -136,7 +136,7 @@ int b6b_as_list(struct b6b_obj *o)
 {
 	char *tok = NULL;
 	struct b6b_litem *li;
-	size_t i, tlen = 0;
+	size_t i, tlen = 0, last = o->slen - 1;
 	int nbrac = 0, nbrak = 0, trim = 0;
 
 	if (!(o->flags & B6B_TYPE_LIST)) {
@@ -374,7 +374,7 @@ static enum b6b_res b6b_list_proc_append(struct b6b_interp *interp,
 
 	if (b6b_proc_get_args(interp, args, "olo", NULL, &l, &o)) {
 		if (b6b_list_add(l, o))
-			return B6B_OK;
+			return b6b_return(interp, b6b_ref(l));
 	}
 
 	return B6B_ERR;

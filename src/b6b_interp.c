@@ -770,28 +770,30 @@ static enum b6b_res b6b_interp_proc_repr(struct b6b_interp *interp,
 		return B6B_OK;
 
 	if (s->slen) {
-		for (i = 0; i < s->slen; ++i) {
-			if (!b6b_isspace(s->s[i]))
-				continue;
+		if ((s->s[0] != '{') || (s->s[s->slen - 1] != '}')) {
+			for (i = 0; i < s->slen; ++i) {
+				if (!b6b_isspace(s->s[i]))
+					continue;
 
-			len = s->slen + 2;
+				len = s->slen + 2;
 
-			buf = (char *)malloc(len + 1);
-			if (b6b_unlikely(!buf))
-				return B6B_ERR;
+				buf = (char *)malloc(len + 1);
+				if (b6b_unlikely(!buf))
+					return B6B_ERR;
 
-			buf[0] = '{';
-			memcpy(&buf[1], s->s, s->slen);
-			buf[s->slen + 1] = '}';
-			buf[len] = '\0';
+				buf[0] = '{';
+				memcpy(&buf[1], s->s, s->slen);
+				buf[s->slen + 1] = '}';
+				buf[len] = '\0';
 
-			s2 = b6b_str_new(buf, len);
-			if (b6b_unlikely(!s2)) {
-				free(buf);
-				return B6B_ERR;
+				s2 = b6b_str_new(buf, len);
+				if (b6b_unlikely(!s2)) {
+					free(buf);
+					return B6B_ERR;
+				}
+
+				return b6b_return(interp, s2);
 			}
-
-			return b6b_return(interp, s2);
 		}
 
 		return b6b_return(interp, b6b_ref(s));
@@ -813,15 +815,15 @@ static enum b6b_res b6b_interp_proc_call(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
-static enum b6b_res b6b_interp_proc(struct b6b_interp *interp,
-                                    struct b6b_obj *args)
+static enum b6b_res b6b_b6b_proc(struct b6b_interp *interp,
+                                 struct b6b_obj *args)
 {
 	struct b6b_obj *i, *s, *o;
 	struct b6b_interp *interp2;
 	enum b6b_res res;
 
 	if (!b6b_proc_get_args(interp, args, "oso", &i, &s, &o) ||
-	    (strcmp(s->s, "eval") != 0))
+	    (strcmp(s->s, "call") != 0))
 		return B6B_ERR;
 
 	interp2 = (struct b6b_interp *)i->priv;
@@ -832,41 +834,40 @@ static enum b6b_res b6b_interp_proc(struct b6b_interp *interp,
 	return res;
 }
 
-static void b6b_interp_del(void *priv)
+static void b6b_b6b_del(void *priv)
 {
 	b6b_interp_destroy((struct b6b_interp *)priv);
 	free(priv);
 }
 
-static enum b6b_res b6b_interp_proc_interp(struct b6b_interp *interp,
-                                           struct b6b_obj *args)
+static enum b6b_res b6b_interp_proc_b6b(struct b6b_interp *interp,
+                                        struct b6b_obj *args)
 {
 	struct b6b_obj *o, *l;
-	struct b6b_interp *interp2;
+	struct b6b_interp *b6b;
 
 	if (!b6b_proc_get_args(interp, args, "ol", NULL, &l))
 		return B6B_ERR;
 
-	interp2 = (struct b6b_interp *)malloc(sizeof(*interp2));
-	if (b6b_unlikely(!interp2))
+	b6b = (struct b6b_interp *)malloc(sizeof(*b6b));
+	if (b6b_unlikely(!b6b))
 		return B6B_ERR;
 
-	o = b6b_str_fmt("interp:%"PRIxPTR, (uintptr_t)interp2);
+	o = b6b_str_fmt("b6b:%"PRIxPTR, (uintptr_t)b6b);
 	if (b6b_unlikely(!o)) {
-		free(interp2);
+		free(b6b);
 		return B6B_ERR;
 	}
 
-	if (!b6b_interp_new(interp2, l, interp->opts)) {
-		b6b_interp_destroy(interp2);
-		free(interp2);
+	if (!b6b_interp_new(b6b, l, interp->opts)) {
+		b6b_b6b_del(b6b);
 		b6b_destroy(o);
 		return B6B_ERR;
 	}
 
-	o->priv = interp2;
-	o->proc = b6b_interp_proc;
-	o->del = b6b_interp_del;
+	o->priv = b6b;
+	o->proc = b6b_b6b_proc;
+	o->del = b6b_b6b_del;
 	return b6b_return(interp, o);
 }
 
@@ -962,10 +963,10 @@ static const struct b6b_ext_obj b6b_interp[] = {
 		.proc = b6b_interp_proc_call
 	},
 	{
-		.name = "interp.new",
+		.name = "b6b",
 		.type = B6B_TYPE_STR,
-		.val.s = "interp.new",
-		.proc = b6b_interp_proc_interp
+		.val.s = "b6b",
+		.proc = b6b_interp_proc_b6b
 	},
 	{
 		.name = "spawn",

@@ -196,6 +196,11 @@ static const struct b6b_ext_obj b6b_signal[] = {
 		.val.i = SIGUSR2
 	},
 	{
+		.name = "SIGCHLD",
+		.type = B6B_TYPE_INT,
+		.val.i = SIGCHLD
+	},
+	{
 		.name = "signal",
 		.type = B6B_TYPE_STR,
 		.val.s = "signal",
