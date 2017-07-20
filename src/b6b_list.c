@@ -136,7 +136,7 @@ int b6b_as_list(struct b6b_obj *o)
 {
 	char *tok = NULL;
 	struct b6b_litem *li;
-	size_t i, tlen = 0, last = o->slen - 1;
+	size_t i, tlen = 0;
 	int nbrac = 0, nbrak = 0, trim = 0;
 
 	if (!(o->flags & B6B_TYPE_LIST)) {
@@ -188,7 +188,8 @@ int b6b_as_list(struct b6b_obj *o)
 					break;
 
 				case '\0':
-					break;
+					if (i == o->slen)
+						break;
 
 				default:
 					if (tok)

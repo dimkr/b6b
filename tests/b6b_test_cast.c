@@ -25,6 +25,56 @@ int main()
 {
 	struct b6b_obj *o, *s;
 
+	o = b6b_str_copy("123 abc", 7);
+	assert(o);
+	assert(o->flags == B6B_TYPE_STR);
+	assert(strcmp(o->s, "123 abc") == 0);
+	assert(o->slen == 7);
+
+	assert(!b6b_as_int(o));
+	assert(!b6b_as_float(o));
+
+	assert(b6b_as_list(o));
+	assert(o->flags == (B6B_TYPE_STR | B6B_TYPE_LIST));
+
+	b6b_unref(o);
+
+	o = b6b_str_copy("\0\0", 2);
+	assert(o);
+	assert(b6b_as_list(o));
+	assert(!b6b_list_empty(o));
+	assert(memcmp(b6b_list_first(o)->o->s, "\0\0", 2) == 0);
+	assert(!b6b_list_next(b6b_list_first(o)));
+	b6b_unref(o);
+
+	o = b6b_str_copy("abc\0\0", 5);
+	assert(o);
+	assert(b6b_as_list(o));
+	assert(!b6b_list_empty(o));
+	assert(memcmp(b6b_list_first(o)->o->s, "abc\0\0", 5) == 0);
+	assert(!b6b_list_next(b6b_list_first(o)));
+	b6b_unref(o);
+
+	o = b6b_str_copy("abc\0\0 \0x\0", 9);
+	assert(o);
+	assert(b6b_as_list(o));
+	assert(!b6b_list_empty(o));
+	assert(memcmp(b6b_list_first(o)->o->s, "abc\0\0", 5) == 0);
+	assert(b6b_list_next(b6b_list_first(o)));
+	assert(memcmp(b6b_list_next(b6b_list_first(o))->o->s, "\0x\0", 3) == 0);
+	assert(!b6b_list_next(b6b_list_next(b6b_list_first(o))));
+	b6b_unref(o);
+
+	o = b6b_str_copy("abc {ab c\0de f}", 15);
+	assert(o);
+	assert(b6b_as_list(o));
+	assert(!b6b_list_empty(o));
+	assert(memcmp(b6b_list_first(o)->o->s, "abc", 3) == 0);
+	assert(b6b_list_next(b6b_list_first(o)));
+	assert(memcmp(b6b_list_next(b6b_list_first(o))->o->s, "ab c\0de f", 9) == 0);
+	assert(!b6b_list_next(b6b_list_next(b6b_list_first(o))));
+	b6b_unref(o);
+
 	o = b6b_float_new(1337.4);
 	assert(o);
 	assert(o->flags & B6B_TYPE_FLOAT);
