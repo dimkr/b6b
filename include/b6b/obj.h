@@ -21,6 +21,7 @@
 #include <stddef.h>
 #include <sys/queue.h>
 #include <assert.h>
+#include <stdlib.h>
 
 typedef long long b6b_int;
 #define B6B_INT_FMT "%lld"
@@ -108,11 +109,22 @@ static inline int b6b_obj_isnull(const struct b6b_obj *o)
 
 static inline int b6b_obj_istrue(const struct b6b_obj *o)
 {
+	char *p = NULL;
+	double d;
+
 	if (o->flags & B6B_TYPE_LIST)
 		return b6b_list_empty(o) ? 0 : 1;
 
-	if (o->flags & B6B_TYPE_STR)
-		return ((o->slen > 1) || ((o->slen == 1) && (o->s[0] != '0')));
+	if (o->flags & B6B_TYPE_STR) {
+		if (!o->slen)
+			return 0;
+
+		d = strtod(o->s, &p);
+		if (*p)
+			return 1;
+
+		return d ? 1 : 0;
+	}
 
 	if (o->flags & B6B_TYPE_INT)
 		return o->i ? 1 : 0;
