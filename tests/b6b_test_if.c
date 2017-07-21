@@ -119,13 +119,13 @@ int main()
 	assert(b6b_obj_istrue(o));
 	b6b_unref(o);
 
-	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$if 1 {{$exit 2}}}", 19) == B6B_EXIT);
 	assert(b6b_as_int(interp.fg->_));
 	assert(interp.fg->_->i == 2);
 	b6b_interp_destroy(&interp);
 
-	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
 	                     "{$if 1 {{$exit 2}} {{$throw}}}",
 	                     30) == B6B_EXIT);
@@ -133,13 +133,13 @@ int main()
 	assert(interp.fg->_->i == 2);
 	b6b_interp_destroy(&interp);
 
-	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$if 0 {{$exit 2}}}", 19) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(!interp.fg->_->slen);
 	b6b_interp_destroy(&interp);
 
-	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
 	                     "{$if 0 {{$throw}} {{$exit 2}}}",
 	                     30) == B6B_EXIT);
