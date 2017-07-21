@@ -17,11 +17,13 @@
  */
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include <b6b.h>
 
 int main()
 {
+	struct b6b_interp interp;
 	struct b6b_obj *o, *s;
 
 	o = b6b_int_new(0);
@@ -92,9 +94,19 @@ int main()
 	assert(!b6b_obj_istrue(o));
 	b6b_unref(o);
 
+	o = b6b_str_copy("001", 3);
+	assert(o);
+	assert(b6b_obj_istrue(o));
+	b6b_unref(o);
+
 	o = b6b_str_copy("0.000000001", 11);
 	assert(o);
 	assert(b6b_obj_istrue(o));
+	b6b_unref(o);
+
+	o = b6b_str_copy(".0", 2);
+	assert(o);
+	assert(!b6b_obj_istrue(o));
 	b6b_unref(o);
 
 	o = b6b_str_copy(".1", 2);
@@ -106,6 +118,34 @@ int main()
 	assert(o);
 	assert(b6b_obj_istrue(o));
 	b6b_unref(o);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_call_copy(&interp, "{$if 1 {{$exit 2}}}", 19) == B6B_EXIT);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 2);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_call_copy(&interp,
+	                     "{$if 1 {{$exit 2}} {{$throw}}}",
+	                     30) == B6B_EXIT);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 2);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_call_copy(&interp, "{$if 0 {{$exit 2}}}", 19) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(!interp.fg->_->slen);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_call_copy(&interp,
+	                     "{$if 0 {{$throw}} {{$exit 2}}}",
+	                     30) == B6B_EXIT);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 2);
+	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;
 }
