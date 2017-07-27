@@ -24,7 +24,6 @@
 int main()
 {
 	struct b6b_interp interp;
-	struct b6b_obj *o;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
