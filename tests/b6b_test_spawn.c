@@ -35,8 +35,8 @@ int main()
 	                "{$return $x} " ,
 	                15 + 56 + 45 + 13) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
-	assert(strstr(interp.fg->_->s, "a a b b"));
-	assert(strstr(interp.fg->_->s, "b b a a"));
+	assert(strstr(interp.fg->_->s, "a b"));
+	assert(strstr(interp.fg->_->s, "b a"));
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -48,12 +48,12 @@ int main()
 	                "{$return $x} " ,
 	                15 + 56 + 56 + 45 + 13) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
-	assert(strstr(interp.fg->_->s, "a a b b") ||
-	       strstr(interp.fg->_->s, "a a c c"));
-	assert(strstr(interp.fg->_->s, "b b a a") ||
-	       strstr(interp.fg->_->s, "b b c c"));
-	assert(strstr(interp.fg->_->s, "c c a a") ||
-	       strstr(interp.fg->_->s, "c c b b"));
+	assert(strstr(interp.fg->_->s, "a b") ||
+	       strstr(interp.fg->_->s, "a c"));
+	assert(strstr(interp.fg->_->s, "b a") ||
+	       strstr(interp.fg->_->s, "b c"));
+	assert(strstr(interp.fg->_->s, "c a") ||
+	       strstr(interp.fg->_->s, "c b"));
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));

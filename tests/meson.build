@@ -15,7 +15,7 @@
 # limitations under the License.
 
 if get_option('default_library') != 'static'
-	foreach component: ['cast', 'list_parse', 'if', 'try', 'map', 'spawn', 'zlib']
+	foreach component: ['cast', 'list_parse', 'if', 'try', 'map', 'spawn', 'zlib', 'co']
 		test_name = 'b6b_test_@0@'.format(component)
 		test_exe = executable(test_name,
 		                      '@0@.c'.format(test_name),
