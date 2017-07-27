@@ -31,7 +31,8 @@
 							"{$call [$list.pop $_cos 0]}" \
 						"}}" \
 					"} {" \
-						"{$yield}" \
+						"{$global _fco 1}\n" \
+						"{$return}" \
 					"}}" \
 				"}}" \
 			"}}\n" \
