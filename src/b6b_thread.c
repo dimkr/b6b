@@ -147,10 +147,8 @@ struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
 	                     null,
 	                     routine,
 	                     priv,
-	                     stksiz)) {
-		free(t);
+	                     stksiz))
 		return NULL;
-	}
 
 	return t;
 }
