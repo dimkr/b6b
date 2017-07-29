@@ -8,7 +8,7 @@ matrix:
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y gcc python3-pip
+  - sudo apt-get install -y gcc python3-pip valgrind
 
 install:
   - export PATH="`pwd`/build:${PATH}"
@@ -18,4 +18,5 @@ install:
 script:
   - meson builddir
   - ninja -C builddir
-  - ninja -C builddir test
+  - mesontest -C builddir --print-errorlogs
+  - mesontest -C builddir --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1"
