@@ -36,6 +36,7 @@ int b6b_dict_set(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj *v)
 		if (eq) {
 			b6b_unref(vli->o);
 			vli->o = b6b_ref(v);
+			b6b_list_flush(d);
 			return 1;
 		}
 
@@ -72,7 +73,8 @@ int b6b_dict_get(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj **v)
 		kli = b6b_list_next(vli);
 	}
 
-	return 0;
+	*v = NULL;
+	return 1;
 }
 
 int b6b_dict_unset(struct b6b_obj *d, struct b6b_obj *k)
@@ -107,7 +109,10 @@ static enum b6b_res b6b_dict_proc_get(struct b6b_interp *interp,
 	if (!b6b_proc_get_args(interp, args, "olo|o", NULL, &d, &k, &f))
 		return B6B_ERR;
 
-	if (b6b_dict_get(d, k, &v))
+	if (!b6b_dict_get(d, k, &v))
+		return B6B_ERR;
+
+	if (v)
 		return b6b_return(interp, b6b_ref(v));
 
 	if (f)
@@ -137,7 +142,7 @@ static enum b6b_res b6b_dict_proc_unset(struct b6b_interp *interp,
 	    !b6b_dict_unset(d, k))
 		return B6B_ERR;
 
-	return B6B_OK;
+	return b6b_return(interp, b6b_ref(d));
 }
 
 static const struct b6b_ext_obj b6b_dict[] = {

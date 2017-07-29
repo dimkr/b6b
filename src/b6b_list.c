@@ -74,7 +74,7 @@ struct b6b_obj *b6b_list_build(struct b6b_obj *o, ...)
 	return l;
 }
 
-static void b6b_on_list_mod(struct b6b_obj *l)
+void b6b_list_flush(struct b6b_obj *l)
 {
 	if (l->flags & B6B_TYPE_STR)
 		free(l->s);
@@ -97,7 +97,7 @@ int b6b_list_add(struct b6b_obj *l, struct b6b_obj *o)
 	if (!b6b_list_do_add(l, o))
 		return 0;
 
-	b6b_on_list_mod(l);
+	b6b_list_flush(l);
 	return 1;
 }
 
@@ -110,7 +110,7 @@ int b6b_list_extend(struct b6b_obj *l, struct b6b_obj *l2)
 			return 0;
 	}
 
-	b6b_on_list_mod(l);
+	b6b_list_flush(l);
 	return 1;
 }
 
@@ -127,7 +127,7 @@ struct b6b_obj *b6b_list_pop(struct b6b_obj *l, struct b6b_litem *li)
 	b6b_list_remove(l, li);
 	o = li->o;
 	free(li);
-	b6b_on_list_mod(l);
+	b6b_list_flush(l);
 
 	return o;
 }

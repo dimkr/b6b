@@ -328,7 +328,10 @@ struct b6b_obj *b6b_get(struct b6b_interp *interp, struct b6b_obj *name)
 
 	if (b6b_as_str(name)) {
 		do {
-			if (b6b_dict_get(f->locals, name, &o))
+			if (!b6b_dict_get(f->locals, name, &o))
+				return NULL;
+
+			if (o)
 				return o;
 
 			f = f->prev;
