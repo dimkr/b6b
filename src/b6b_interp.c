@@ -487,7 +487,9 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 
 	if ((interp->opts & B6B_OPT_TRACE) &&
 	    (!b6b_as_str(f->args) ||
-	     (fprintf(stderr, "+ %s\n", f->args->s) <= 0)))
+	     (fwrite("+ ", 2, 1, stderr) != 1) ||
+	     (fwrite(f->args->s, f->args->slen, 1, stderr) != 1) ||
+	     (fputc('\n', stderr) != '\n')))
 		goto pop;
 
 	/* reset the return value after argument evaluation */
