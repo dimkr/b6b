@@ -26,5 +26,5 @@ subdir('tests')
 subdir('doc')
 subdir('examples')
 
-install_data('README', 'AUTHORS', 'COPYING',
+install_data('README.md', 'AUTHORS', 'COPYING',
              install_dir: join_paths(get_option('datadir'), 'doc', 'b6b'))
