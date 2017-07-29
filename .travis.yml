@@ -41,6 +41,6 @@ script:
   - mesontest -C builddir --print-errorlogs
   - mesontest -C builddir --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1"
 
-after-success:
+after_success:
   - ninja -C builddir coverage
   - cd builddir; bash <(curl -s https://codecov.io/bash)
