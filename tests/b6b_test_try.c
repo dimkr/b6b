@@ -98,6 +98,72 @@ int main()
 	assert(b6b_get(&interp, s));
 	b6b_interp_destroy(&interp);
 
+	assert(b6b_interp_new_argv(&interp,
+	                           0,
+	                           NULL,
+	                           B6B_OPT_TRACE | B6B_OPT_RAISE));
+	assert(b6b_call_copy(&interp, "{$try {{$throw 5}}}", 19) == B6B_ERR);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 5);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp,
+	                           0,
+	                           NULL,
+	                           B6B_OPT_TRACE | B6B_OPT_RAISE));
+	assert(b6b_call_copy(&interp,
+	                     "{$try {{$throw 5}} {{$throw 6}}}",
+	                     32) == B6B_ERR);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 6);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp,
+	                           0,
+	                           NULL,
+	                           B6B_OPT_TRACE | B6B_OPT_RAISE));
+	assert(b6b_call_copy(&interp,
+	                     "{$try {{$throw 5}} {{$return 6}} {{$global x 0}}}",
+	                     49) == B6B_ERR);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 6);
+	assert(b6b_get(&interp, s));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp,
+	                           0,
+	                           NULL,
+	                           B6B_OPT_TRACE | B6B_OPT_RAISE));
+	assert(b6b_call_copy(&interp,
+	                     "{$try {{$throw 5}} {} {{$global x 0}}}",
+	                     38) == B6B_ERR);
+	assert(b6b_get(&interp, s));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp,
+	                           0,
+	                           NULL,
+	                           B6B_OPT_TRACE | B6B_OPT_RAISE));
+
+	assert(b6b_call_copy(&interp,
+	                     "{$try {{$throw 5}} {{$exit 6}}}",
+	                     31) == B6B_EXIT);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 6);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp,
+	                           0,
+	                           NULL,
+	                           B6B_OPT_TRACE | B6B_OPT_RAISE));
+	assert(b6b_call_copy(&interp,
+	                     "{$try {{$throw 5}} {{$throw 6}} {{$global x 0}}}",
+	                     48) == B6B_ERR);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 6);
+	assert(b6b_get(&interp, s));
+	b6b_interp_destroy(&interp);
+
 	b6b_unref(s);
 
 	return EXIT_SUCCESS;
