@@ -1,4 +1,4 @@
-sudo: false
+sudo: required
 language: c
 
 matrix:
@@ -6,10 +6,13 @@ matrix:
     - os: linux
       dist: trusty
 
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y gcc python3-pip
+
 install:
   - export PATH="`pwd`/build:${PATH}"
   - wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build
-  - apt install -y gcc python3-pip
   - pip3 install meson
 
 script:
