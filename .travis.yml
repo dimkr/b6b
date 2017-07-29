@@ -16,7 +16,7 @@ install:
   - pip3 install meson
 
 script:
-  - meson -Dsmall_stack=false builddir
+  - meson builddir
   - ninja -C builddir
   - mesontest -C builddir --print-errorlogs
   - mesontest -C builddir --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1"
