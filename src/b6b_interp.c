@@ -29,6 +29,10 @@
 #include <limits.h>
 #include <time.h>
 #include <stdio.h>
+#ifndef B6B_SMALL_STACK
+#	include <sys/time.h>
+#	include <sys/resource.h>
+#endif
 
 #undef _GNU_SOURCE
 
@@ -101,19 +105,29 @@ int b6b_interp_new(struct b6b_interp *interp,
                    struct b6b_obj *args,
                    const uint8_t opts)
 {
+#ifndef B6B_SMALL_STACK
+	struct rlimit lim;
+#endif
 	const struct b6b_ext *e;
 	b6b_initf *ip;
 	unsigned int j;
 
 	b6b_thread_init(&interp->threads);
 
-	/* we allocate a small stack (just four pages, instead of the bigger
-	 * _SC_THREAD_ATTR_STACKSIZE used by native threads), to reduce memory
-	 * consumption */
+#ifdef B6B_SMALL_STACK
+	/* we allocate a small stack (just two pages) */
 	interp->stksiz = sysconf(_SC_PAGESIZE);
 	if (interp->stksiz <= 0)
 		goto bail;
-	interp->stksiz *= 4;
+	interp->stksiz *= 2;
+#else
+	if ((getrlimit(RLIMIT_STACK, &lim) < 0) ||
+	    !lim.rlim_cur ||
+	    (lim.rlim_cur > LONG_MAX))
+		goto bail;
+
+	interp->stksiz = (long)lim.rlim_cur;
+#endif
 
 	interp->null = b6b_str_copy("", 0);
 	if (b6b_unlikely(!interp->null))
