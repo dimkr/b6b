@@ -1,8 +1,10 @@
-``` _      __   _
+```
+ _      __   _
 | |__  / /_ | |__
 | '_ \| '_ \| '_ \
 | |_) | (_) | |_) |
-|_.__/ \___/|_.__/```
+|_.__/ \___/|_.__/
+```
 
 [![Build Status](https://travis-ci.org/dimkr/b6b.svg?branch=master)](https://travis-ci.org/dimkr/b6b)
 
@@ -26,8 +28,10 @@ language and its implementation.
 
 ## Building
 
-  $ meson build
-  $ ninja -C build install
+```bash
+meson build
+ninja -C build install
+```
 
 ## Credits and Legal Information
 
