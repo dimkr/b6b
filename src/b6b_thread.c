@@ -99,9 +99,9 @@ static int b6b_thread_prep(struct b6b_thread *t,
 			makecontext(&t->ucp,
 			            (void (*)(void))routine,
 			            4,
-			            (int)((uint64_t)(uintptr_t)t << 32),
+			            (int)((uint64_t)(uintptr_t)t >> 32),
 			            (int)((uint64_t)(uintptr_t)t & UINT_MAX),
-			            (int)((uint64_t)(uintptr_t)priv << 32),
+			            (int)((uint64_t)(uintptr_t)priv >> 32),
 			            (int)((uint64_t)(uintptr_t)priv & UINT_MAX));
 		else
 			makecontext(&t->ucp,

@@ -41,10 +41,6 @@ if get_option('with_miniz')
 	libb6b_srcs += ['miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c']
 endif
 
-if get_option('small_stack')
-	add_project_arguments('-DB6B_SMALL_STACK', language: 'c')
-endif
-
 libffi = cc.find_library('ffi', required: false)
 if libffi.found()
 	libb6b_srcs += ['b6b_ffi.c']

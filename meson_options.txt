@@ -16,4 +16,3 @@
 
 option('with_miniz', type: 'boolean')
 option('with_linenoise', type: 'boolean')
-option('small_stack', type: 'boolean')
