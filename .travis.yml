@@ -4,11 +4,12 @@ language: c
 matrix:
   include:
     - os: linux
-      dist: xenial
+      dist: trusty
 
 install:
   - export PATH="`pwd`/build:${PATH}"
   - wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build
+  - apt install -y gcc python3-pip
   - pip3 install meson
 
 script:
