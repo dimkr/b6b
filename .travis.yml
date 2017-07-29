@@ -17,10 +17,6 @@
 sudo: required
 language: c
 
-env:
-  global:
-    - CODECOV_TOKEN=:6dbc9a38-b346-4743-801f-0b82b47ac24c
-
 matrix:
   include:
     - os: linux
