@@ -107,13 +107,13 @@ int b6b_interp_new(struct b6b_interp *interp,
 
 	b6b_thread_init(&interp->threads);
 
-	/* we allocate a small stack (just two pages, instead of the bigger
+	/* we allocate a small stack (just four pages, instead of the bigger
 	 * _SC_THREAD_ATTR_STACKSIZE used by native threads), to reduce memory
 	 * consumption */
 	interp->stksiz = sysconf(_SC_PAGESIZE);
 	if (interp->stksiz <= 0)
 		goto bail;
-	interp->stksiz *= 2;
+	interp->stksiz *= 4;
 
 	interp->null = b6b_str_copy("", 0);
 	if (b6b_unlikely(!interp->null))
