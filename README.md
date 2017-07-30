@@ -6,7 +6,7 @@
 |_.__/ \___/|_.__/
 ```
 
-[![Build Status](https://travis-ci.org/dimkr/b6b.svg?branch=master)](https://travis-ci.org/dimkr/b6b) [![codecov](https://codecov.io/gh/dimkr/b6b/branch/master/graph/badge.svg)](https://codecov.io/gh/dimkr/b6b)
+[![Build Status](https://travis-ci.org/dimkr/b6b.svg?branch=master)](https://travis-ci.org/dimkr/b6b) [![codecov](https://codecov.io/gh/dimkr/b6b/branch/master/graph/badge.svg)](https://codecov.io/gh/dimkr/b6b) [![Coverity](https://scan.coverity.com/projects/13321/badge.svg)](https://scan.coverity.com/projects/dimkr-b6b)
 
 ## Overview
 

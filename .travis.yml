@@ -17,6 +17,12 @@
 sudo: required
 language: c
 
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "aPMOOUYbnK4PpLnV/iKyct8eSsYVFgIiAXZywHITD1KB43K+qXW6YBofOSTIv7qLiWBnckO7K3QviZkUprWoY+OasZO8QEMCb2MKSod1njRManXZKsirMcQtzHsnxtnbECK3ArJpw048ItyxRRTe7NxP+swoC4wxO5ThItw6QFrpaH4BAqMAG4qp88vpUrui/pMj1KKVkwoZhUv4J6aRWHzPcp5nHcaGbnn9LAEBX89MgsgGtRKPizulAkdMp9iHbpd+bfKddgxLH/IBfOlt+bR3XbWYAmpyZSVF/ThABatQZKt7yngO45zUAUwoLbfY4AxUEXLBL1bYjA/97itpxy6ar0EDlogM8hOzGoIRAf/59pMfnmzVwmp5mHcUgCgNXMj3xMEjbZT8MypRpyxWpcjYrlu+EWpBKneh3MQo68R0EnZHF2bFpsN/+BHUqvLXLkRciEFa1hlD9EiB9TeJ6w9eLM6Fq3sERND7eRhl677ZV06Nt2uBugtvm7tSIJpHHbDauSeojUSHefTYBJgfn+/1QgZzyqp0zWmn5UTTawnuIM4ZRIehMPSsQXBFgBr1NFgdNcv/J2srBULoAt+YFcVJ9tEav8Bc/C08QpxC7bZ9MYOeB5RLcbj6wPXxsoE4q9Rbyo90yymFJFbg7v697648ldsjFG3Y/lyYAhkbBHo="
+
 matrix:
   include:
     - os: linux
@@ -25,6 +31,7 @@ matrix:
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y gcc python3-pip valgrind curl gcovr asciidoc
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
   - export PATH="`pwd`/build:${PATH}"
@@ -40,3 +47,13 @@ script:
 after_success:
   - ninja -C builddir coverage
   - cd builddir; bash <(curl -s https://codecov.io/bash)
+
+addons:
+  coverity_scan:
+    project:
+      name: "dimkr/b6b"
+      description: "Build submitted via Travis CI"
+    notification_email: dima@dimakrasner.com
+    build_command_prepend: "meson builddir"
+    build_command:  "ninja -C builddir"
+    branch_pattern: master
