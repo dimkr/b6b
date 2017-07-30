@@ -39,14 +39,14 @@ install:
   - pip3 install meson
 
 script:
-  - meson -Db_coverage=true builddir
-  - ninja -C builddir
-  - mesontest -C builddir --print-errorlogs
-  - mesontest -C builddir --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1"
+  - meson -Db_coverage=true build
+  - ninja -C build
+  - mesontest -C build --print-errorlogs
+  - mesontest -C build --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1"
 
 after_success:
-  - ninja -C builddir coverage
-  - cd builddir; bash <(curl -s https://codecov.io/bash)
+  - ninja -C build coverage
+  - cd build; bash <(curl -s https://codecov.io/bash)
 
 addons:
   coverity_scan:
@@ -54,6 +54,6 @@ addons:
       name: "dimkr/b6b"
       description: "Build submitted via Travis CI"
     notification_email: dima@dimakrasner.com
-    build_command_prepend: "meson builddir"
-    build_command:  "ninja -C builddir"
+    build_command_prepend: "meson coverity-build"
+    build_command:  "ninja -C coverity-build"
     branch_pattern: master
