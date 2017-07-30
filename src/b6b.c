@@ -47,12 +47,11 @@
 int main(int argc, char *argv[]) {
 	struct b6b_interp interp;
 	enum b6b_res res;
-	int opt, ret = EXIT_FAILURE;
+	int ret = EXIT_FAILURE;
 	uint8_t opts = 0;
 
 	do {
-		opt = getopt(argc, argv, "ceux");
-		switch (opt) {
+		switch (getopt(argc, argv, "ceux")) {
 			case 'c':
 				opts |= B6B_OPT_CMD;
 				break;

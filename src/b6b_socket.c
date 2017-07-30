@@ -204,16 +204,21 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
 	struct b6b_obj *o;
 	struct b6b_socket *s;
 
-	if (plen > sizeof(s->peer))
+	if (plen > sizeof(s->peer)) {
+		close(fd);
 		return NULL;
+	}
 
 	s = (struct b6b_socket *)malloc(sizeof(*s));
-	if (b6b_unlikely(!s))
+	if (b6b_unlikely(!s)) {
+		close(fd);
 		return NULL;
+	}
 
 	s->fd = fd;
 	memcpy(&s->addr, addr, (size_t)alen);
-	memcpy(&s->peer, peer, (size_t)plen);
+	if (peer)
+		memcpy(&s->peer, peer, (size_t)plen);
 
 	o = b6b_strm_fmt(interp, ops, s, type);
 	if (b6b_unlikely(!o))
@@ -251,8 +256,7 @@ static struct b6b_obj *b6b_socket_client_new(struct b6b_interp *interp,
                                              const char *type)
 {
 	struct sockaddr_storage ss = {.ss_family = res->ai_socktype};
-	socklen_t sslen;
-	struct b6b_obj *o;
+	socklen_t sslen = sizeof(ss);
 	int fd, err;
 
 	fd = socket(res->ai_family,
@@ -272,18 +276,14 @@ static struct b6b_obj *b6b_socket_client_new(struct b6b_interp *interp,
 		return NULL;
 	}
 
-	o = b6b_socket_new(interp,
-	                   fd,
-	                   (const struct sockaddr *)&ss,
-	                   sslen,
-	                   res->ai_addr,
-	                   res->ai_addrlen,
-	                   type,
-	                   ops);
-	if (b6b_unlikely(!o))
-		close(fd);
-
-	return o;
+	return b6b_socket_new(interp,
+	                      fd,
+	                      (const struct sockaddr *)&ss,
+	                      sslen,
+	                      res->ai_addr,
+	                      res->ai_addrlen,
+	                      type,
+	                      ops);
 }
 
 static const struct b6b_strm_ops b6b_tcp_client_ops = {
@@ -391,7 +391,6 @@ static struct b6b_obj *b6b_server_socket_new(struct b6b_interp *interp,
                                              const struct b6b_strm_ops *dgram_ops,
                                              const char *type)
 {
-	struct b6b_obj *o;
 	const struct b6b_strm_ops *ops = stream_ops;
 	int fd, err, one = 1;
 
@@ -417,18 +416,14 @@ static struct b6b_obj *b6b_server_socket_new(struct b6b_interp *interp,
 		return NULL;
 	}
 
-	o = b6b_socket_new(interp,
-	                   fd,
-	                   res->ai_addr,
-	                   res->ai_addrlen,
-	                   NULL,
-	                   0,
-	                   type,
-	                   ops);
-	if (b6b_unlikely(!o))
-		close(fd);
-
-	return o;
+	return b6b_socket_new(interp,
+	                      fd,
+	                      res->ai_addr,
+	                      res->ai_addrlen,
+	                      NULL,
+	                      0,
+	                      type,
+	                      ops);
 }
 
 static int b6b_socket_stream_accept(struct b6b_interp *interp,

@@ -63,6 +63,7 @@ struct b6b_obj *b6b_list_build(struct b6b_obj *o, ...)
 	va_start(ap, o);
 	while (o) {
 		if (!b6b_list_do_add(l, o)) {
+			va_end(ap);
 			b6b_destroy(l);
 			return NULL;
 		}
@@ -209,7 +210,7 @@ int b6b_as_list(struct b6b_obj *o)
 			if (b6b_unlikely(!li))
 				goto bail;
 
-			if (trim)
+			if (trim && (tlen >= 2))
 				li->o = b6b_str_copy(&tok[1], tlen - 2);
 			else
 				li->o = b6b_str_copy(tok, tlen);

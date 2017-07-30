@@ -77,8 +77,10 @@ static int b6b_interp_new_ext_obj(struct b6b_interp *interp,
 			return 0;
 	}
 
-	if (b6b_unlikely(!v))
+	if (b6b_unlikely(!v)) {
+		b6b_destroy(k);
 		return 0;
+	}
 
 	if (eo->proc)
 		v->proc = eo->proc;
@@ -569,6 +571,7 @@ enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 	char *s, *pos;
 	struct b6b_obj *stmts;
 	ssize_t len;
+	ptrdiff_t off;
 	int fd;
 	enum b6b_res res = B6B_ERR;
 
@@ -612,8 +615,11 @@ enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 			return B6B_ERR;
 		}
 
-		++pos;
-		stmts = b6b_str_copy(pos, (size_t)(stbuf.st_size - (pos - s)));
+		off = pos - s;
+		if (off)
+			++off;
+
+		stmts = b6b_str_copy(pos, (size_t)(stbuf.st_size - off));
 		free(s);
 		if (b6b_unlikely(!stmts))
 			return B6B_ERR;
