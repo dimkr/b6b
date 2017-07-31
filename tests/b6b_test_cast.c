@@ -39,6 +39,13 @@ int main()
 
 	b6b_unref(o);
 
+	o = b6b_str_copy("123\0abc", 7);
+	assert(o);
+	assert(!b6b_as_int(o));
+	assert(!b6b_as_float(o));
+	assert(b6b_as_list(o));
+	b6b_unref(o);
+
 	o = b6b_str_copy("\0\0", 2);
 	assert(o);
 	assert(b6b_as_list(o));

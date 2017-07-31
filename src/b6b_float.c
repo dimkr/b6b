@@ -44,14 +44,17 @@ int b6b_as_float(struct b6b_obj *o)
 	 * more accurate */
 	if (o->flags & B6B_TYPE_STR) {
 		o->f = strtod(o->s, &p);
-		if (*p)
+
+		/* make sure the entire string was converted - for example, 127\0abc is
+		 * an invalid integer */
+		if (p != o->s + o->slen)
 			return 0;
 	} else if (o->flags & B6B_TYPE_LIST) {
-		if (!b6b_as_str(o))
+		if (!b6b_as_str(o) || !o->slen)
 			return 0;
 
 		o->f = strtod(o->s, &p);
-		if (*p)
+		if (p != o->s + o->slen)
 			return 0;
 	}
 	else
