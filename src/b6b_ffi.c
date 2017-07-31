@@ -490,7 +490,6 @@ static enum b6b_res b6b_ffi_proc_pack(struct b6b_interp *interp,
 
 				memset(buf + len, 0, pad);
 				len = end;
-
 			}
 
 			end = len + type->size;
@@ -564,6 +563,7 @@ static enum b6b_res b6b_ffi_proc_unpack(struct b6b_interp *interp,
 		}
 
 		b6b_unref(dec);
+		off += type->size;
 	}
 
 	return b6b_return(interp, l);

@@ -108,6 +108,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 	unsigned int j;
 
 	b6b_thread_init(&interp->threads);
+	interp->fg = NULL;
 
 	/* we allocate a small stack (just two pages) */
 	interp->stksiz = sysconf(_SC_PAGESIZE);
@@ -235,7 +236,8 @@ static void b6b_join(struct b6b_interp *interp)
 
 void b6b_interp_destroy(struct b6b_interp *interp)
 {
-	b6b_join(interp);
+	if (interp->fg)
+		b6b_join(interp);
 
 	if (interp->global)
 		b6b_frame_destroy(interp->global);
