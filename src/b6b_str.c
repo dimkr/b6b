@@ -341,7 +341,8 @@ static enum b6b_res b6b_str_proc_index(struct b6b_interp *interp,
 	struct b6b_obj *s, *i;
 
 	if (!b6b_proc_get_args(interp, args, "osi", NULL, &s, &i) ||
-	    (i->i >= s->slen))
+	    (i->i >= s->slen) ||
+	    (i->i < 0))
 	    return B6B_ERR;
 
 	return b6b_return_str(interp, &s->s[i->i], 1);

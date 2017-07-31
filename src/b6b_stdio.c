@@ -114,8 +114,13 @@ void b6b_stdio_close(void *priv)
 	free(s);
 }
 
-static const struct b6b_strm_ops b6b_stdio_pipe_ops = {
+static const struct b6b_strm_ops b6b_stdio_ro_pipe_ops = {
 	.read = b6b_stdio_read,
+	.fd = b6b_stdio_fd,
+	.close = free
+};
+
+static const struct b6b_strm_ops b6b_stdio_wo_pipe_ops = {
 	.write = b6b_stdio_write,
 	.fd = b6b_stdio_fd,
 	.close = free
@@ -125,7 +130,8 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
                           const char *name,
                           const size_t len,
                           FILE *fp,
-                          const int fd)
+                          const int fd,
+                          const struct b6b_strm_ops *ops)
 {
 	struct b6b_obj *o;
 	struct b6b_stdio_strm *s;
@@ -138,7 +144,7 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 	s->buf = NULL;
 	s->fd = fd;
 
-	o = b6b_strm_copy(interp, &b6b_stdio_pipe_ops, s, name, len);
+	o = b6b_strm_copy(interp, ops, s, name, len);
 	if (b6b_unlikely(!o)) {
 		free(s);
 		return 0;
@@ -156,13 +162,22 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 	return 1;
 }
 
-#define B6B_STDIO_WRAP(interp, fp, fd) \
-	b6b_stdio_wrap(interp, #fp, sizeof(#fp) - 1, fp, fd)
+#define B6B_STDIO_WRAP(interp, fp, fd, ops) \
+	b6b_stdio_wrap(interp, #fp, sizeof(#fp) - 1, fp, fd, ops)
 
 static int b6b_stdio_init(struct b6b_interp *interp)
 {
-	return B6B_STDIO_WRAP(interp, stdin, STDIN_FILENO) &&
-	       B6B_STDIO_WRAP(interp, stdout, STDOUT_FILENO) &&
-	       B6B_STDIO_WRAP(interp, stderr, STDERR_FILENO);
+	return B6B_STDIO_WRAP(interp,
+	                      stdin,
+	                      STDIN_FILENO,
+	                      &b6b_stdio_ro_pipe_ops) &&
+	       B6B_STDIO_WRAP(interp,
+	                      stdout,
+	                      STDOUT_FILENO,
+	                      &b6b_stdio_wo_pipe_ops) &&
+	       B6B_STDIO_WRAP(interp,
+	                      stderr,
+	                      STDERR_FILENO,
+	                      &b6b_stdio_wo_pipe_ops);
 }
 __b6b_init(b6b_stdio_init);

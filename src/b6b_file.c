@@ -26,7 +26,20 @@
 
 #define B6B_FILE_DEF_FMODE "r"
 
-static const struct b6b_strm_ops b6b_file_ops = {
+static const struct b6b_strm_ops b6b_ro_file_ops = {
+	.peeksz = b6b_stdio_peeksz,
+	.read = b6b_stdio_read,
+	.fd = b6b_stdio_fd,
+	.close = b6b_stdio_close
+};
+
+static const struct b6b_strm_ops b6b_wo_file_ops = {
+	.write = b6b_stdio_write,
+	.fd = b6b_stdio_fd,
+	.close = b6b_stdio_close
+};
+
+static const struct b6b_strm_ops b6b_rw_file_ops = {
 	.peeksz = b6b_stdio_peeksz,
 	.read = b6b_stdio_read,
 	.write = b6b_stdio_write,
@@ -37,7 +50,8 @@ static const struct b6b_strm_ops b6b_file_ops = {
 static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
                                     FILE *fp,
                                     const int fd,
-                                    const int bmode)
+                                    const int bmode,
+                                    const struct b6b_strm_ops *ops)
 {
 	struct b6b_obj *o;
 	struct b6b_stdio_strm *s;
@@ -50,7 +64,7 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 	s->buf = NULL;
 	s->fd = fd;
 
-	o = b6b_strm_fmt(interp, &b6b_file_ops, s, "file");
+	o = b6b_strm_fmt(interp, ops, s, "file");
 	if (b6b_unlikely(!o)) {
 		b6b_stdio_close(s);
 		return NULL;
@@ -73,66 +87,85 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 	return o;
 }
 
-static const char *b6b_file_mode(const char *mode, int *bmode)
+static const char *b6b_file_mode(const char *mode,
+                                 int *bmode,
+                                 const struct b6b_strm_ops **ops)
 {
-	if ((strcmp("r", mode) == 0) ||
-	    (strcmp("w", mode) == 0) ||
-	    (strcmp("a", mode) == 0)) {
+	if (strcmp("r", mode) == 0) {
 		*bmode = _IOLBF;
+		*ops = &b6b_ro_file_ops;
+		return mode;
+	}
+	else if ((strcmp("w", mode) == 0) || (strcmp("a", mode) == 0)) {
+		*bmode = _IOLBF;
+		*ops = &b6b_wo_file_ops;
 		return mode;
 	}
 	else if (strcmp("rb", mode) == 0) {
 		*bmode = _IOFBF;
+		*ops = &b6b_ro_file_ops;
 		return "r";
 	}
 	else if (strcmp("wb", mode) == 0) {
 		*bmode = _IOFBF;
+		*ops = &b6b_wo_file_ops;
 		return "w";
 	}
 	else if (strcmp("ab", mode) == 0) {
 		*bmode = _IOFBF;
+		*ops = &b6b_wo_file_ops;
 		return "a";
 	}
 	else if (strcmp("ru", mode) == 0) {
 		*bmode = _IONBF;
+		*ops = &b6b_ro_file_ops;
 		return "r";
 	}
 	else if (strcmp("wu", mode) == 0) {
 		*bmode = _IONBF;
+		*ops = &b6b_wo_file_ops;
 		return "w";
 	}
 	else if (strcmp("au", mode) == 0) {
 		*bmode = _IONBF;
+		*ops = &b6b_wo_file_ops;
 		return "a";
 	}
 	else if ((strcmp("r+", mode) == 0) ||
 	         (strcmp("w+", mode) == 0) ||
 	         (strcmp("a+", mode) == 0)) {
 		*bmode = _IOLBF;
+		*ops = &b6b_rw_file_ops;
 		return mode;
 	}
 	else if (strcmp("r+b", mode) == 0) {
 		*bmode = _IOFBF;
+		*ops = &b6b_rw_file_ops;
 		return "r+";
 	}
 	else if (strcmp("w+b", mode) == 0) {
 		*bmode = _IOFBF;
+		*ops = &b6b_rw_file_ops;
 		return "w+";
 	}
 	else if (strcmp("a+b", mode) == 0) {
 		*bmode = _IOFBF;
+		*ops = &b6b_rw_file_ops;
 		return "a+";
 	}
 	else if (strcmp("r+u", mode) == 0) {
 		*bmode = _IONBF;
+		*ops = &b6b_rw_file_ops;
 		return "r+";
 	}
 	else if (strcmp("w+u", mode) == 0) {
 		*bmode = _IONBF;
+		*ops = &b6b_rw_file_ops;
 		return "w+";
 	}
 	else if (strcmp("a+u", mode) == 0) {
 		*bmode = _IONBF;
+		*ops = &b6b_rw_file_ops;
 		return "a+";
 	}
 
@@ -147,13 +180,14 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 	const char *rmode = B6B_FILE_DEF_FMODE;
 	FILE *fp;
 	int fd, fl, err, bmode = _IONBF;
+	const struct b6b_strm_ops *ops = &b6b_ro_file_ops;
 
-	switch (b6b_proc_get_args(interp, args, "oss", NULL, &path, &mode)) {
+	switch (b6b_proc_get_args(interp, args, "os|s", NULL, &path, &mode)) {
 		case 3:
 			if (!b6b_as_str(mode))
 				return B6B_ERR;
 
-			rmode = b6b_file_mode(mode->s, &bmode);
+			rmode = b6b_file_mode(mode->s, &bmode, &ops);
 			if (!rmode)
 				return b6b_return_strerror(interp, EINVAL);
 
@@ -172,7 +206,7 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 				return b6b_return_strerror(interp, err);
 			}
 
-			f = b6b_file_new(interp, fp, fd, bmode);
+			f = b6b_file_new(interp, fp, fd, bmode, ops);
 			if (!f) {
 				fclose(fp);
 				return B6B_ERR;
