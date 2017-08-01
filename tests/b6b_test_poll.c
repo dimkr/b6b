@@ -108,7 +108,6 @@ int main()
 	assert(!interp.fg->_->slen);
 
 	assert(b6b_call_copy(&interp, "{$p wait 5 0}", 13) == B6B_OK);
-	b6b_as_str(interp.fg->_);
 	assert(b6b_as_list(interp.fg->_));
 	assert(!b6b_list_empty(interp.fg->_));
 	assert(b6b_as_list(b6b_list_first(interp.fg->_)->o));
