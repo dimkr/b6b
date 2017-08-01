@@ -588,6 +588,7 @@ static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
 		++j;
 	}
 
+	s2[j] = '\0';
 	o = b6b_str_new(s2, j);
 	if (b6b_unlikely(!o)) {
 		free(s2);
@@ -608,12 +609,14 @@ static enum b6b_res b6b_str_proc_rtrim(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	i = (ssize_t)s->slen;
-	j = i - 1;
-	while (i >= 0) {
-		if (!b6b_isspace(s->s[j]))
-			break;
-		--i;
-		--j;
+	if (i) {
+		j = i - 1;
+		while (i >= 0) {
+			if (!b6b_isspace(s->s[j]))
+				break;
+			--i;
+			--j;
+		}
 	}
 
 	return b6b_return_str(interp, s->s, (size_t)i);

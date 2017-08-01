@@ -217,6 +217,39 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand {}}", 16) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(!interp.fg->_->slen);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand \\}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand \\t}", 16) == B6B_OK);
+	assert(strcmp(interp.fg->_->s, "\t") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand \\t\\}", 17) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand \\t\\t}", 18) == B6B_OK);
+	assert(strcmp(interp.fg->_->s, "\t\t") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand a\\tb\\tc}", 21) == B6B_OK);
+	assert(strcmp(interp.fg->_->s, "a\tb\tc") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand a\\tb\\tc\\}", 22) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$rtrim {}}", 11) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(!interp.fg->_->slen);
