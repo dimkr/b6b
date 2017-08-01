@@ -111,6 +111,15 @@ int main()
 	assert(o->i == 1337);
 	b6b_unref(o);
 
+	o = b6b_int_new(1337);
+	assert(o);
+	assert(o->i == 1337);
+	assert(o->flags & B6B_TYPE_INT);
+	assert(b6b_as_float(o));
+	assert(o->flags & (B6B_TYPE_INT | B6B_TYPE_FLOAT));
+	assert(o->f == 1337);
+	b6b_unref(o);
+
 	o = b6b_float_new(1337.6);
 	assert(o);
 	assert(o->flags & B6B_TYPE_FLOAT);
