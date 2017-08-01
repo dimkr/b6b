@@ -42,7 +42,7 @@ script:
   - meson -Db_coverage=true build
   - ninja -C build
   - mesontest -C build --print-errorlogs
-  - mesontest -C build --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1"
+  - mesontest -C build --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
 
 after_success:
   - ninja -C build coverage

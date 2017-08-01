@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-componenets = ['cast', 'list_parse', 'if', 'try', 'map', 'spawn', 'co', 'dict', 'str', 'file', 'signal']
+componenets = ['cast', 'list_parse', 'if', 'try', 'map', 'spawn', 'co', 'dict', 'str', 'file', 'signal', 'poll']
 
 if get_option('with_miniz')
 	componenets += ['zlib']
