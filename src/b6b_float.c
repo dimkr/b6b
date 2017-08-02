@@ -43,6 +43,9 @@ int b6b_as_float(struct b6b_obj *o)
 	/* always prefer the string representation over the integer one, since it's
 	 * more accurate */
 	if (o->flags & B6B_TYPE_STR) {
+		if (!o->slen)
+			return 0;
+
 		o->f = strtod(o->s, &p);
 
 		/* make sure the entire string was converted - for example, 127\0abc is
