@@ -20,6 +20,10 @@ if get_option('with_miniz')
 	componenets += ['zlib']
 endif
 
+if libffi.found()
+	componenets += ['ffi']
+endif
+
 if get_option('default_library') != 'static'
 	foreach component: componenets
 		test_name = 'b6b_test_@0@'.format(component)

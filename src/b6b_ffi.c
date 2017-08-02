@@ -450,57 +450,58 @@ static enum b6b_res b6b_ffi_proc_pack(struct b6b_interp *interp,
 	size_t i = 0, len = 0, pad, end;
 	int pack = 0;
 
-	if (!b6b_proc_get_args(interp, args, "os*", NULL, &fmt, &vli))
+	if (!b6b_proc_get_args(interp, args, "os*", NULL, &fmt, &vli) || !fmt->slen)
 		return B6B_ERR;
+
+	if (fmt->s[i] == '.') {
+		if (fmt->slen == 1)
+			return B6B_ERR;
+
+		pack = 1;
+		++i;
+	}
 
 	buf = malloc(B6B_FFI_MAX_STRUCT_SZ);
 	if (b6b_unlikely(!buf))
 		return B6B_ERR;
 
-	if (fmt->slen) {
-		if (fmt->s[i] == '.') {
-			pack = 1;
-			++i;
+	for (; i < fmt->slen; ++i, vli = b6b_list_next(vli)) {
+		if (!vli) {
+			free(buf);
+			return B6B_ERR;
 		}
 
-		for (; i < fmt->slen; ++i, vli = b6b_list_next(vli)) {
-			if (!vli) {
-				free(buf);
-				return B6B_ERR;
-			}
+		type = b6b_ffi_type(interp, fmt->s[i]);
+		if (!type) {
+			free(buf);
+			return B6B_ERR;
+		}
 
-			type = b6b_ffi_type(interp, fmt->s[i]);
-			if (!type) {
-				free(buf);
-				return B6B_ERR;
-			}
+		if (!b6b_ffi_encode(interp, vli->o, type, &val, &p)) {
+			free(buf);
+			return B6B_ERR;
+		}
 
-			if (!b6b_ffi_encode(interp, vli->o, type, &val, &p)) {
-				free(buf);
-				return B6B_ERR;
-			}
-
-			if (!pack) {
-				pad = len % type->alignment;
-				end = len + pad;
-				if (end > B6B_FFI_MAX_STRUCT_SZ) {
-					free(buf);
-					return B6B_ERR;
-				}
-
-				memset(buf + len, 0, pad);
-				len = end;
-			}
-
-			end = len + type->size;
+		if (!pack) {
+			pad = len % type->alignment;
+			end = len + pad;
 			if (end > B6B_FFI_MAX_STRUCT_SZ) {
 				free(buf);
 				return B6B_ERR;
 			}
 
-			memcpy(buf + len, p, type->size);
+			memset(buf + len, 0, pad);
 			len = end;
 		}
+
+		end = len + type->size;
+		if (end > B6B_FFI_MAX_STRUCT_SZ) {
+			free(buf);
+			return B6B_ERR;
+		}
+
+		memcpy(buf + len, p, type->size);
+		len = end;
 	}
 
 	if (b6b_unlikely(!b6b_ffi_buf_new(interp, buf, len))) {
@@ -516,18 +517,25 @@ static enum b6b_res b6b_ffi_proc_unpack(struct b6b_interp *interp,
 {
 	struct b6b_obj *fmt, *o, *l, *dec;
 	ffi_type *type;
-	size_t i, pad, off = 0;
+	size_t i = 0, pad, off = 0;
 	int packed = 0;
 
-	if (!b6b_proc_get_args(interp, args, "oss", NULL, &fmt, &o) ||
-	    (!fmt->slen))
+	if (!b6b_proc_get_args(interp, args, "oss", NULL, &fmt, &o) || !fmt->slen)
 		return B6B_ERR;
+
+	if (fmt->s[i] == '.') {
+		if (fmt->slen == 1)
+			return B6B_ERR;
+
+		packed = 1;
+		++i;
+	}
 
 	l = b6b_list_new();
 	if (b6b_unlikely(!l))
 		return B6B_ERR;
 
-	for (i = 0; i < fmt->slen; ++i) {
+	for (; i < fmt->slen; ++i) {
 		if (off >= o->slen) {
 			b6b_destroy(l);
 			return B6B_ERR;
