@@ -14,5 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+option('with_doc', type: 'boolean')
 option('with_miniz', type: 'boolean')
 option('with_linenoise', type: 'boolean')

@@ -1,3 +1,5 @@
+#!/bin/sh -xe
+
 # This file is part of b6b.
 #
 # Copyright 2017 Dima Krasner
@@ -14,16 +16,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if get_option('with_doc')
-	install_man('b6b.1')
+meson -Db_coverage=true -Dwith_doc=false build-debug
+meson --buildtype release build-release
+CC=clang meson -Dwith_doc=false build-clang-debug
+CC=clang meson --buildtype release -Dwith_doc=false build-clang-release
 
-	asciidoc = find_program('asciidoc', required: false)
-	if asciidoc.found()
-		custom_target('manual',
-		              input: 'b6b.txt',
-		              output: 'b6b.html',
-		              command: [asciidoc.path(), '-a', 'toc', '-a', 'toclevels=4', '-o', '@OUTPUT@', '@INPUT@'],
-		              install: true,
-		              install_dir: docdir)
-	endif
-endif
+for i in "" -clang
+do
+	for j in -release -debug
+	do
+		ninja -C build$i$j
+		mesontest -C build$i$j --print-errorlogs
+	done
+
+	DESTDIR=dest ninja -C build$i-release install
+done
+
+mesontest -C build-release --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"

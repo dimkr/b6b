@@ -28,9 +28,12 @@ matrix:
     - os: linux
       dist: trusty
 
+services:
+  - docker
+
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y gcc python3-pip valgrind curl gcovr asciidoc
+  - sudo apt-get install -y gcc python3-pip curl gcovr
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
@@ -39,10 +42,11 @@ install:
   - pip3 install meson
 
 script:
-  - meson -Db_coverage=true build
+  - meson -Db_coverage=true -Dwith_doc=false build
   - ninja -C build
   - mesontest -C build --print-errorlogs
-  - mesontest -C build --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
+  - docker build -t b6b -f Dockerfile .
+  - docker run -w /root b6b ./ci_build.sh
 
 after_success:
   - ninja -C build coverage
@@ -54,6 +58,6 @@ addons:
       name: "dimkr/b6b"
       description: "Build submitted via Travis CI"
     notification_email: dima@dimakrasner.com
-    build_command_prepend: "meson coverity-build"
-    build_command:  "ninja -C coverity-build"
+    build_command_prepend: "meson -Dwith_doc=false build-coverity"
+    build_command:  "ninja -C build-coverity"
     branch_pattern: master
