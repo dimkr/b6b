@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export LC_ALL=en_US.UTF-8
+
 meson -Db_coverage=true -Dwith_doc=false build-debug
 meson --buildtype release build-release
 CC=clang meson -Dwith_doc=false build-clang-debug
