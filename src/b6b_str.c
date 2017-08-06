@@ -294,32 +294,38 @@ struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 	if (b6b_unlikely(!l))
 		return 0;
 
-	do {
-		out = mbrtowc(NULL, s, len, &ps);
-		if ((out == (size_t)-1) || (out == (size_t)-2)) {
-			b6b_destroy(l);
-			return NULL;
-		}
+	if (len) {
+		do {
+			out = mbrtowc(NULL, s, len, &ps);
+			if ((out == (size_t)-1) || (out == (size_t)-2)) {
+				b6b_destroy(l);
+				return NULL;
+			}
 
-		if (!out)
-			break;
+			if (!out)
+				break;
 
-		c = b6b_str_copy(s, out);
-		if (b6b_unlikely(!c)) {
-			b6b_destroy(l);
-			return NULL;
-		}
+			c = b6b_str_copy(s, out);
+			if (b6b_unlikely(!c)) {
+				b6b_destroy(l);
+				return NULL;
+			}
 
-		if (b6b_unlikely(!b6b_list_add(l, c))) {
-			b6b_destroy(c);
-			b6b_destroy(l);
-			return NULL;
-		}
+			if (b6b_unlikely(!b6b_list_add(l, c))) {
+				b6b_destroy(c);
+				b6b_destroy(l);
+				return NULL;
+			}
 
-		b6b_unref(c);
-		len -= out;
-		s += out;
-	} while (1);
+			b6b_unref(c);
+
+			len -= out;
+			if (!len)
+				break;
+
+			s += out;
+		} while (1);
+	}
 
 	return l;
 }

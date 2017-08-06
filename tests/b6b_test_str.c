@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <locale.h>
 
 #include <b6b.h>
 
@@ -319,6 +320,42 @@ int main()
 	assert(b6b_call_copy(&interp, "{$ltrim {  abc  }}", 18) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(strcmp(interp.fg->_->s, "abc  ") == 0);
+	b6b_interp_destroy(&interp);
+
+	setlocale(LC_ALL, "");
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{{} decode}", 11) == B6B_OK);
+	assert(b6b_as_list(interp.fg->_));
+	assert(b6b_list_empty(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.len [\xd7\xa9\xd7\x9c\xd7\x95\xd7\x9d decode]}", 29) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 4);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.len [\xd7\xa9\xd7\x9c\xd7\x95\xd7 decode]}", 28) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.len [abc\xd7\xa9\xd7\x9c\xd7\x95\xd7\x9d decode]}", 32) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 7);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.len [{abc \xd7\xa9\xd7\x9c\xd7\x95\xd7\x9d} decode]}", 35) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 8);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.len [{\xd7\xa9\xd7\x9c\xd7\x95\xd7\x9d abc} decode]}", 35) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 8);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;
