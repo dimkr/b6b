@@ -322,7 +322,7 @@ int main()
 	assert(strcmp(interp.fg->_->s, "abc  ") == 0);
 	b6b_interp_destroy(&interp);
 
-	setlocale(LC_ALL, "");
+	setlocale(LC_ALL, "en_US.UTF-8");
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{{} decode}", 11) == B6B_OK);
