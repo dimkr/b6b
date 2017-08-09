@@ -107,10 +107,8 @@ a name. To obtain the value of a named object, prefix its name with '$'.
 
 Statements
 ~~~~~~~~~~
-+b6b+ code is a list of statements; each statement performs a certain operation.
-
-Each statement is a list of objects. The first object in a statement is invoked,
-while the objects that follow are passed to it as parameters.
+Each +b6b+ statement is a list of objects. The first object in a statement is
+invoked, while the objects that follow are passed to it as parameters.
 
 For example, the following script invokes the 'sleep' procedure (a named object)
 to pause for '2' (an anonymous object) seconds:
@@ -277,7 +275,7 @@ Event loops are created using 'evloop' and managed using 'add', 'remove' and
 }}
 
 {$proc on_tick {
-	{$loop add [$sh {ls -la}] $on_ls {} {}}
+	{$loop add [$list.index [$sh {ls -la} 2]] $on_ls {} {}}
 }}
 
 {$proc on_ls {
@@ -290,7 +288,7 @@ Event loops are created using 'evloop' and managed using 'add', 'remove' and
 	{$exit}
 }}
 
-{$loop add [$sh {ping 127.0.0.1}] $on_ping {} {}}
+{$loop add [$list.index [$sh {ping 127.0.0.1}] 2] $on_ping {} {}}
 {$loop every 3 $on_tick}
 {$loop add [$signal $SIGINT] $ctrl_c {} {}}
 {$loop wait -1}
@@ -669,7 +667,8 @@ access).
 {$sh {ls -la}}
 --------------------------------------
 
-'sh' creates a shell command stream.
+'sh' creates pipe streams, attached to the standard I/O pipes of a shell
+command.
 
 --------------------------------------
 {$signal $SIGTERM}
