@@ -16,6 +16,9 @@
 
 FROM ubuntu:artful
 
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+
 RUN sed -i s/^deb.*multiverse.*/\#\&/g /etc/apt/sources.list
 RUN apt-get -qq update
 RUN apt-get -y --no-install-recommends install gcc clang ninja-build python3-pip python3-setuptools python3-wheel valgrind asciidoc
