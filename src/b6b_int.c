@@ -29,8 +29,7 @@ struct b6b_obj *b6b_int_new(const b6b_int i)
 	o = b6b_new();
 	if (o) {
 		o->i = i;
-		o->f = (b6b_float)i;
-		o->flags = B6B_TYPE_INT | B6B_TYPE_FLOAT;
+		o->flags = B6B_TYPE_INT;
 	}
 
 	return o;
