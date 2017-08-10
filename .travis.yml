@@ -48,7 +48,7 @@ script:
   - ninja -C build
   - mesontest -C build --print-errorlogs
   - docker build -t b6b -f Dockerfile .
-  - docker run -w /root b6b ./ci_build.sh
+  - docker run -w /root -e LC_ALL=en_US.UTF-8 -e LANG=en_US.UTF-8 b6b ./ci_build.sh
 
 after_success:
   - ninja -C build coverage
