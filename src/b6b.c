@@ -27,7 +27,7 @@
 
 #define B6B_SHELL \
 	"{$local chld [$b6b $@]}\n" \
-	"{$while 1 {" \
+	"{$loop {" \
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
 		"{$if [$str.len $stmt] {" \
 			"{$try {" \

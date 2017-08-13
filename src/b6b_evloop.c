@@ -67,7 +67,7 @@
 	"} [$list.new [$list.new $3]]] {} {}}"
 
 #define B6B_EVLOOP_WAIT \
-	"{$while 1 {" \
+	"{$loop {" \
 		"{$map {p strms inps outps errps} $. {" \
 			"{$local n [$list.len $strms]}\n" \
 			"{$if [$== $n 0] {" \

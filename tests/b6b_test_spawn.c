@@ -71,8 +71,8 @@ int main()
 	assert(b6b_call_copy(&interp,
 	                     "{$global x {}} " \
 	                     "{$spawn {{$yield} {$exit 7}}} " \
-	                     "{$while 1 {{$yield}}}",
-	                     15 + 30 + 21) == B6B_EXIT);
+	                     "{$loop {{$yield}}}",
+	                     15 + 30 + 18) == B6B_EXIT);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

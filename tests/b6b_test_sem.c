@@ -27,7 +27,7 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2 3} {{$map j [$range 1 100] {{$nop}}} {$s write 1} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 728) == B6B_RET);
+	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2 3} {{$map j [$range 1 100] {{$nop}}} {$s write 1} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 710) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen);
 	switch (interp.fg->_->s[0]) {
@@ -52,7 +52,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2 3 4} {{$map j [$range 1 100] {{$nop}}} {$s write 1} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 730) == B6B_RET);
+	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2 3 4} {{$map j [$range 1 100] {{$nop}}} {$s write 1} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 712) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen);
 	switch (interp.fg->_->s[0]) {
@@ -77,7 +77,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2} {{$map j [$range 1 100] {{$nop}}} {$s write 1} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 726) == B6B_RET);
+	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2} {{$map j [$range 1 100] {{$nop}}} {$s write 1} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 708) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	puts(interp.fg->_->s);
 	assert(interp.fg->_->slen);
@@ -100,7 +100,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$while 1 {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$while 1 {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2 3} {{$map j [$range 1 100] {{$nop}}} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 715) == B6B_RET);
+	assert(b6b_call_copy(&interp, "{$global p [$poll]} {$global s [$sem 0]} {$p add [$s fd] $POLLIN} {$global x {}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$loop {{$if [$!= [$list.len [$list.index [$p wait 1 0] 0]] 0] {{$break}}} {$yield}}} {$s read} {$loop {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2 3} {{$map j [$range 1 100] {{$nop}}} {$yield}}} {$map j [$range 1 100] {{$nop}}} {$return $x}", 697) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(!interp.fg->_->slen);
 	b6b_interp_destroy(&interp);

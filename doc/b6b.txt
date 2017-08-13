@@ -217,12 +217,12 @@ script in a separate thread of execution:
 
 --------------------------------------
 {$spawn {
-	{$while 1 {
+	{$loop {
 		{$stdout writeln 1}
 	}}
 }}
 
-{$while 1 {
+{$loop {
 	{$stdout writeln 2}
 }}
 --------------------------------------
@@ -232,7 +232,7 @@ to spawn threads to perform many short background operations. In such cases, use
 'co':
 
 --------------------------------------
-{$while 1 {
+{$loop {
 	{$co {
 		{$map i [$range 10 20] {
 			{$stdout writeln $i}
@@ -542,12 +542,12 @@ loop.
 If an iteration of the loop calls 'continue', its return value is ignored.
 
 --------------------------------------
-{$while 1 {
+{$loop {
 	{$stdout writeln a}
 }}
 --------------------------------------
 
-'while' repeatedly runs a list of statements, while a condition is true.
+'loop' repeatedly runs a list of statements.
 
 --------------------------------------
 {$range 1 5}
@@ -611,7 +611,7 @@ Threading
 ^^^^^^^^^
 --------------------------------------
 {$spawn {
-	{$while 1 {
+	{$loop {
 		{$stdout writeln a}
 	}}
 }}

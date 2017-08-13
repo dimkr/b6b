@@ -25,7 +25,7 @@
 		"{$list.append $_cos $1}\n" \
 		"{$if $_fco {" \
 			"{$spawn {" \
-				"{$while 1 {" \
+				"{$loop {" \
 					"{$if $_cos {" \
 						"{$try {" \
 							"{$call [$list.pop $_cos 0]}" \

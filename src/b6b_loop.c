@@ -82,23 +82,16 @@ done:
 	return b6b_return(interp, r);
 }
 
-static enum b6b_res b6b_loop_proc_while(struct b6b_interp *interp,
-                                        struct b6b_obj *args)
+static enum b6b_res b6b_loop_proc_loop(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
 {
-	struct b6b_obj *c, *b;
+	struct b6b_obj *b;
 	enum b6b_res res = B6B_OK;
 
-	if (!b6b_proc_get_args(interp, args, "ooo", NULL, &c, &b))
+	if (!b6b_proc_get_args(interp, args, "oo", NULL, &b))
 		return B6B_ERR;
 
 	do {
-		if (b6b_unlikely(!b6b_as_str(c)))
-			return res;
-
-		res = b6b_eval(interp, c);
-		if ((res != B6B_OK) || !b6b_obj_istrue(interp->fg->_))
-			break;
-
 		res = b6b_call(interp, b);
 		if (res == B6B_BREAK)
 			return B6B_OK;
@@ -163,10 +156,10 @@ static const struct b6b_ext_obj b6b_loop[] = {
 		.proc = b6b_loop_proc_map
 	},
 	{
-		.name = "while",
+		.name = "loop",
 		.type = B6B_TYPE_STR,
-		.val.s = "while",
-		.proc = b6b_loop_proc_while
+		.val.s = "loop",
+		.proc = b6b_loop_proc_loop
 	},
 	{
 		.name = "range",
