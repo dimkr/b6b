@@ -86,7 +86,7 @@ static enum b6b_res b6b_math_proc_mod(struct b6b_interp *interp,
 
 		errno = 0;
 		feclearexcept(FE_ALL_EXCEPT);
-		p = fmod(m->f, n->f);
+		p = remainder(m->f, n->f);
 		if (!errno && !fetestexcept(FE_INVALID))
 			return b6b_return_float(interp, (b6b_float)p);
 	}
