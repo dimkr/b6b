@@ -135,10 +135,10 @@ struct b6b_obj *b6b_list_pop(struct b6b_obj *l, struct b6b_litem *li)
 
 int b6b_as_list(struct b6b_obj *o)
 {
-	char *tok = NULL;
-	struct b6b_litem *li;
-	size_t i, tlen = 0;
-	int nbrac = 0, nbrak = 0, trim = 0;
+	struct b6b_obj *s;
+	const char *start, *end;
+	size_t i, j, last;
+	size_t nbrac, nbrak, skip;
 
 	if (!(o->flags & B6B_TYPE_LIST)) {
 		if (!b6b_as_str(o))
@@ -146,95 +146,127 @@ int b6b_as_list(struct b6b_obj *o)
 
 		TAILQ_INIT(&o->l);
 
-		for (i = 0; i <= o->slen; ++i) {
+		i = 0;
+		last = o->slen - 1;
+		while (i < o->slen) {
+			skip = 0;
 			switch (o->s[i]) {
+				/* if a token is wrapped with braces, find the shortest
+				 * substring wrapped with balanced braces, then strip one pair
+				 * of braces */
 				case '{':
-					if ((++nbrac == 1) && !tok) {
-						tok = &o->s[i];
-						tlen = 1;
-						trim = 1;
-					}
-					else
-						++tlen;
-					continue;
+					nbrac = 1;
+					j = i + 1;
+					start = &o->s[j];
+					while (j <= last) {
+						switch (o->s[j]) {
+							case '{':
+								++nbrac;
+								break;
 
-				case '}':
-					--nbrac;
-					++tlen;
-					continue;
+							case '}':
+								if (!--nbrac)
+									goto brac_end;
+								break;
+						}
+
+						++j;
+					} while (1);
+
+					b6b_destroy_l(o);
+					return 0;
+
+brac_end:
+					end = &o->s[j];
+					skip = 2;
+					break;
 
 				case '[':
-					if (!tok) {
-						tok = &o->s[i];
-						tlen = 1;
-					}
-					else
-						++tlen;
-					++nbrak;
-					continue;
+					/* if a token is wrapped with brackets, find the shortest
+					 * substring wrapped with balanced brackets that does not
+					 * contain a literal ] */
+					nbrak = 1;
+					nbrac = 0;
+					start = &o->s[i];
+					j = i + 1;
+					while (j <= last) {
+						switch (o->s[j]) {
+							case '{':
+								++nbrac;
+								break;
 
-				case ']':
-					--nbrak;
-					++tlen;
-					continue;
+							case '}':
+								--nbrac;
+								break;
+
+							case '[':
+								++nbrak;
+								break;
+
+							case ']':
+								if (!--nbrak && !nbrac) {
+									end = &o->s[j + 1];
+									goto brak_end;
+								}
+								break;
+						}
+
+						++j;
+					} while (1);
+
+					b6b_destroy_l(o);
+					return 0;
+
+brak_end:
+					skip = 0;
+					break;
 
 				case ' ':
 				case '\t':
 				case '\r':
 				case '\n':
-					if (nbrac || nbrak) {
-						++tlen;
-						continue;
-					}
-					break;
-
-				case '\0':
-					if (i == o->slen)
-						break;
+					/* skip whitespace between tokens */
+					++i;
+					continue;
 
 				default:
-					if (tok)
-						++tlen;
-					else {
-						tok = &o->s[i];
-						tlen = 1;
-					}
-					continue;
+					/* otherwise, if it's a non-whitespace character that isn't
+					 * { or [, this token ends at the nearest whitespace
+					 * character or at the end of the string */
+					for (j = i + 1;
+					     (j != o->slen) &&
+					     (o->s[j] != ' ') &&
+					     (o->s[j] != '\t') &&
+					     (o->s[j] != '\n') &&
+					     (o->s[j] != '\r');
+					     ++j);
+
+					start = &o->s[i];
+					end = &o->s[j];
+					skip = 1;
 			}
 
-			/* ignore empty tokens, unless wrapped with braces */
-			if (!tlen)
-				continue;
-
-			li = (struct b6b_litem *)malloc(sizeof(*li));
-			if (b6b_unlikely(!li))
-				goto bail;
-
-			if (trim && (tlen >= 2))
-				li->o = b6b_str_copy(&tok[1], tlen - 2);
-			else
-				li->o = b6b_str_copy(tok, tlen);
-			if (b6b_unlikely(!li->o)) {
-				free(li);
-				goto bail;
+			s = b6b_str_copy(start, end - start);
+			if (b6b_unlikely(!s)) {
+				b6b_destroy_l(o);
+				return 0;
 			}
 
-			TAILQ_INSERT_TAIL(&o->l, li, ents);
+			if (b6b_unlikely(!b6b_list_do_add(o, s))) {
+				b6b_destroy(s);
+				b6b_destroy_l(o);
+				return 0;
+			}
 
-			tok = NULL;
-			tlen = 0;
-			trim = 0;
-			nbrak = 0;
+			b6b_unref(s);
+
+			i += end - start + skip;
 		}
 
 		o->flags |= B6B_TYPE_LIST;
 	}
 
 	return 1;
-
-bail:
-	b6b_destroy_l(o);
-	return 0;
 }
 
 unsigned int b6b_list_vparse(struct b6b_obj *l, const char *fmt, va_list ap)
