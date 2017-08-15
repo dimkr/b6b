@@ -31,6 +31,7 @@ b6b_deps = [
 	cc.find_library('m', required: true),
 	cc.find_library('dl', required: true),
 ]
+b6b_libs = []
 
 with_linenoise = get_option('with_linenoise')
 if with_linenoise
@@ -38,7 +39,11 @@ if with_linenoise
 endif
 
 if get_option('with_miniz')
-	libb6b_srcs += ['miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c', 'b6b_zlib.c']
+	miniz = static_library('miniz',
+	                       'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c',
+	                       c_args: ['-DMINIZ_NO_ARCHIVE_APIS', '-DMINIZ_NO_ZLIB_COMPATIBLE_NAMES'])
+	libb6b_srcs += ['b6b_zlib.c']
+	b6b_libs += [miniz]
 endif
 
 libffi = cc.find_library('ffi', required: false)
@@ -54,12 +59,14 @@ if get_option('default_library') == 'static' and with_linenoise
 	                 libb6b_srcs + ['b6b.c'],
 	                 include_directories: b6b_includes,
 	                 dependencies: b6b_deps,
+	                 link_with: b6b_libs,
 	                 install: true)
 else
 	libb6b = library('b6b',
 	                 libb6b_srcs,
 	                 include_directories: b6b_includes,
 	                 dependencies: b6b_deps,
+	                 link_with: b6b_libs,
 	                 install: true)
 
 	if with_linenoise
