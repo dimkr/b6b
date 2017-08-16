@@ -23,10 +23,11 @@
 #include <string.h>
 #include <getopt.h>
 
+#include "linenoise/linenoise.h"
 #include <b6b.h>
 
 #define B6B_SHELL \
-	"{$local chld [$b6b $@]}\n" \
+	"{$global chld [$b6b $@]}\n" \
 	"{$loop {" \
 		"{$local stmt [$linenoise.read {>>> }]}\n" \
 		"{$if [$str.len $stmt] {" \
@@ -44,8 +45,71 @@
 		"}}" \
 	"}}"
 
+static struct b6b_interp interp, *chld = NULL;
+
+static struct b6b_interp *get_chld(void)
+{
+	struct b6b_obj *s, *v = NULL;
+
+	if (!chld) {
+		s = b6b_str_copy("chld", 4);
+		if (b6b_likely(s)) {
+			if (b6b_dict_get(interp.global->locals, s, &v) && v) {
+				/* we assume the REPL user, whose statements run in a child
+				 * interpreter, cannot replace the chld global of the outer
+				 * interpreter with another object */
+				chld = (struct b6b_interp *)v->priv;
+			}
+
+			b6b_destroy(s);
+		}
+	}
+
+	return chld;
+}
+
+static void complete(const char *s, linenoiseCompletions *c)
+{
+	struct b6b_obj *ds[2];
+	struct b6b_litem *li;
+	char *buf;
+	int i;
+
+	if (!get_chld())
+		return;
+
+	/* we offer local variables before global ones */
+	ds[0] = chld->fg->curr->locals;
+	ds[1] = chld->global->locals;
+
+	for (i = 0; i < sizeof(ds) / sizeof(ds[0]); ++i) {
+		if (!b6b_as_list(ds[i]))
+			return;
+
+		for (li = b6b_list_first(ds[i]); li; li = b6b_list_next(li)) {
+			if ((s[0] == '$') &&
+				b6b_as_str(li->o) &&
+				(strncmp(li->o->s, &s[1], strlen(s) - 1) == 0)) {
+				if (li->o->slen > SIZE_MAX - 2)
+					return;
+
+				buf = (char *)malloc(li->o->slen + 2);
+				buf[0] = '$';
+				strcpy(&buf[1], li->o->s);
+
+				linenoiseAddCompletion(c, buf);
+
+				free(buf);
+			}
+
+			li = b6b_list_next(li);
+			if (!li)
+				break;
+		}
+	}
+}
+
 int main(int argc, char *argv[]) {
-	struct b6b_interp interp;
 	enum b6b_res res;
 	int ret = EXIT_FAILURE;
 	uint8_t opts = 0;
@@ -94,6 +158,8 @@ done:
 	else {
 		if (!b6b_interp_new_argv(&interp, argc, (const char **)argv, opts))
 			return EXIT_FAILURE;
+
+		linenoiseSetCompletionCallback(complete);
 
 		res = b6b_call_copy(&interp, B6B_SHELL, sizeof(B6B_SHELL) - 1);
 	}
