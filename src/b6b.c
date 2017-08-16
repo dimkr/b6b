@@ -70,13 +70,34 @@ static struct b6b_interp *get_chld(void)
 
 static void complete(const char *s, linenoiseCompletions *c)
 {
-	struct b6b_obj *ds[2];
+	struct b6b_obj *ds[2], *o, *tok, *ctok;
 	struct b6b_litem *li;
-	char *buf;
+	size_t len;
 	int i;
 
-	if (!get_chld())
+	len = strlen(s);
+	if (!len)
 		return;
+
+	/* make s a b6b list and get the last item */
+	o = b6b_str_copy(s, len);
+	if (b6b_unlikely(!o))
+		return;
+
+	if (!b6b_as_list(o) || !b6b_list_first(o)) {
+		b6b_destroy(o);
+		return;
+	}
+
+	tok = b6b_ref(b6b_list_last(o)->o);
+
+	if (b6b_unlikely(!b6b_as_str(tok)) ||
+	    (tok->s[0] != '$') ||
+	    !get_chld()) {
+		b6b_unref(tok);
+		b6b_destroy(o);
+		return;
+	}
 
 	/* we offer local variables before global ones */
 	ds[0] = chld->fg->curr->locals;
@@ -84,22 +105,32 @@ static void complete(const char *s, linenoiseCompletions *c)
 
 	for (i = 0; i < sizeof(ds) / sizeof(ds[0]); ++i) {
 		if (!b6b_as_list(ds[i]))
-			return;
+			break;
 
 		for (li = b6b_list_first(ds[i]); li; li = b6b_list_next(li)) {
-			if ((s[0] == '$') &&
-				b6b_as_str(li->o) &&
-				(strncmp(li->o->s, &s[1], strlen(s) - 1) == 0)) {
+			if (b6b_as_str(li->o) &&
+			    (strncmp(li->o->s, &tok->s[1], tok->slen - 1) == 0)) {
 				if (li->o->slen > SIZE_MAX - 2)
-					return;
+					continue;
 
-				buf = (char *)malloc(li->o->slen + 2);
-				buf[0] = '$';
-				strcpy(&buf[1], li->o->s);
+				/* replace the last list item with the proposed one, prefixed
+				 * with $ */
+				b6b_unref(b6b_list_pop(o, b6b_list_last(o)));
 
-				linenoiseAddCompletion(c, buf);
+				ctok = b6b_str_fmt("$%s", li->o->s);
+				if (b6b_unlikely(!ctok))
+					break;
 
-				free(buf);
+				if (b6b_unlikely(!b6b_list_add(o, ctok))) {
+					b6b_destroy(ctok);
+					break;
+				}
+				b6b_unref(ctok);
+
+				if (b6b_unlikely(!b6b_as_str(o)))
+					break;
+
+				linenoiseAddCompletion(c, o->s);
 			}
 
 			li = b6b_list_next(li);
@@ -107,6 +138,9 @@ static void complete(const char *s, linenoiseCompletions *c)
 				break;
 		}
 	}
+
+	b6b_unref(tok);
+	b6b_destroy(o);
 }
 
 int main(int argc, char *argv[]) {

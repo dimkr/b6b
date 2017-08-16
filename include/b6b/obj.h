@@ -66,6 +66,7 @@ struct b6b_obj {
 
 #define b6b_list_empty(o) TAILQ_EMPTY(&o->l)
 #define b6b_list_first(o) TAILQ_FIRST(&o->l)
+#define b6b_list_last(o) TAILQ_LAST(&o->l, b6b_lhead)
 #define b6b_list_next(li) TAILQ_NEXT(li, ents)
 #define b6b_list_foreach_safe(o, li, tli) \
 	TAILQ_FOREACH_SAFE(li, &o->l, ents, tli)
