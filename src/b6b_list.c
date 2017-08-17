@@ -171,7 +171,7 @@ int b6b_as_list(struct b6b_obj *o)
 						}
 
 						++j;
-					} while (1);
+					}
 
 					b6b_destroy_l(o);
 					return 0;
@@ -212,7 +212,7 @@ brac_end:
 						}
 
 						++j;
-					} while (1);
+					}
 
 					b6b_destroy_l(o);
 					return 0;
