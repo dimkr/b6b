@@ -143,6 +143,24 @@ static void complete(const char *s, linenoiseCompletions *c)
 	b6b_destroy(o);
 }
 
+static char *hint(const char *s, int *color, int *bold)
+{
+	if (!s[0])
+		return NULL;
+
+	switch (s[strlen(&s[1])]) {
+		case '{':
+			*bold = 1;
+			return "}";
+
+		case '[':
+			*bold = 1;
+			return "]";
+	}
+
+	return NULL;
+}
+
 int main(int argc, char *argv[]) {
 	enum b6b_res res;
 	int ret = EXIT_FAILURE;
@@ -194,6 +212,7 @@ done:
 			return EXIT_FAILURE;
 
 		linenoiseSetCompletionCallback(complete);
+		linenoiseSetHintsCallback(hint);
 
 		res = b6b_call_copy(&interp, B6B_SHELL, sizeof(B6B_SHELL) - 1);
 	}
