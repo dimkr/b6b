@@ -172,7 +172,7 @@ int b6b_as_str(struct b6b_obj *o)
 						o->s = s2;
 						o->slen = nlen;
 					}
-					else { /* first, non-empty withput whitespace */
+					else { /* first, non-empty witoput whitespace */
 						o->s = b6b_strndup(li->o->s, li->o->slen);
 						if (b6b_unlikely(!o->s))
 							return 0;
