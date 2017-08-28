@@ -36,6 +36,8 @@ union b6b_ffi_val {
 	unsigned int uint;
 	long slong;
 	unsigned long ulong;
+	int64_t int64;
+	uint64_t uint64;
 	float f;
 	double d;
 	void *voidp;
@@ -338,6 +340,7 @@ static enum b6b_res b6b_ffi_proc_func(struct b6b_interp *interp,
 	return b6b_return(interp, o);
 }
 
+
 static int b6b_ffi_encode(struct b6b_interp *interp,
                           struct b6b_obj *o,
                           ffi_type *type,
@@ -415,6 +418,22 @@ static int b6b_ffi_encode(struct b6b_interp *interp,
 		val->ushort = (unsigned short)o->i;
 		if (p)
 			*p = &val->ushort;
+	}
+	else if (type == &ffi_type_sint64) {
+		if (!b6b_as_int(o) || (o->i < INT64_MIN) || (o->i > INT64_MAX))
+			return 0;
+
+		val->int64 = (int64_t)o->i;
+		if (p)
+			*p = &val->int64;
+	}
+	else if (type == &ffi_type_uint64) {
+		if (!b6b_as_int(o) || (o->i < 0) || (o->i > UINT64_MAX))
+			return 0;
+
+		val->uint64 = (uint64_t)o->i;
+		if (p)
+			*p = &val->uint64;
 	}
 	else if (type == &ffi_type_float) {
 		if (!b6b_as_float(o))
