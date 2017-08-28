@@ -39,7 +39,7 @@ static enum b6b_res b6b_rand_proc_choice(struct b6b_interp *interp,
 	for (i = 0; i < c; ++i) {
 		li = b6b_list_next(li);
 		if (!li) {
-			/* if the list length is bigger than the random number, divide the
+			/* if the list length is smaller than the random number, divide the
 			 * latter by the former */
 			c %= (i + 1);
 
