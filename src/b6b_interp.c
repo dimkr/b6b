@@ -351,18 +351,15 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *, struct b6b_obj *);
 
 enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 {
-	struct b6b_obj *name, *o, *stmt;
+	struct b6b_obj name, *o, *stmt;
 	enum b6b_res res;
 
 	if (exp->slen) {
 		switch (exp->s[0]) {
 			case '$':
-				name = b6b_str_copy(&exp->s[1], exp->slen - 1);
-				if (b6b_unlikely(!name))
-					return B6B_ERR;
+				b6b_str_init(&name, &exp->s[1], exp->slen - 1);
 
-				o = b6b_get(interp, name);
-				b6b_destroy(name);
+				o = b6b_get(interp, &name);
 				if (o)
 					return b6b_return(interp, b6b_ref(o));
 

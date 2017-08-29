@@ -24,6 +24,18 @@ char *b6b_strndup(const char *s, const size_t len);
 __attribute__((nonnull(1)))
 struct b6b_obj *b6b_str_new(char *s, const size_t len);
 
+static inline struct b6b_obj *b6b_str_init(struct b6b_obj *o,
+                                           char *s,
+                                           const size_t len)
+{
+	o->s = s;
+	o->slen = len;
+	o->flags = B6B_TYPE_STR;
+	o->del = NULL;
+	o->refc = 1;
+	return o;
+}
+
 __attribute__((nonnull(1)))
 struct b6b_obj *b6b_str_copy(const char *s, const size_t len);
 struct b6b_obj *b6b_str_vfmt(const char *fmt, va_list ap);
