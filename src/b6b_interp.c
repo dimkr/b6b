@@ -357,6 +357,10 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	if (exp->slen) {
 		switch (exp->s[0]) {
 			case '$':
+				/* by using a statically-allocated object that points to the
+				 * same buffer as exp, we avoid the huge overhead of two
+				 * malloc() calls (one for the object and another for the
+				 * string); the performance gain is huge */
 				b6b_str_init(&name, &exp->s[1], exp->slen - 1);
 
 				o = b6b_get(interp, &name);

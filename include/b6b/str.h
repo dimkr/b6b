@@ -31,7 +31,6 @@ static inline struct b6b_obj *b6b_str_init(struct b6b_obj *o,
 	o->s = s;
 	o->slen = len;
 	o->flags = B6B_TYPE_STR;
-	o->del = NULL;
 	o->refc = 1;
 	return o;
 }
