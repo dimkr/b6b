@@ -377,7 +377,7 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 					return B6B_ERR;
 				}
 
-				stmt = b6b_str_copy(&exp->s[1], exp->slen - 2);
+				stmt = b6b_list_from(&exp->s[1], exp->slen - 2);
 				if (b6b_unlikely(!stmt))
 					return B6B_ERR;
 

@@ -20,6 +20,7 @@
 
 struct b6b_obj *b6b_list_new(void);
 struct b6b_obj *b6b_list_build(struct b6b_obj *o, ...);
+struct b6b_obj *b6b_list_from(const char *s, const size_t len);
 int b6b_as_list(struct b6b_obj *o);
 
 void b6b_list_flush(struct b6b_obj *l);
