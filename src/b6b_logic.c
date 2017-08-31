@@ -33,26 +33,26 @@ static enum b6b_res b6b_logic_proc_eq(struct b6b_interp *interp,
                                       struct b6b_obj *args)
 {
 	struct b6b_obj *a, *b;
-	int eq;
 
 	if (!b6b_proc_get_args(interp, args, "ooo", NULL, &a, &b) ||
-	    b6b_unlikely(!b6b_obj_eq(a, b, &eq)))
+	    b6b_unlikely(!b6b_obj_hash(a)) ||
+	    b6b_unlikely(!b6b_obj_hash(b)))
 		return B6B_ERR;
 
-	return b6b_return_bool(interp, eq);
+	return b6b_return_bool(interp, b6b_obj_eq(a, b));
 }
 
 static enum b6b_res b6b_logic_proc_ne(struct b6b_interp *interp,
                                       struct b6b_obj *args)
 {
 	struct b6b_obj *a, *b;
-	int eq;
 
 	if (!b6b_proc_get_args(interp, args, "ooo", NULL, &a, &b) ||
-	    b6b_unlikely(!b6b_obj_eq(a, b, &eq)))
+	    b6b_unlikely(!b6b_obj_hash(a)) ||
+	    b6b_unlikely(!b6b_obj_hash(b)))
 		return B6B_ERR;
 
-	return b6b_return_bool(interp, !eq);
+	return b6b_return_bool(interp, !b6b_obj_eq(a, b));
 }
 
 static enum b6b_res b6b_logic_proc_and(struct b6b_interp *interp,

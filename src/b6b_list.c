@@ -523,16 +523,16 @@ static enum b6b_res b6b_list_proc_in(struct b6b_interp *interp,
 {
 	struct b6b_obj *l, *o;
 	struct b6b_litem *li;
-	int eq;
 
-	if (!b6b_proc_get_args(interp, args, "ool", NULL, &o, &l))
+	if (!b6b_proc_get_args(interp, args, "ool", NULL, &o, &l) ||
+	    b6b_unlikely(!b6b_obj_hash(o)))
 		return B6B_ERR;
 
 	b6b_list_foreach(l, li) {
-		if (b6b_unlikely(!b6b_obj_eq(o, li->o, &eq)))
+		if (b6b_unlikely(!b6b_obj_hash(li->o)))
 			return B6B_ERR;
 
-		if (eq)
+		if (b6b_obj_eq(o, li->o))
 			return b6b_return_true(interp);
 	}
 

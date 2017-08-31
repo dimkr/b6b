@@ -22,18 +22,20 @@
 int b6b_dict_set(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj *v)
 {
 	struct b6b_litem *kli, *vli;
-	int eq;
+
+	if (b6b_unlikely(!b6b_obj_hash(k)))
+		return 0;
 
 	kli = b6b_list_first(d);
 	while (kli) {
-		if (b6b_unlikely(!b6b_obj_eq(kli->o, k, &eq)))
+		if (b6b_unlikely(!b6b_obj_hash(kli->o)))
 			return 0;
 
 		vli = b6b_list_next(kli);
 		if (!vli)
 			return 0;
 
-		if (eq) {
+		if (b6b_obj_eq(kli->o, k)) {
 			b6b_unref(vli->o);
 			vli->o = b6b_ref(v);
 			b6b_list_flush(d);
@@ -57,15 +59,17 @@ int b6b_dict_set(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj *v)
 int b6b_dict_get(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj **v)
 {
 	struct b6b_litem *kli, *vli;
-	int eq;
+
+	if (b6b_unlikely(!b6b_obj_hash(k)))
+		return 0;
 
 	kli = b6b_list_first(d);
 	while (kli) {
 		vli = b6b_list_next(kli);
-		if (!vli || !b6b_obj_eq(kli->o, k, &eq))
+		if (!vli || b6b_unlikely(!b6b_obj_hash(kli->o)))
 			return 0;
 
-		if (eq) {
+		if (b6b_obj_eq(kli->o, k)) {
 			*v = vli->o;
 			return 1;
 		}
@@ -80,15 +84,18 @@ int b6b_dict_get(struct b6b_obj *d, struct b6b_obj *k, struct b6b_obj **v)
 int b6b_dict_unset(struct b6b_obj *d, struct b6b_obj *k)
 {
 	struct b6b_litem *li, *vli;
-	int eq;
+
+	if (b6b_unlikely(!b6b_obj_hash(k)))
+		return 0;
 
 	li = b6b_list_first(d);
 	while (li) {
 		vli = b6b_list_next(li);
-		if (!vli || !b6b_obj_eq(li->o, k, &eq))
+
+		if (!vli || b6b_unlikely(!b6b_obj_hash(li->o)))
 			return 0;
 
-		if (eq) {
+		if (b6b_obj_eq(li->o, k)) {
 			b6b_unref(b6b_list_pop(d, li));
 			b6b_unref(b6b_list_pop(d, vli));
 			return 1;

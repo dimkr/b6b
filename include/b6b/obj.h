@@ -22,6 +22,7 @@
 #include <sys/queue.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef long long b6b_int;
 #define B6B_INT_FMT "%lld"
@@ -95,7 +96,13 @@ static inline void b6b_unref(struct b6b_obj *o)
 		b6b_destroy(o);
 }
 
-int b6b_obj_eq(struct b6b_obj *a, struct b6b_obj *b, int *eq);
+int b6b_obj_hash(struct b6b_obj *o);
+static inline int b6b_obj_eq(struct b6b_obj *a, struct b6b_obj *b)
+{
+	return (a->hash == b->hash) &&
+	       (a->slen == b->slen) &&
+	       (memcmp(a->s, b->s, a->slen) == 0);
+}
 
 static inline int b6b_obj_isnull(const struct b6b_obj *o)
 {
