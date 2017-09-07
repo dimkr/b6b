@@ -137,7 +137,7 @@
 			{$list.append $resp_hdrs $http.deflate_hdr}
 			{$local cbody [$dict.get $http.cbody_cache $url {}]}
 			{$if [$! [$str.len $cbody]] {
-				{$local cbody [$deflate $body 1]}
+				{$local cbody [$compress $body 1]}
 				{# cache the compressed file contents, too}
 				{$dict.set $http.cbody_cache $url $cbody}
 				{$export cbody}
