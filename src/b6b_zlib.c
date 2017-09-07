@@ -28,8 +28,9 @@
 #define B6B_INFLATE_IN_CHUNK_SZ 64 * 1024
 #define B6B_INFLATE_OUT_CHUNK_SZ 256 * 1024
 
-static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
-                                          struct b6b_obj *args)
+static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
+                                     struct b6b_obj *args,
+                                     const int wbits)
 {
 	mz_stream strm = {0};
 	size_t slen, dlen;
@@ -54,7 +55,12 @@ static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
 	if (s->slen > UINT32_MAX)
 		return B6B_ERR;
 
-	if (mz_deflateInit(&strm, level) != MZ_OK)
+	if (mz_deflateInit2(&strm,
+	                    level,
+	                    MZ_DEFLATED,
+	                    wbits,
+	                    9,
+	                    MZ_DEFAULT_STRATEGY) != MZ_OK)
 		return B6B_ERR;
 
 	/* copy the buffer, since s->s may be freed after context switch */
@@ -117,8 +123,21 @@ static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
 	return b6b_return(interp, o);
 }
 
-static enum b6b_res b6b_zlib_proc_inflate(struct b6b_interp *interp,
+static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
                                           struct b6b_obj *args)
+{
+	return b6b_zlib_deflate(interp, args, -MZ_DEFAULT_WINDOW_BITS);
+}
+
+static enum b6b_res b6b_zlib_proc_compress(struct b6b_interp *interp,
+                                           struct b6b_obj *args)
+{
+	return b6b_zlib_deflate(interp, args, MZ_DEFAULT_WINDOW_BITS);
+}
+
+static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
+                                     struct b6b_obj *args,
+                                     const int wbits)
 {
 	mz_stream strm = {0};
 	size_t slen, dlen;
@@ -132,7 +151,7 @@ static enum b6b_res b6b_zlib_proc_inflate(struct b6b_interp *interp,
 	if (s->slen > UINT32_MAX)
 		return B6B_ERR;
 
-	if (mz_inflateInit(&strm) != MZ_OK)
+	if (mz_inflateInit2(&strm, wbits) != MZ_OK)
 		return B6B_ERR;
 
 	src = (unsigned char *)malloc(s->slen);
@@ -207,6 +226,18 @@ flush:
 	return b6b_return(interp, o);
 }
 
+static enum b6b_res b6b_zlib_proc_inflate(struct b6b_interp *interp,
+                                          struct b6b_obj *args)
+{
+	return b6b_zlib_inflate(interp, args, -MZ_DEFAULT_WINDOW_BITS);
+}
+
+static enum b6b_res b6b_zlib_proc_decompress(struct b6b_interp *interp,
+                                             struct b6b_obj *args)
+{
+	return b6b_zlib_inflate(interp, args, MZ_DEFAULT_WINDOW_BITS);
+}
+
 static const struct b6b_ext_obj b6b_zlib[] = {
 	{
 		.name = "deflate",
@@ -215,10 +246,22 @@ static const struct b6b_ext_obj b6b_zlib[] = {
 		.proc = b6b_zlib_proc_deflate
 	},
 	{
+		.name = "compress",
+		.type = B6B_TYPE_STR,
+		.val.s = "compress",
+		.proc = b6b_zlib_proc_compress
+	},
+	{
 		.name = "inflate",
 		.type = B6B_TYPE_STR,
 		.val.s = "inflate",
 		.proc = b6b_zlib_proc_inflate
+	},
+	{
+		.name = "decompress",
+		.type = B6B_TYPE_STR,
+		.val.s = "decompress",
+		.proc = b6b_zlib_proc_decompress
 	}
 };
 __b6b_ext(b6b_zlib);
