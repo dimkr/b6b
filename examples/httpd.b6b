@@ -109,7 +109,10 @@
 		{$if [$== $url /] {
 			{$export url ./index.html}
 		} {
-			{$export url [$realpath [$str.join ./ [$list.new {} $url]]]}
+			{$if [$str.in ../ $url] {
+				{$throw}
+			}}
+			{$export url [$str.join ./ [$list.new {} $url]]}
 		}}
 
 		{$try {

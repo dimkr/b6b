@@ -604,6 +604,32 @@ static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
 	return b6b_return(interp, o);
 }
 
+static enum b6b_res b6b_str_proc_in(struct b6b_interp *interp,
+                                    struct b6b_obj *args)
+{
+	struct b6b_obj *sub, *s;
+	size_t i;
+
+	if (!b6b_proc_get_args(interp, args, "oss", NULL, &sub, &s) || !sub->slen)
+		return B6B_ERR;
+
+	if (s->slen > sub->slen) {
+		for (i = 0; i <= s->slen - sub->slen; ++i) {
+			if (memcmp(&s->s[i], sub->s, sub->slen) == 0)
+				return b6b_return_bool(interp, 1);
+		}
+	}
+	else if (s->slen == sub->slen) {
+		if (b6b_unlikely(!b6b_obj_hash(s)) || b6b_unlikely(!b6b_obj_hash(sub)))
+			return B6B_ERR;
+
+
+		return b6b_return_bool(interp, b6b_obj_eq(sub, s));
+	}
+
+	return b6b_return_bool(interp, 0);
+}
+
 static enum b6b_res b6b_str_proc_rtrim(struct b6b_interp *interp,
                                        struct b6b_obj *args)
 {
@@ -681,6 +707,12 @@ static const struct b6b_ext_obj b6b_str[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "str.expand",
 		.proc = b6b_str_proc_expand
+	},
+	{
+		.name = "str.in",
+		.type = B6B_TYPE_STR,
+		.val.s = "str.in",
+		.proc = b6b_str_proc_in
 	},
 	{
 		.name = "rtrim",

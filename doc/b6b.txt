@@ -435,6 +435,12 @@ Strings
 'str.expand' expands escape sequences in a string.
 
 --------------------------------------
+{$str.in bc abcd}
+--------------------------------------
+
+'str.in' determines whether a string is a subset of another string.
+
+--------------------------------------
 {$rtrim {a b  }}
 --------------------------------------
 

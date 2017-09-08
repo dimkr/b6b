@@ -251,6 +251,50 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in {} abcd}", 17) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in ef abcd}", 17) == B6B_OK);
+	assert(!b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in ab abcd}", 17) == B6B_OK);
+	assert(b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in bc abcd}", 17) == B6B_OK);
+	assert(b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in cd abcd}", 17) == B6B_OK);
+	assert(b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in bc bc}", 15) == B6B_OK);
+	assert(b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in bc bb}", 15) == B6B_OK);
+	assert(!b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in bc b}", 14) == B6B_OK);
+	assert(!b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.in bc {}}", 15) == B6B_OK);
+	assert(!b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$rtrim {}}", 11) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(!interp.fg->_->slen);
