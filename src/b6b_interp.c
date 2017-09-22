@@ -467,6 +467,7 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 {
 	struct b6b_litem *li;
 	struct b6b_frame *f;
+	const char *p;
 	enum b6b_res res = B6B_ERR;
 
 	/* if the interpreter is exiting, issue B6B_EXIT in the current thread;
@@ -491,12 +492,23 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 			goto pop;
 	}
 
-	if ((interp->opts & B6B_OPT_TRACE) &&
-	    (!b6b_as_str(f->args) ||
-	     (fwrite("+ ", 2, 1, stderr) != 1) ||
-	     (fwrite(f->args->s, f->args->slen, 1, stderr) != 1) ||
-	     (fputc('\n', stderr) != '\n')))
-		goto pop;
+	if (interp->opts & B6B_OPT_TRACE) {
+		if (!b6b_as_str(f->args))
+			goto pop;
+
+		if (fwrite("+ ", 2, 1, stderr) != 1)
+			goto pop;
+
+		p = strchr(f->args->s, '\n');
+		if (p) {
+			if ((fwrite(f->args->s, p - f->args->s, 1, stderr) != 1) ||
+			    (fwrite(" ...\n", 5, 1, stderr) != 1))
+				goto pop;
+		}
+		else if ((fwrite(f->args->s, f->args->slen, 1, stderr) != 1) ||
+		         (fputc('\n', stderr) != '\n'))
+			goto pop;
+	}
 
 	/* reset the return value after argument evaluation */
 	b6b_unref(interp->fg->_);
