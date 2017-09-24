@@ -40,7 +40,7 @@ before_install:
 
 install:
   - export PATH="`pwd`/build:${PATH}"
-  - wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build
+  - wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build
   - pip3 install --user meson
 
 script:
