@@ -51,15 +51,19 @@ struct b6b_interp {
 };
 
 #ifdef B6B_HAVE_THREADS
+
 static inline int b6b_threaded(struct b6b_interp *interp)
 {
 	return b6b_thread_next(b6b_thread_first(&interp->threads)) ? 1 : 0;
 }
+
 #else
+
 static inline int b6b_threaded(struct b6b_interp *interp)
 {
 	return 0;
 }
+
 #endif
 
 int b6b_interp_new(struct b6b_interp *interp,
@@ -147,8 +151,10 @@ unsigned int b6b_args_parse(struct b6b_interp *interp,
 #ifdef B6B_HAVE_THREADS
 int b6b_yield(struct b6b_interp *interp);
 #else
+
 static inline int b6b_yield(struct b6b_interp *interp)
 {
 	return 0;
 }
+
 #endif

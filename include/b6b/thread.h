@@ -23,9 +23,9 @@
 #	include <sys/queue.h>
 
 enum b6b_thread_flags {
-	B6B_THREAD_BG      = 1,
-	B6B_THREAD_FG      = 1 << 1,
-	B6B_THREAD_DONE    = 1 << 2
+	B6B_THREAD_BG   = 1,
+	B6B_THREAD_FG   = 1 << 1,
+	B6B_THREAD_DONE = 1 << 2
 };
 
 TAILQ_HEAD(b6b_threads, b6b_thread);
@@ -33,14 +33,14 @@ struct b6b_thread {
 	ucontext_t ucp;
 	void *stack;
 	struct b6b_frame *curr;
-	unsigned int depth;
 	struct b6b_obj *fn;
 	struct b6b_obj *_;
+	TAILQ_ENTRY(b6b_thread) ents;
 #	ifdef B6B_HAVE_VALGRIND
 	int sid;
 #	endif
+	unsigned int depth;
 	uint8_t flags;
-	TAILQ_ENTRY(b6b_thread) ents;
 };
 
 #	define b6b_thread_init(h) TAILQ_INIT(h)
@@ -73,9 +73,9 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg);
 #else
 
 struct b6b_thread {
+	struct b6b_obj *_;
 	struct b6b_frame *curr;
 	unsigned int depth;
-	struct b6b_obj *_;
 };
 
 #endif
