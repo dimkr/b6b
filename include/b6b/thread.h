@@ -16,15 +16,16 @@
  * limitations under the License.
  */
 
-#include <ucontext.h>
+#ifdef B6B_HAVE_THREADS
 
-#include <sys/queue.h>
+#	include <ucontext.h>
+
+#	include <sys/queue.h>
 
 enum b6b_thread_flags {
 	B6B_THREAD_BG      = 1,
 	B6B_THREAD_FG      = 1 << 1,
-	B6B_THREAD_DONE    = 1 << 2,
-	B6B_THREAD_NATIVE  = 1 << 3
+	B6B_THREAD_DONE    = 1 << 2
 };
 
 TAILQ_HEAD(b6b_threads, b6b_thread);
@@ -35,17 +36,17 @@ struct b6b_thread {
 	unsigned int depth;
 	struct b6b_obj *fn;
 	struct b6b_obj *_;
-#ifdef B6B_HAVE_VALGRIND
+#	ifdef B6B_HAVE_VALGRIND
 	int sid;
-#endif
+#	endif
 	uint8_t flags;
 	TAILQ_ENTRY(b6b_thread) ents;
 };
 
-#define b6b_thread_init(h) TAILQ_INIT(h)
-#define b6b_thread_first(h) TAILQ_FIRST(h)
-#define b6b_thread_next(t) TAILQ_NEXT(t, ents)
-#define b6b_thread_foreach_safe(h, t, tt) TAILQ_FOREACH_SAFE(t, h, ents, tt)
+#	define b6b_thread_init(h) TAILQ_INIT(h)
+#	define b6b_thread_first(h) TAILQ_FIRST(h)
+#	define b6b_thread_next(t) TAILQ_NEXT(t, ents)
+#	define b6b_thread_foreach_safe(h, t, tt) TAILQ_FOREACH_SAFE(t, h, ents, tt)
 
 struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
                                   struct b6b_obj *fn,
@@ -54,7 +55,6 @@ struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
                                   void (*routine)(int, int, int, int),
                                   void *priv,
                                   const size_t stksiz);
-void b6b_thread_destroy(struct b6b_thread *t);
 
 static inline void b6b_thread_push(struct b6b_threads *threads,
                                    struct b6b_thread *t,
@@ -68,5 +68,18 @@ static inline void b6b_thread_push(struct b6b_threads *threads,
 }
 
 void b6b_thread_pop(struct b6b_threads *ts, struct b6b_thread *t);
-
 void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg);
+
+#else
+
+struct b6b_thread {
+	struct b6b_frame *curr;
+	unsigned int depth;
+	struct b6b_obj *_;
+};
+
+#endif
+
+struct b6b_thread *b6b_thread_self(struct b6b_frame *global,
+                                   struct b6b_obj *null);
+void b6b_thread_destroy(struct b6b_thread *t);

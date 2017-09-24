@@ -23,8 +23,8 @@ endif
 libb6b_srcs = [
 	'b6b_obj.c', 'b6b_str.c', 'b6b_int.c', 'b6b_float.c', 'b6b_list.c', 'b6b_dict.c',
 	'b6b_frame.c', 'b6b_thread.c', 'b6b_interp.c',
-	'b6b_math.c', 'b6b_logic.c', 'b6b_loop.c', 'b6b_exc.c', 'b6b_proc.c', 'b6b_co.c',
-	'b6b_strm.c', 'b6b_fdops.c', 'b6b_stdio.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sem.c', 'b6b_sh.c', 'b6b_poll.c', 'b6b_evloop.c',
+	'b6b_math.c', 'b6b_logic.c', 'b6b_loop.c', 'b6b_exc.c', 'b6b_proc.c',
+	'b6b_strm.c', 'b6b_fdops.c', 'b6b_stdio.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sh.c', 'b6b_poll.c', 'b6b_evloop.c',
 	'b6b_time.c', 'b6b_path.c', 'b6b_rand.c'
 ]
 b6b_deps = [
@@ -32,6 +32,11 @@ b6b_deps = [
 	cc.find_library('dl', required: true),
 ]
 b6b_libs = []
+
+if get_option('with_threads')
+	add_project_arguments('-DB6B_HAVE_THREADS', language: 'c')
+	libb6b_srcs += ['b6b_co.c', 'b6b_sem.c']
+endif
 
 with_linenoise = get_option('with_linenoise')
 if with_linenoise

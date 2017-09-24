@@ -14,18 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-componenets = ['cast', 'list_parse', 'if', 'try', 'map', 'spawn', 'co', 'dict', 'str', 'file', 'signal', 'poll', 'proc', 'sh', 'sem', 'math']
+components = ['cast', 'list_parse', 'if', 'try', 'map', 'dict', 'str', 'file', 'signal', 'poll', 'proc', 'sh', 'math']
+
+if get_option('with_threads')
+	components += ['spawn', 'co', 'sem']
+endif
 
 if get_option('with_miniz')
-	componenets += ['zlib']
+	components += ['zlib']
 endif
 
 if libffi.found()
-	componenets += ['ffi']
+	components += ['ffi']
 endif
 
 if get_option('default_library') != 'static'
-	foreach component: componenets
+	foreach component: components
 		test_name = 'b6b_test_@0@'.format(component)
 		test_exe = executable(test_name,
 		                      '@0@.c'.format(test_name),

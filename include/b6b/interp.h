@@ -28,7 +28,9 @@ enum b6b_interp_opts {
 };
 
 struct b6b_interp {
+#ifdef B6B_HAVE_THREADS
 	struct b6b_threads threads;
+#endif
 	struct b6b_thread *fg;
 	struct b6b_frame *global;
 	struct b6b_obj *null;
@@ -37,17 +39,28 @@ struct b6b_interp {
 	struct b6b_obj *dot;
 	struct b6b_obj *at;
 	struct b6b_obj *_;
+#ifdef B6B_HAVE_THREADS
 	long stksiz;
 	int exit;
+#endif
 	unsigned int seed;
+#ifdef B6B_HAVE_THREADS
 	uint8_t qstep;
+#endif
 	uint8_t opts;
 };
 
+#ifdef B6B_HAVE_THREADS
 static inline int b6b_threaded(struct b6b_interp *interp)
 {
 	return b6b_thread_next(b6b_thread_first(&interp->threads)) ? 1 : 0;
 }
+#else
+static inline int b6b_threaded(struct b6b_interp *interp)
+{
+	return 0;
+}
+#endif
 
 int b6b_interp_new(struct b6b_interp *interp,
                    struct b6b_obj *args,
@@ -79,7 +92,9 @@ enum b6b_res b6b_call(struct b6b_interp *interp, struct b6b_obj *stmts);
 enum b6b_res b6b_call_copy(struct b6b_interp *interp,
                            const char *s,
                            const size_t len);
+#ifdef B6B_HAVE_THREADS
 int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts);
+#endif
 enum b6b_res b6b_source(struct b6b_interp *interp, const char *path);
 
 static inline enum b6b_res b6b_return(struct b6b_interp *interp,
@@ -129,4 +144,11 @@ unsigned int b6b_args_parse(struct b6b_interp *interp,
                             const char *fmt,
                             ...);
 
+#ifdef B6B_HAVE_THREADS
 int b6b_yield(struct b6b_interp *interp);
+#else
+static inline int b6b_yield(struct b6b_interp *interp)
+{
+	return 0;
+}
+#endif

@@ -34,6 +34,8 @@
 
 #include <b6b.h>
 
+#ifdef B6B_HAVE_THREADS
+
 static void b6b_thread_routine(const int th,
                                const int tl,
                                const int ih,
@@ -54,6 +56,8 @@ static void b6b_thread_routine(const int th,
 	t->flags |= B6B_THREAD_DONE;
 	b6b_yield(interp);
 }
+
+#endif
 
 static int b6b_interp_new_ext_obj(struct b6b_interp *interp,
                                   const struct b6b_ext_obj *eo)
@@ -107,14 +111,16 @@ int b6b_interp_new(struct b6b_interp *interp,
 	b6b_initf *ip;
 	unsigned int j;
 
-	b6b_thread_init(&interp->threads);
 	interp->fg = NULL;
+#ifdef B6B_HAVE_THREADS
+	b6b_thread_init(&interp->threads);
 
 	/* we allocate a small stack (just two pages) */
 	interp->stksiz = sysconf(_SC_PAGESIZE);
 	if (interp->stksiz <= 0)
 		goto bail;
 	interp->stksiz *= 2;
+#endif
 
 	interp->null = b6b_str_copy("", 0);
 	if (b6b_unlikely(!interp->null))
@@ -145,19 +151,17 @@ int b6b_interp_new(struct b6b_interp *interp,
 	    b6b_unlikely(!b6b_frame_set_args(interp, interp->global, args)))
 		goto bail;
 
+#ifdef B6B_HAVE_THREADS
 	interp->qstep = 0;
 	interp->exit = 0;
+#endif
 
-	interp->fg = b6b_thread_new(&interp->threads,
-	                            NULL,
-	                            interp->global,
-	                            interp->null,
-	                            b6b_thread_routine,
-	                            interp,
-	                            (size_t)interp->stksiz);
+	interp->fg = b6b_thread_self(interp->global, interp->null);
 	if (!interp->fg)
 		goto bail;
+#ifdef B6B_HAVE_THREADS
 	b6b_thread_push(&interp->threads, interp->fg, NULL);
+#endif
 
 	interp->seed = (unsigned int)time(NULL);
 	interp->opts = opts & B6B_OPT_NBF;
@@ -222,6 +226,7 @@ int b6b_interp_new_argv(struct b6b_interp *interp,
 
 static void b6b_join(struct b6b_interp *interp)
 {
+#ifdef B6B_HAVE_THREADS
 	struct b6b_thread *t;
 
 	/* wait until all threads except the main thread are inactive */
@@ -232,6 +237,10 @@ static void b6b_join(struct b6b_interp *interp)
 	t = b6b_thread_first(&interp->threads);
 	if (t)
 		b6b_thread_destroy(t);
+#else
+	if (interp->fg)
+		b6b_thread_destroy(interp->fg);
+#endif
 }
 
 void b6b_interp_destroy(struct b6b_interp *interp)
@@ -390,6 +399,8 @@ enum b6b_res b6b_eval(struct b6b_interp *interp, struct b6b_obj *exp)
 	return b6b_return(interp, b6b_ref(exp));
 }
 
+#ifdef B6B_HAVE_THREADS
+
 static void b6b_wait(struct b6b_interp *interp)
 {
 	struct b6b_thread *t, *tt;
@@ -435,6 +446,8 @@ swap:
 	return 1;
 }
 
+#endif
+
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,
                                const enum b6b_res res)
 {
@@ -443,12 +456,15 @@ static enum b6b_res b6b_on_res(struct b6b_interp *interp,
 		return B6B_OK;
 	}
 
+#ifdef B6B_HAVE_THREADS
 	++interp->qstep;
+#endif
 
 	/* update _ of the calling frame */
 	if (b6b_unlikely(!b6b_local(interp, interp->_, interp->fg->_)))
 		return B6B_ERR;
 
+#ifdef B6B_HAVE_THREADS
 	if (res == B6B_EXIT) {
 		/* signal all threads to stop */
 		interp->exit = 1;
@@ -458,6 +474,7 @@ static enum b6b_res b6b_on_res(struct b6b_interp *interp,
 	/* switch to another thread after each batch of B6B_QUANT_LEN statements */
 	if (interp->qstep == B6B_QUANT_LEN)
 		b6b_yield(interp);
+#endif
 
 	return res;
 }
@@ -470,10 +487,12 @@ static enum b6b_res b6b_stmt_call(struct b6b_interp *interp,
 	const char *p;
 	enum b6b_res res = B6B_ERR;
 
+#ifdef B6B_HAVE_THREADS
 	/* if the interpreter is exiting, issue B6B_EXIT in the current thread;
 	 * b6b_join() takes care of sweeping through all threads */
 	if (interp->exit)
 		return B6B_EXIT;
+#endif
 
 	f = b6b_frame_push(interp);
 	if (b6b_unlikely(!f))
@@ -561,6 +580,8 @@ enum b6b_res b6b_call_copy(struct b6b_interp *interp,
 	return res;
 }
 
+#ifdef B6B_HAVE_THREADS
+
 int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts)
 {
 	struct b6b_thread *t;
@@ -579,6 +600,8 @@ int b6b_start(struct b6b_interp *interp, struct b6b_obj *stmts)
 
 	return 0;
 }
+
+#endif
 
 enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 {
@@ -839,6 +862,22 @@ static enum b6b_res b6b_interp_proc_call(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
+#ifdef B6B_HAVE_THREADS
+
+static enum b6b_res b6b_interp_proc_spawn(struct b6b_interp *interp,
+                                          struct b6b_obj *args)
+{
+	struct b6b_obj *o;
+
+	if (b6b_proc_get_args(interp, args, "oo", NULL, &o) &&
+	    b6b_start(interp, o))
+		return B6B_OK;
+
+	return B6B_ERR;
+}
+
+#endif
+
 static enum b6b_res b6b_b6b_proc(struct b6b_interp *interp,
                                  struct b6b_obj *args)
 {
@@ -893,18 +932,6 @@ static enum b6b_res b6b_interp_proc_b6b(struct b6b_interp *interp,
 	o->proc = b6b_b6b_proc;
 	o->del = b6b_b6b_del;
 	return b6b_return(interp, o);
-}
-
-static enum b6b_res b6b_interp_proc_spawn(struct b6b_interp *interp,
-                                          struct b6b_obj *args)
-{
-	struct b6b_obj *o;
-
-	if (b6b_proc_get_args(interp, args, "oo", NULL, &o) &&
-	    b6b_start(interp, o))
-		return B6B_OK;
-
-	return B6B_ERR;
 }
 
 static const struct b6b_ext_obj b6b_interp[] = {
@@ -986,17 +1013,19 @@ static const struct b6b_ext_obj b6b_interp[] = {
 		.val.s = "call",
 		.proc = b6b_interp_proc_call
 	},
-	{
-		.name = "b6b",
-		.type = B6B_TYPE_STR,
-		.val.s = "b6b",
-		.proc = b6b_interp_proc_b6b
-	},
+#ifdef B6B_HAVE_THREADS
 	{
 		.name = "spawn",
 		.type = B6B_TYPE_STR,
 		.val.s = "spawn",
 		.proc = b6b_interp_proc_spawn
+	},
+#endif
+	{
+		.name = "b6b",
+		.type = B6B_TYPE_STR,
+		.val.s = "b6b",
+		.proc = b6b_interp_proc_b6b
 	}
 };
 __b6b_ext(b6b_interp);

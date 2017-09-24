@@ -16,20 +16,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-meson -Db_coverage=true -Dwith_doc=false build-debug
+meson -Dwith_doc=false build-debug
 meson --buildtype release build-release
+meson -Dwith_doc=false -Dwith_threads=false build-no-threads-debug
+meson --buildtype release -Dwith_doc=false -Dwith_threads=false build-no-threads-release
 CC=clang meson -Dwith_doc=false build-clang-debug
 CC=clang meson --buildtype release -Dwith_doc=false build-clang-release
 
-for i in "" -clang
+for i in "" -no-threads -clang
 do
 	for j in -release -debug
 	do
 		ninja -C build$i$j
-		mesontest -C build$i$j --print-errorlogs
+		meson test -C build$i$j --print-errorlogs
 	done
 
 	DESTDIR=dest ninja -C build$i-release install
 done
 
-mesontest -C build-release --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
+meson test -C build-release --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
