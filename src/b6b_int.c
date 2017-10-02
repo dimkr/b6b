@@ -18,7 +18,9 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <fenv.h>
+#ifdef B6B_HAVE_FENV
+#	include <fenv.h>
+#endif
 
 #include <b6b.h>
 
@@ -43,10 +45,14 @@ int b6b_as_int(struct b6b_obj *o)
 	if (!b6b_as_float(o))
 		return 0;
 
+#ifdef B6B_HAVE_FENV
 	feclearexcept(FE_ALL_EXCEPT);
+#endif
 	o->i = (b6b_int)floor(o->f);
+#ifdef B6B_HAVE_FENV
 	if (fetestexcept(FE_INVALID))
 		return 0;
+#endif
 
 	o->flags |= B6B_TYPE_INT;
 	return 1;

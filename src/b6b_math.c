@@ -18,7 +18,9 @@
 
 #include <math.h>
 #include <errno.h>
-#include <fenv.h>
+#ifdef B6B_HAVE_FENV
+#	include <fenv.h>
+#endif
 
 #include <b6b.h>
 
@@ -84,11 +86,20 @@ static enum b6b_res b6b_math_proc_mod(struct b6b_interp *interp,
 			return B6B_ERR;
 		}
 
+#ifndef B6B_HAVE_FENV
+		if (isinf(m->f) && !isnan(n->f))
+			return B6B_ERR;
+#else
 		errno = 0;
 		feclearexcept(FE_ALL_EXCEPT);
+#endif
 		p = remainder(m->f, n->f);
-		if (!errno && !fetestexcept(FE_INVALID))
-			return b6b_return_float(interp, (b6b_float)p);
+#ifdef B6B_HAVE_FENV
+		if (errno || fetestexcept(FE_INVALID))
+			return B6B_ERR;
+#endif
+
+		return b6b_return_float(interp, (b6b_float)p);
 	}
 
 	return B6B_ERR;

@@ -20,6 +20,10 @@ if get_option('buildtype').startswith('debug') and cc.has_header('valgrind/valgr
 	add_project_arguments('-DB6B_HAVE_VALGRIND', language: 'c')
 endif
 
+if cc.has_header('fenv.h')
+	add_project_arguments('-DB6B_HAVE_FENV', language: 'c')
+endif
+
 libb6b_srcs = [
 	'b6b_obj.c', 'b6b_str.c', 'b6b_int.c', 'b6b_float.c', 'b6b_list.c', 'b6b_dict.c',
 	'b6b_frame.c', 'b6b_thread.c', 'b6b_interp.c',
@@ -27,10 +31,7 @@ libb6b_srcs = [
 	'b6b_strm.c', 'b6b_fdops.c', 'b6b_stdio.c', 'b6b_file.c', 'b6b_socket.c', 'b6b_timer.c', 'b6b_signal.c', 'b6b_sh.c', 'b6b_poll.c', 'b6b_evloop.c',
 	'b6b_time.c', 'b6b_path.c', 'b6b_rand.c'
 ]
-b6b_deps = [
-	cc.find_library('m', required: true),
-	cc.find_library('dl', required: true),
-]
+b6b_deps = [cc.find_library('m', required: true)]
 b6b_libs = []
 
 if get_option('with_threads')
@@ -53,8 +54,11 @@ endif
 
 libffi = cc.find_library('ffi', required: false)
 if libffi.found()
-	libb6b_srcs += ['b6b_ffi.c']
-	b6b_deps += [libffi]
+	libdl = cc.find_library('dl', required: false)
+	if libdl.found()
+		libb6b_srcs += ['b6b_ffi.c']
+		b6b_deps += [libffi, libdl]
+	endif
 endif
 
 # b6b cannot be linked with a static libb6b due to the use of sections in
