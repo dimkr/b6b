@@ -28,12 +28,14 @@
 #	include <b6b/dict.h>
 #	include <b6b/frame.h>
 #	include <b6b/thread.h>
-#	include <b6b/syscall.h>
 #	include <b6b/interp.h>
 #	include <b6b/proc.h>
 #	include <b6b/ext.h>
 #	include <b6b/strm.h>
 #	include <b6b/fdops.h>
 #	include <b6b/stdio.h>
+#	ifdef B6B_HAVE_SYSCALL_THREAD
+#		include <b6b/syscall.h>
+#	endif
 
 #endif
