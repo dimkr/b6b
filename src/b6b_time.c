@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
+#include <sys/syscall.h>
 
 #include <b6b.h>
 
@@ -29,6 +30,7 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 {
 	struct timespec req, rem;
 	struct b6b_obj *f;
+	int ret;
 
 	if (!b6b_proc_get_args(interp, args, "of", NULL, &f))
 		return B6B_ERR;
@@ -40,13 +42,19 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 	req.tv_sec = (time_t)floor(f->f);
 	req.tv_nsec = labs((long)(1000000000 * (f->f - (b6b_float)req.tv_sec)));
 
-	while (nanosleep(&req, &rem) < 0) {
+	do {
+		if (!b6b_syscall(interp, &ret, __NR_nanosleep, &req, &rem))
+			return B6B_ERR;
+
+		if (ret == 0)
+			break;
+
 		if (errno != EINTR)
 			return b6b_return_strerror(interp, errno);
 
 		req.tv_sec = rem.tv_sec;
 		req.tv_nsec = rem.tv_nsec;
-	}
+	} while (1);
 
 	return B6B_OK;
 }

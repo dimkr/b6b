@@ -15,8 +15,9 @@
 # limitations under the License.
 
 cc = meson.get_compiler('c')
+debug = get_option('buildtype').startswith('debug')
 
-if get_option('buildtype').startswith('debug') and cc.has_header('valgrind/valgrind.h') and cc.has_header('valgrind/memcheck.h')
+if debug and cc.has_header('valgrind/valgrind.h') and cc.has_header('valgrind/memcheck.h')
 	add_project_arguments('-DB6B_HAVE_VALGRIND', language: 'c')
 endif
 
@@ -37,6 +38,16 @@ b6b_libs = []
 if get_option('with_threads')
 	add_project_arguments('-DB6B_HAVE_THREADS', language: 'c')
 	libb6b_srcs += ['b6b_co.c', 'b6b_sem.c']
+	b6b_deps += [dependency('threads')]
+
+	if cc.has_header('stdatomic.h')
+		add_project_arguments('-DB6B_HAVE_SYSCALL_THREAD', language: 'c')
+		libb6b_srcs += ['b6b_syscall.c']
+
+		if debug and cc.has_header('valgrind/helgrind.h')
+			add_project_arguments('-DB6B_HAVE_HELGRIND', language: 'c')
+		endif
+	endif
 endif
 
 with_linenoise = get_option('with_linenoise')

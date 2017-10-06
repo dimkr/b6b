@@ -28,6 +28,7 @@
 #	include <b6b/dict.h>
 #	include <b6b/frame.h>
 #	include <b6b/thread.h>
+#	include <b6b/syscall.h>
 #	include <b6b/interp.h>
 #	include <b6b/proc.h>
 #	include <b6b/ext.h>

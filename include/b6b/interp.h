@@ -30,6 +30,9 @@ enum b6b_interp_opts {
 struct b6b_interp {
 #ifdef B6B_HAVE_THREADS
 	struct b6b_threads threads;
+#	ifdef B6B_HAVE_SYSCALL_THREAD
+	struct b6b_syscall_thread systh;
+#	endif
 #endif
 	struct b6b_thread *fg;
 	struct b6b_frame *global;
@@ -158,3 +161,8 @@ static inline int b6b_yield(struct b6b_interp *interp)
 }
 
 #endif
+
+int b6b_syscall(struct b6b_interp *interp,
+                int *ret,
+                const long nr,
+                ...);
