@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syscall.h>
 
 #include <b6b.h>
 
@@ -31,7 +32,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 {
 	struct epoll_event ev = {0}, *evs;
 	struct b6b_obj *fds[3], *p, *op, *n, *t, *l, *fd;
-	int i, j = 0, out, err, r, w, e, to[2];
+	int i, j = 0, out, err, r, w, e, ret;
 	unsigned int argc;
 
 	argc = b6b_proc_get_args(interp, args, "osi|i", &p, &op, &n, &t);
@@ -104,29 +105,37 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 				return B6B_ERR;
 			}
 
-			/* p->priv may be freed during the context switch */
+			/* these three may be freed during context switch */
 			b6b_ref(p);
+			b6b_ref(n);
+			b6b_ref(t);
 
-			/* if this isn't the only thread and there's no immediately
-			 * available event, let other threads run before we try again and
-			 * block */
-			to[0] = 0;
-			to[1] = (int)t->i;
-			for (i = !b6b_threaded(interp); i < 2; ++i) {
-				out = epoll_wait((int)(intptr_t)p->priv, evs, (int)n->i, to[i]);
-				if (out < 0) {
-					err = errno;
-					b6b_unref(p);
-					free(evs);
-					b6b_destroy(l);
-					return b6b_return_strerror(interp, err);
-				}
-				if (out > 0)
-					break;
-				b6b_yield(interp);
+			out = b6b_syscall(interp,
+			                  &ret,
+			                  __NR_epoll_wait,
+			                  (long)(intptr_t)p->priv,
+			                  (long)(intptr_t)evs,
+			                  (long)n->i,
+			                  (long)t->i);
+
+			b6b_unref(t);
+			b6b_unref(n);
+			b6b_unref(p);
+
+			if (!out) {
+				free(evs);
+				b6b_destroy(l);
+				return B6B_ERR;
 			}
 
-			for (i = 0; (j < out) && (i < n->i); ++i) {
+			if (ret < 0) {
+				err = errno;
+				free(evs);
+				b6b_destroy(l);
+				return b6b_return_strerror(interp, err);
+			}
+
+			for (i = 0; (j < ret) && (i < n->i); ++i) {
 				if (!evs[i].events)
 					continue;
 
@@ -160,13 +169,11 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 				continue;
 
 err:
-				b6b_unref(p);
 				free(evs);
 				b6b_destroy(l);
 				return B6B_ERR;
 			}
 
-			b6b_unref(p);
 			free(evs);
 			return b6b_return(interp, l);
 		}
