@@ -31,24 +31,28 @@ static void *b6b_syscall_thread_routine(void *arg)
 	int sig;
 
 	/* block all signals */
-	if (pthread_sigmask(SIG_BLOCK, &t->mask, NULL) == 0) {
-		/* signal b6b_syscall_ready() */
-		atomic_store(&t->state, B6B_SYSCALL_IDLE);
+	if (pthread_sigmask(SIG_BLOCK, &t->mask, NULL) != 0)
+		pthread_exit(NULL);
 
-		/* block until t->sig; we wait only for this signal so we don't unqueue
-		 * signals handled by other threads */
-		while (sigwait(&t->wmask, &sig) == 0) {
-			t->ret = syscall(t->args[0],
-			                 t->args[1],
-			                 t->args[2],
-			                 t->args[3],
-			                 t->args[4],
-			                 t->args[5]);
-			t->rerrno = errno;
+	/* notify the main thread that initialization is complete */
+	atomic_store(&t->state, B6B_SYSCALL_UP);
+	if (pthread_kill(t->main, t->sig) != 0)
+		pthread_exit(NULL);
 
-			/* signal b6b_syscall_done() */
-			atomic_store(&t->state, B6B_SYSCALL_DONE);
-		}
+	/* block until t->sig; we wait only for this signal so we don't unqueue
+	 * signals handled by other threads */
+	while ((sigwait(&t->wmask, &sig) == 0) &&
+	       (atomic_load(&t->state) == B6B_SYSCALL_RUNNING)) {
+		t->ret = syscall(t->args[0],
+		                 t->args[1],
+		                 t->args[2],
+		                 t->args[3],
+		                 t->args[4],
+		                 t->args[5]);
+		t->rerrno = errno;
+
+		/* signal b6b_syscall_done() */
+		atomic_store(&t->state, B6B_SYSCALL_DONE);
 	}
 
 	pthread_exit(NULL);
@@ -56,6 +60,8 @@ static void *b6b_syscall_thread_routine(void *arg)
 
 int b6b_syscall_thread_start(struct b6b_syscall_thread *t)
 {
+	int sig;
+
 	if ((sigfillset(&t->mask) < 0) || (sigemptyset(&t->wmask) < 0))
 		return 0;
 
@@ -66,12 +72,29 @@ int b6b_syscall_thread_start(struct b6b_syscall_thread *t)
 	    (sigaddset(&t->wmask, t->sig) < 0))
 		return 0;
 
+	/* block only the realtime signal; we do not restore the signal mask because
+	 * this is racy in multi-threaded processes that may alter their signal mask
+	 * after we blocked t->sig */
+	if (pthread_sigmask(SIG_BLOCK, &t->wmask, NULL) != 0)
+		return 0;
+
+	t->main = pthread_self();
 	if (pthread_create(&t->tid, NULL, b6b_syscall_thread_routine, t) != 0)
 		return 0;
 
-	/* we need this special state for b6b_syscall_thread_stop(): this state
-	 * means the thread is running but not ready */
-	atomic_store(&t->state, B6B_SYSCALL_UP);
+	/* wait for the syscall thread to send the realtime signal once
+	 * initialization is complete */
+	do {
+		if ((sigwait(&t->wmask, &sig) != 0) || (sig != t->sig)) {
+			pthread_cancel(t->tid);
+			pthread_join(t->tid, NULL);
+			return 0;
+		}
+	} while (atomic_load(&t->state) != B6B_SYSCALL_UP);
+
+	/* signal b6b_syscall_ready() */
+	atomic_store(&t->state, B6B_SYSCALL_IDLE);
+
 	return 1;
 }
 

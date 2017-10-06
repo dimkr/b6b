@@ -39,6 +39,7 @@ struct b6b_syscall_thread {
 	sigset_t mask;
 	sigset_t wmask;
 	pthread_t tid;
+	pthread_t main;
 	atomic_int state;
 	int sig;
 	int ret;
