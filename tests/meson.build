@@ -28,12 +28,19 @@ if libffi.found()
 	components += ['ffi']
 endif
 
+if get_option('with_threads')
+	test_deps = [dependency('threads')]
+else
+	test_deps = []
+endif
+
 if get_option('default_library') != 'static'
 	foreach component: components
 		test_name = 'b6b_test_@0@'.format(component)
 		test_exe = executable(test_name,
 		                      '@0@.c'.format(test_name),
 		                      include_directories: b6b_includes,
+		                      dependencies: test_deps,
 		                      link_with: [libb6b])
 		test(test_name, test_exe)
 	endforeach
