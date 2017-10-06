@@ -30,14 +30,14 @@ static void *b6b_syscall_thread_routine(void *arg)
 	struct b6b_syscall_thread *t = (struct b6b_syscall_thread *)arg;
 	int sig;
 
+	/* block all signals */
 	if (pthread_sigmask(SIG_BLOCK, &t->mask, NULL) == 0) {
-		/* block until t->sig or SIGTERM */
-		while (sigwait(&t->mask, &sig) == 0) {
-			if (sig == SIGTERM)
-				break;
-			else if (sig != t->sig)
-				continue;
+		/* signal b6b_syscall_ready() */
+		atomic_store(&t->state, B6B_SYSCALL_IDLE);
 
+		/* block until t->sig; we wait only for this signal so we don't unqueue
+		 * signals handled by other threads */
+		while (sigwait(&t->wmask, &sig) == 0) {
 			t->ret = syscall(t->args[0],
 			                 t->args[1],
 			                 t->args[2],
@@ -56,26 +56,29 @@ static void *b6b_syscall_thread_routine(void *arg)
 
 int b6b_syscall_thread_start(struct b6b_syscall_thread *t)
 {
-	if (sigfillset(&t->mask) < 0)
+	if ((sigfillset(&t->mask) < 0) || (sigemptyset(&t->wmask) < 0))
 		return 0;
 
-	/* pick a high realtime signal */
+	/* pick a high realtime signal and add it to both masks */
 	t->sig = SIGRTMAX -1;
-	if ((t->sig < SIGRTMIN) || (sigaddset(&t->mask, t->sig) < 0))
+	if ((t->sig < SIGRTMIN) ||
+	    (sigaddset(&t->mask, t->sig) < 0) ||
+	    (sigaddset(&t->wmask, t->sig) < 0))
 		return 0;
 
 	if (pthread_create(&t->tid, NULL, b6b_syscall_thread_routine, t) != 0)
 		return 0;
 
-	/* signal b6b_syscall_ready() */
-	atomic_store(&t->state, B6B_SYSCALL_IDLE);
+	/* we need this special state for b6b_syscall_thread_stop(): this state
+	 * means the thread is running but not ready */
+	atomic_store(&t->state, B6B_SYSCALL_UP);
 	return 1;
 }
 
 void b6b_syscall_thread_stop(struct b6b_syscall_thread *t)
 {
 	if (atomic_load(&t->state) != B6B_SYSCALL_INIT) {
-		pthread_kill(t->tid, SIGTERM);
+		pthread_cancel(t->tid);
 		pthread_join(t->tid, NULL);
 	}
 }

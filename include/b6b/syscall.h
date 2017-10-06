@@ -28,6 +28,7 @@
  * for execution and to B6B_SYSCALL_DONE when the syscall returns */
 enum b6b_syscall_state {
 	B6B_SYSCALL_INIT,
+	B6B_SYSCALL_UP,
 	B6B_SYSCALL_IDLE,
 	B6B_SYSCALL_RUNNING,
 	B6B_SYSCALL_DONE
@@ -36,6 +37,7 @@ enum b6b_syscall_state {
 struct b6b_syscall_thread {
 	long args[6];
 	sigset_t mask;
+	sigset_t wmask;
 	pthread_t tid;
 	atomic_int state;
 	int sig;
