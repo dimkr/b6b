@@ -489,29 +489,27 @@ int b6b_syscall(struct b6b_interp *interp,
 		while (!b6b_syscall_ready(&interp->systh))
 			b6b_yield(interp);
 
-		if (!b6b_syscall_start(&interp->systh,
-		                       nr,
-		                       va_arg(ap, long),
-		                       va_arg(ap, long),
-		                       va_arg(ap, long),
-		                       va_arg(ap, long),
-		                       va_arg(ap, long)))
-			goto out;
+		if (b6b_syscall_start(&interp->systh,
+		                      nr,
+		                      va_arg(ap, long),
+		                      va_arg(ap, long),
+		                      va_arg(ap, long),
+		                      va_arg(ap, long),
+		                      va_arg(ap, long))) {
+			while (!b6b_syscall_done(&interp->systh))
+				b6b_yield(interp);
 
-		while (!b6b_syscall_done(&interp->systh))
+			out = b6b_syscall_finish(&interp->systh, ret);
+
+			/* we must give other threads a chance to run - otherwise, if the
+			 * current thread repeatedly calls b6b_syscall_start(), it will
+			 * always be the first to signal b6b_syscall_ready() and other
+			 * threads will be stuck in a b6b_syscall_ready() loop */
 			b6b_yield(interp);
-
-		out = b6b_syscall_finish(&interp->systh, ret);
-
-		/* we must give other threads a chance to run - otherwise, if the
-		 * current thread repeatedly calls b6b_syscall_start(), it will always
-		 * be the first to signal b6b_syscall_ready() and other threads will
-		 * be stuck in a b6b_syscall_ready() loop */
-		b6b_yield(interp);
+		}
 	}
 #endif
 
-out:
 	va_end(ap);
 	return out;
 }
