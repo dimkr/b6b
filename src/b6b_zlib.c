@@ -28,16 +28,41 @@
 #define B6B_INFLATE_IN_CHUNK_SZ 64 * 1024
 #define B6B_INFLATE_OUT_CHUNK_SZ 256 * 1024
 
+struct b6b_zlib_deflate_data {
+	mz_stream strm;
+	mz_uint rem;
+	size_t slen;
+	int ok;
+};
+
+static void b6b_zlib_do_deflate(void *arg)
+{
+	struct b6b_zlib_deflate_data *data = (struct b6b_zlib_deflate_data *)arg;
+
+	do {
+		if (data->rem > B6B_DEFLATE_CHUNK_SZ)
+			data->strm.avail_in = B6B_DEFLATE_CHUNK_SZ;
+		else
+			data->strm.avail_in = data->rem;
+
+		if (mz_deflate(&data->strm, 0) != MZ_OK)
+			return;
+
+		data->rem = (mz_uint)data->slen - data->strm.total_in;
+	} while (data->rem);
+
+	data->ok = 1;
+}
+
 static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
                                      struct b6b_obj *args,
                                      const int wbits)
 {
-	mz_stream strm = {0};
-	size_t slen, dlen;
+	struct b6b_zlib_deflate_data data = {.strm = {0}};
+	size_t dlen;
 	struct b6b_obj *s, *l, *o;
 	unsigned char *src, *dst;
 	int level = MZ_DEFAULT_COMPRESSION;
-	mz_uint rem;
 
 	switch (b6b_proc_get_args(interp, args, "os|i", NULL, &s, &l)) {
 		case 3:
@@ -55,7 +80,7 @@ static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
 	if (s->slen > UINT32_MAX)
 		return B6B_ERR;
 
-	if (mz_deflateInit2(&strm,
+	if (mz_deflateInit2(&data.strm,
 	                    level,
 	                    MZ_DEFLATED,
 	                    wbits,
@@ -66,55 +91,39 @@ static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
 	/* copy the buffer, since s->s may be freed after context switch */
 	src = (unsigned char *)malloc(s->slen);
 	if (b6b_unlikely(!src)) {
-		mz_deflateEnd(&strm);
+		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
-	dlen = (size_t)mz_deflateBound(&strm, (mz_ulong)s->slen);
+	dlen = (size_t)mz_deflateBound(&data.strm, (mz_ulong)s->slen);
 	dst = (unsigned char *)malloc(dlen);
 	if (b6b_unlikely(!dst)) {
 		free(src);
-		mz_deflateEnd(&strm);
+		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
-	slen = s->slen;
-	memcpy(src, s->s, slen);
+	data.slen = s->slen;
+	memcpy(src, s->s, data.slen);
 
-	strm.next_in = src;
-	strm.next_out = dst;
-	strm.avail_out = (mz_uint32)dlen;
+	data.strm.next_in = src;
+	data.strm.next_out = dst;
+	data.strm.avail_out = (mz_uint32)dlen;
 
-	rem = (mz_uint)s->slen;
-	do {
-		if (rem > B6B_DEFLATE_CHUNK_SZ)
-			strm.avail_in = B6B_DEFLATE_CHUNK_SZ;
-		else
-			strm.avail_in = rem;
-
-		if (mz_deflate(&strm, 0) != MZ_OK) {
-			free(dst);
-			free(src);
-			mz_deflateEnd(&strm);
-			return B6B_ERR;
-		}
-
-		/* compression is CPU-intensive; switch to another thread */
-		b6b_yield(interp);
-
-		rem = (mz_uint)slen - strm.total_in;
-	} while (rem);
-
-	if (mz_deflate(&strm, MZ_FINISH) != MZ_STREAM_END) {
+	data.rem = (mz_uint)s->slen;
+	data.ok = 0;
+	if (!b6b_offload(interp, b6b_zlib_do_deflate, &data) ||
+	    !data.ok ||
+	    (mz_deflate(&data.strm, MZ_FINISH) != MZ_STREAM_END)) {
 		free(dst);
 		free(src);
-		mz_deflateEnd(&strm);
+		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
 	free(src);
-	o = b6b_str_new((char *)dst, (size_t)strm.total_out);
-	mz_deflateEnd(&strm);
+	o = b6b_str_new((char *)dst, (size_t)data.strm.total_out);
+	mz_deflateEnd(&data.strm);
 	if (b6b_unlikely(!o)) {
 		free(dst);
 		return B6B_ERR;
@@ -135,15 +144,58 @@ static enum b6b_res b6b_zlib_proc_compress(struct b6b_interp *interp,
 	return b6b_zlib_deflate(interp, args, MZ_DEFAULT_WINDOW_BITS);
 }
 
+struct b6b_zlib_inflate_data {
+	mz_stream strm;
+	size_t slen;
+	size_t dlen;
+	unsigned char *dst;
+	mz_uint rem;
+	int ok;
+};
+
+static void b6b_zlib_do_inflate(void *arg)
+{
+	struct b6b_zlib_inflate_data *data = (struct b6b_zlib_inflate_data *)arg;
+	unsigned char *mdst;
+
+	do {
+		mdst = (unsigned char *)realloc(data->dst, data->dlen);
+		if (b6b_unlikely(!mdst))
+			return;
+
+		data->strm.next_out = mdst + (data->strm.next_out - data->dst);
+		data->dst = mdst;
+		data->strm.avail_out += B6B_INFLATE_OUT_CHUNK_SZ;
+
+		if (data->rem > B6B_INFLATE_IN_CHUNK_SZ)
+			data->strm.avail_in = B6B_INFLATE_IN_CHUNK_SZ;
+		else
+			data->strm.avail_in = data->rem;
+
+		switch (mz_inflate(&data->strm, 0))  {
+			case MZ_OK:
+				break;
+
+			case MZ_STREAM_END:
+				data->ok = 1;
+				return;
+
+			default:
+				return;
+		}
+
+		data->rem = (mz_uint)data->slen - data->strm.total_in;
+		data->dlen += B6B_INFLATE_OUT_CHUNK_SZ;
+	} while (1);
+}
+
 static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
                                      struct b6b_obj *args,
                                      const int wbits)
 {
-	mz_stream strm = {0};
-	size_t slen, dlen;
+	struct b6b_zlib_inflate_data data = {.strm = {0}};
 	struct b6b_obj *s, *o;
-	unsigned char *src, *dst = NULL, *mdst;
-	mz_uint rem;
+	unsigned char *src;
 
 	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
@@ -151,75 +203,40 @@ static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
 	if (s->slen > UINT32_MAX)
 		return B6B_ERR;
 
-	if (mz_inflateInit2(&strm, wbits) != MZ_OK)
+	if (mz_inflateInit2(&data.strm, wbits) != MZ_OK)
 		return B6B_ERR;
 
 	src = (unsigned char *)malloc(s->slen);
 	if (b6b_unlikely(!src)) {
-		mz_inflateEnd(&strm);
+		mz_inflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
-	dlen = B6B_INFLATE_OUT_CHUNK_SZ;
-	slen = s->slen;
-	memcpy(src, s->s, slen);
+	data.dlen = B6B_INFLATE_OUT_CHUNK_SZ;
+	data.slen = s->slen;
+	memcpy(src, s->s, s->slen);
 
-	strm.next_in = src;
-	strm.next_out = NULL;
-	strm.avail_out = 0;
+	data.strm.next_in = src;
+	data.strm.next_out = NULL;
+	data.strm.avail_out = 0;
 
-	rem = (mz_uint)s->slen;
-	do {
-		mdst = (unsigned char *)realloc(dst, dlen);
-		if (b6b_unlikely(!mdst)) {
-			free(dst);
-			free(src);
-			mz_inflateEnd(&strm);
-			return B6B_ERR;
-		}
-
-		strm.next_out = mdst + (strm.next_out - dst);
-		dst = mdst;
-		strm.avail_out += B6B_INFLATE_OUT_CHUNK_SZ;
-
-		if (rem > B6B_INFLATE_IN_CHUNK_SZ)
-			strm.avail_in = B6B_INFLATE_IN_CHUNK_SZ;
-		else
-			strm.avail_in = rem;
-
-		switch (mz_inflate(&strm, 0))  {
-			case MZ_OK:
-				break;
-
-			case MZ_STREAM_END:
-				goto flush;
-
-			default:
-				free(dst);
-				free(src);
-				mz_inflateEnd(&strm);
-				return B6B_ERR;
-		}
-
-		b6b_yield(interp);
-
-		rem = (mz_uint)slen - strm.total_in;
-		dlen += B6B_INFLATE_OUT_CHUNK_SZ;
-	} while (1);
-
-flush:
-	if (mz_inflate(&strm, MZ_FINISH) != MZ_STREAM_END) {
-		free(dst);
+	data.dst = NULL;
+	data.rem = (mz_uint)s->slen;
+	data.ok = 0;
+	if (!b6b_offload(interp, b6b_zlib_do_inflate, &data) ||
+	    !data.ok ||
+	    (mz_inflate(&data.strm, MZ_FINISH) != MZ_STREAM_END)) {
+		free(data.dst);
 		free(src);
-		mz_inflateEnd(&strm);
+		mz_inflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
 	free(src);
-	o = b6b_str_new((char *)dst, (size_t)strm.total_out);
-	mz_inflateEnd(&strm);
+	o = b6b_str_new((char *)data.dst, (size_t)data.strm.total_out);
+	mz_inflateEnd(&data.strm);
 	if (b6b_unlikely(!o)) {
-		free(dst);
+		free(data.dst);
 		return B6B_ERR;
 	}
 
