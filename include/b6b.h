@@ -28,8 +28,8 @@
 #	include <b6b/dict.h>
 #	include <b6b/frame.h>
 #	include <b6b/thread.h>
-#	ifdef B6B_HAVE_SYSCALL_THREAD
-#		include <b6b/syscall.h>
+#	ifdef B6B_HAVE_OFFLOAD_THREAD
+#		include <b6b/offload.h>
 #	endif
 #	include <b6b/interp.h>
 #	include <b6b/proc.h>

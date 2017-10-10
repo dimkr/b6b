@@ -17,17 +17,14 @@
  */
 
 #include <pthread.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <errno.h>
 #include <signal.h>
 
 #include <b6b.h>
 
 __attribute__((noreturn))
-static void *b6b_syscall_thread_routine(void *arg)
+static void *b6b_offload_thread_routine(void *arg)
 {
-	struct b6b_syscall_thread *t = (struct b6b_syscall_thread *)arg;
+	struct b6b_offload_thread *t = (struct b6b_offload_thread *)arg;
 	int sig;
 
 	/* block all signals */
@@ -35,30 +32,27 @@ static void *b6b_syscall_thread_routine(void *arg)
 		pthread_exit(NULL);
 
 	/* notify the main thread that initialization is complete */
-	atomic_store(&t->state, B6B_SYSCALL_UP);
+	atomic_store(&t->state, B6B_OFFLOAD_UP);
 	if (pthread_kill(t->main, t->sig) != 0)
 		pthread_exit(NULL);
 
 	/* block until t->sig; we wait only for this signal so we don't unqueue
 	 * signals handled by other threads */
 	while ((sigwait(&t->wmask, &sig) == 0) &&
-	       (atomic_load(&t->state) == B6B_SYSCALL_RUNNING)) {
-		t->ret = syscall(t->args[0],
-		                 t->args[1],
-		                 t->args[2],
-		                 t->args[3],
-		                 t->args[4],
-		                 t->args[5]);
-		t->rerrno = errno;
+	       (atomic_load(&t->state) == B6B_OFFLOAD_RUNNING)) {
+		t->fn(t->arg);
 
-		/* signal b6b_syscall_done() */
-		atomic_store(&t->state, B6B_SYSCALL_DONE);
+		/* signal b6b_offload_done() - we need this state to prevent a thread
+		 * from calling b6b_offload_start() (hence, changing the state to
+		 * B6B_OFFLOAD_RUNNING) when the previous user of the offload thread
+		 * calls b6b_yield() while waiting for completion */
+		atomic_store(&t->state, B6B_OFFLOAD_DONE);
 	}
 
 	pthread_exit(NULL);
 }
 
-int b6b_syscall_thread_start(struct b6b_syscall_thread *t)
+int b6b_offload_thread_start(struct b6b_offload_thread *t)
 {
 	int sig;
 
@@ -79,10 +73,10 @@ int b6b_syscall_thread_start(struct b6b_syscall_thread *t)
 		return 0;
 
 	t->main = pthread_self();
-	if (pthread_create(&t->tid, NULL, b6b_syscall_thread_routine, t) != 0)
+	if (pthread_create(&t->tid, NULL, b6b_offload_thread_routine, t) != 0)
 		return 0;
 
-	/* wait for the syscall thread to send the realtime signal once
+	/* wait for the offload thread to send the realtime signal once
 	 * initialization is complete */
 	do {
 		if ((sigwait(&t->wmask, &sig) != 0) || (sig != t->sig)) {
@@ -90,52 +84,34 @@ int b6b_syscall_thread_start(struct b6b_syscall_thread *t)
 			pthread_join(t->tid, NULL);
 			return 0;
 		}
-	} while (atomic_load(&t->state) != B6B_SYSCALL_UP);
+	} while (atomic_load(&t->state) != B6B_OFFLOAD_UP);
 
-	/* signal b6b_syscall_ready() */
-	atomic_store(&t->state, B6B_SYSCALL_IDLE);
+	/* signal b6b_offload_ready() */
+	atomic_store(&t->state, B6B_OFFLOAD_IDLE);
 
 	return 1;
 }
 
-void b6b_syscall_thread_stop(struct b6b_syscall_thread *t)
+void b6b_offload_thread_stop(struct b6b_offload_thread *t)
 {
-	if (atomic_load(&t->state) != B6B_SYSCALL_INIT) {
+	if (atomic_load(&t->state) != B6B_OFFLOAD_INIT) {
 		pthread_cancel(t->tid);
 		pthread_join(t->tid, NULL);
 	}
 }
 
-int b6b_syscall_start(struct b6b_syscall_thread *t,
-                      const long nr,
-                      const long a0,
-                      const long a1,
-                      const long a2,
-                      const long a3,
-                      const long a4)
+int b6b_offload_start(struct b6b_offload_thread *t,
+                      void (*fn)(void *),
+                      void *arg)
 {
-	/* falsify b6b_syscall_ready() */
-	atomic_store(&t->state, B6B_SYSCALL_RUNNING);
-	t->args[0] = nr;
-	t->args[1] = a0;
-	t->args[2] = a1;
-	t->args[3] = a2;
-	t->args[4] = a3;
-	t->args[5] = a4;
+	/* falsify b6b_offload_ready() */
+	atomic_store(&t->state, B6B_OFFLOAD_RUNNING);
+	t->fn = fn;
+	t->arg = arg;
 
-	/* wake up the syscall execution thread */
+	/* wake up the offload thread */
 	if (pthread_kill(t->tid, t->sig) != 0)
 		return 0;
 
-	return 1;
-}
-
-int b6b_syscall_finish(struct b6b_syscall_thread *t, int *ret)
-{
-	*ret = t->ret;
-	errno = t->rerrno;
-
-	/* signal b6b_syscall_ready() */
-	atomic_store(&t->state, B6B_SYSCALL_IDLE);
 	return 1;
 }

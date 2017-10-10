@@ -30,6 +30,9 @@
 #include <time.h>
 #include <stdio.h>
 #include <sys/syscall.h>
+#ifdef B6B_HAVE_HELGRIND
+#	include <valgrind/helgrind.h>
+#endif
 
 #undef _GNU_SOURCE
 
@@ -115,8 +118,8 @@ int b6b_interp_new(struct b6b_interp *interp,
 	interp->fg = NULL;
 #ifdef B6B_HAVE_THREADS
 	b6b_thread_init(&interp->threads);
-#	ifdef B6B_HAVE_SYSCALL_THREAD
-	b6b_syscall_thread_init(&interp->systh);
+#	ifdef B6B_HAVE_OFFLOAD_THREAD
+	b6b_offload_thread_init(&interp->offth);
 #	endif
 
 	/* we allocate a small stack (just two pages) */
@@ -124,8 +127,8 @@ int b6b_interp_new(struct b6b_interp *interp,
 	if (interp->stksiz <= 0)
 		goto bail;
 
-#	ifdef B6B_HAVE_SYSCALL_THREAD
-	if (!b6b_syscall_thread_start(&interp->systh))
+#	ifdef B6B_HAVE_OFFLOAD_THREAD
+	if (!b6b_offload_thread_start(&interp->offth))
 		goto bail;
 #	endif
 
@@ -248,8 +251,8 @@ static void b6b_join(struct b6b_interp *interp)
 	if (t)
 		b6b_thread_destroy(t);
 
-#	ifdef B6B_HAVE_SYSCALL_THREAD
-	b6b_syscall_thread_stop(&interp->systh);
+#	ifdef B6B_HAVE_OFFLOAD_THREAD
+	b6b_offload_thread_stop(&interp->offth);
 #	endif
 
 #else
@@ -463,55 +466,80 @@ swap:
 
 #endif
 
+#ifdef B6B_HAVE_OFFLOAD_THREAD
+
+int b6b_offload(struct b6b_interp *interp,
+                void (*fn)(void *),
+                void *arg)
+{
+	if (!b6b_threaded(interp))
+		fn(arg);
+	else {
+		while (!b6b_offload_ready(&interp->offth))
+			b6b_yield(interp);
+
+		if (!b6b_offload_start(&interp->offth, fn, arg))
+			return 0;
+
+		while (!b6b_offload_done(&interp->offth))
+			b6b_yield(interp);
+
+		b6b_offload_finish(&interp->offth);
+
+		/* we must give other threads a chance to run - otherwise, if the
+		 * current thread repeatedly calls b6b_offload_start(), it will always
+		 * be the first to signal b6b_offload_ready() and other threads will be
+		 * stuck in a b6b_offload_ready() loop */
+		b6b_yield(interp);
+	}
+
+	return 1;
+}
+
+#endif
+
+static void b6b_do_syscall(void *arg)
+{
+	struct b6b_syscall_data *data = (struct b6b_syscall_data *)arg;
+
+	data->rval = syscall(data->args[0],
+	                     data->args[1],
+	                     data->args[2],
+	                     data->args[3],
+	                     data->args[4],
+	                     data->args[5]);
+	if (data->rval < 0)
+		data->rerrno = errno;
+}
+
 int b6b_syscall(struct b6b_interp *interp,
                 int *ret,
                 const long nr,
                 ...)
 {
+	struct b6b_syscall_data data;
 	va_list ap;
-	int out = 0;
+	int i;
 
 	va_start(ap, nr);
 
-#ifdef B6B_HAVE_SYSCALL_THREAD
-	if (!b6b_threaded(interp)) {
-#endif
-		*ret = syscall(nr,
-		               va_arg(ap, long),
-		               va_arg(ap, long),
-		               va_arg(ap, long),
-		               va_arg(ap, long),
-		               va_arg(ap, long));
-		out = 1;
-#ifdef B6B_HAVE_SYSCALL_THREAD
-	}
-	else {
-		while (!b6b_syscall_ready(&interp->systh))
-			b6b_yield(interp);
-
-		if (b6b_syscall_start(&interp->systh,
-		                      nr,
-		                      va_arg(ap, long),
-		                      va_arg(ap, long),
-		                      va_arg(ap, long),
-		                      va_arg(ap, long),
-		                      va_arg(ap, long))) {
-			while (!b6b_syscall_done(&interp->systh))
-				b6b_yield(interp);
-
-			out = b6b_syscall_finish(&interp->systh, ret);
-
-			/* we must give other threads a chance to run - otherwise, if the
-			 * current thread repeatedly calls b6b_syscall_start(), it will
-			 * always be the first to signal b6b_syscall_ready() and other
-			 * threads will be stuck in a b6b_syscall_ready() loop */
-			b6b_yield(interp);
-		}
-	}
-#endif
+	data.args[0] = nr;
+	for (i = 1; i < sizeof(data.args) / sizeof(data.args[0]); ++i)
+		data.args[i] = va_arg(ap, long);
 
 	va_end(ap);
-	return out;
+
+#ifdef B6B_HAVE_HELGRIND
+	VALGRIND_HG_DISABLE_CHECKING(&data, sizeof(data));
+#endif
+	if (!b6b_offload(interp, b6b_do_syscall, &data))
+		return 0;
+
+	*ret = data.rval;
+	if (data.rval < 0)
+		errno = data.rerrno;
+
+	return 1;
 }
 
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,

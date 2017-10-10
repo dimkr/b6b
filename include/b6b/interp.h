@@ -30,8 +30,8 @@ enum b6b_interp_opts {
 struct b6b_interp {
 #ifdef B6B_HAVE_THREADS
 	struct b6b_threads threads;
-#	ifdef B6B_HAVE_SYSCALL_THREAD
-	struct b6b_syscall_thread systh;
+#	ifdef B6B_HAVE_OFFLOAD_THREAD
+	struct b6b_offload_thread offth;
 #	endif
 #endif
 	struct b6b_thread *fg;
@@ -161,6 +161,30 @@ static inline int b6b_yield(struct b6b_interp *interp)
 }
 
 #endif
+
+#ifdef B6B_HAVE_OFFLOAD_THREAD
+
+int b6b_offload(struct b6b_interp *interp,
+                void (*fn)(void *),
+                void *arg);
+
+#else
+
+static inline int b6b_offload(struct b6b_interp *interp,
+                              void (*fn)(void *),
+                              void *arg);
+{
+	fn(arg);
+	return 1;
+}
+
+#endif
+
+struct b6b_syscall_data {
+	long args[6];
+	int rval;
+	int rerrno;
+};
 
 int b6b_syscall(struct b6b_interp *interp,
                 int *ret,

@@ -41,8 +41,8 @@ if get_option('with_threads')
 	b6b_deps += [dependency('threads')]
 
 	if cc.has_header('stdatomic.h')
-		add_project_arguments('-DB6B_HAVE_SYSCALL_THREAD', language: 'c')
-		libb6b_srcs += ['b6b_syscall.c']
+		add_project_arguments('-DB6B_HAVE_OFFLOAD_THREAD', language: 'c')
+		libb6b_srcs += ['b6b_offload.c']
 
 		if debug and cc.has_header('valgrind/helgrind.h')
 			add_project_arguments('-DB6B_HAVE_HELGRIND', language: 'c')
