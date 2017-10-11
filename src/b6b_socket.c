@@ -439,7 +439,7 @@ static int b6b_socket_stream_accept(struct b6b_interp *interp,
 
 	fd = accept(s->fd, (struct sockaddr *)&peer, &plen);
 	if (fd < 0) {
-		if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+		if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EMFILE)) {
 			*o = NULL;
 			return 1;
 		}
