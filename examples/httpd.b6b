@@ -190,10 +190,20 @@
 
 {$proc on_clients {
 	{$map client [$1 accept] {
-		{# register a timer stream, to close the connection after a while}
-		{$http.loop after $http.sess_ttl [$proc _ {
-			{$http.loop remove $.}
-		} $client]}
+		{$try {
+			{# register a timer stream, to close the connection after a while}
+			{$http.loop after $http.sess_ttl [$proc _ {
+				{$http.loop remove $.}
+			} $client]}
+		} {
+			{#
+				if we cannot create a timer stream, we have no choice but to
+				stop and disconnect the remaining pending clients; this may
+				happen if the file descriptor table is full - in this case, we
+				temporarily cannot accept new connections
+			}
+			{$return}
+		}}
 
 		{$http.loop add $client $on_request {} $on_error}
 	}}
