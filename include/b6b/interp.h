@@ -172,7 +172,7 @@ int b6b_offload(struct b6b_interp *interp,
 
 static inline int b6b_offload(struct b6b_interp *interp,
                               void (*fn)(void *),
-                              void *arg);
+                              void *arg)
 {
 	fn(arg);
 	return 1;
