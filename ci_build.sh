@@ -28,7 +28,8 @@ do
 	for j in -release -debug
 	do
 		ninja -C build$i$j
-		meson test -C build$i$j --print-errorlogs
+		meson test -C build$i$j --print-errorlogs --repeat 5
+		meson test -C build$i$j --print-errorlogs --repeat 5 --wrapper "taskset -c 0"
 	done
 
 	DESTDIR=dest ninja -C build$i-release install
