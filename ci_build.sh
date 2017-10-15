@@ -16,8 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export CFLAGS=-g
+rm -rf build build-clang build-no-threads build-small
 
+export CFLAGS=-g
 meson build
 CC=clang meson -Dwith_doc=false build-clang
 meson -Dwith_doc=false -Dwith_threads=false build-no-threads
