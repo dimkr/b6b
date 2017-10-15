@@ -14,4 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-meson.add_install_script('install.sh')
+if get_option('with_linenoise')
+	meson.add_install_script('install.sh')
+endif
