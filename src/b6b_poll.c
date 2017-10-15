@@ -105,10 +105,10 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 				return B6B_ERR;
 			}
 
-			/* these three may be freed during context switch */
+			/* p may be freed during context switch but although n or t may lose
+			 * their integer representation, we pass n->i and t->i by value so
+			 * this is safe */
 			b6b_ref(p);
-			b6b_ref(n);
-			b6b_ref(t);
 
 			out = b6b_syscall(interp,
 			                  &ret,
@@ -118,8 +118,6 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 			                  (long)n->i,
 			                  (long)t->i);
 
-			b6b_unref(t);
-			b6b_unref(n);
 			b6b_unref(p);
 
 			if (!out) {

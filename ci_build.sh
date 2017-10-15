@@ -16,23 +16,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-meson -Dwith_doc=false build-debug
-meson --buildtype release build-release
-meson -Dwith_doc=false -Dwith_threads=false build-no-threads-debug
-meson --buildtype release -Dwith_doc=false -Dwith_threads=false build-no-threads-release
-CC=clang meson -Dwith_doc=false build-clang-debug
-CC=clang meson --buildtype release -Dwith_doc=false build-clang-release
+export CFLAGS=-g
 
-for i in "" -no-threads -clang
+meson build
+CC=clang meson -Dwith_doc=false build-clang
+meson -Dwith_doc=false -Dwith_threads=false build-no-threads
+meson -Dwith_doc=false -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
+
+for i in build build-clang build-no-threads
 do
-	for j in -release -debug
-	do
-		ninja -C build$i$j
-		meson test -C build$i$j --print-errorlogs --repeat 5
-		meson test -C build$i$j --print-errorlogs --repeat 5 --wrapper "taskset -c 0"
-	done
+	ninja -C $i
+	meson test -C $i --print-errorlogs
+	meson test -C $i --print-errorlogs --wrapper "taskset -c 0"
 
-	DESTDIR=dest ninja -C build$i-release install
+	meson configure -Dbuildtype=release $i
+	ninja -C $i
+	meson test -C $i --print-errorlogs
+	meson test -C $i --print-errorlogs --repeat 5 --wrapper "taskset -c 0"
+
+	DESTDIR=dest ninja -C $i install
+
+	meson test -C $i --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
 done
 
-meson test -C build-release --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
+ninja -C build-small
+DESTDIR=dest ninja -C build-small install
+
+for i in build build-clang
+do
+	meson test -C $i --print-errorlogs --num-processes 1 --repeat 5 --wrapper "valgrind --tool=helgrind"
+	meson test -C $i --print-errorlogs --num-processes 1 --wrapper "valgrind --tool=helgrind --fair-sched=yes"
+done
