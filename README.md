@@ -31,4 +31,4 @@ ninja -C build install
 
 b6b is free and unencumbered software released under the terms of the [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0); see COPYING for the license text. For a list of its authors and contributors, see AUTHORS.
 
-The ASCII art logo at the top was made using [FIGlet](http://www.figlet.org/).p
+The ASCII art logo at the top was made using [FIGlet](http://www.figlet.org/).
