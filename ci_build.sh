@@ -24,6 +24,7 @@ CC=clang meson -Dwith_doc=false build-clang
 meson -Dwith_doc=false -Dwith_threads=false build-no-threads
 meson -Dwith_doc=false -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
 
+# build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off
 for i in build build-clang build-no-threads
 do
 	ninja -C $i
@@ -33,6 +34,7 @@ do
 	meson configure -Dbuildtype=release $i
 	ninja -C $i
 	meson test -C $i --print-errorlogs
+	# run the tests 5 times on a single CPU, to increase the chance of finding racy tests
 	meson test -C $i --print-errorlogs --repeat 5 --wrapper "taskset -c 0"
 
 	DESTDIR=dest ninja -C $i install
@@ -42,6 +44,12 @@ done
 
 ninja -C build-small
 DESTDIR=dest ninja -C build-small install
+meson test -C build-small --print-errorlogs
+
+# rebuild the small build with a static library
+meson configure -Ddefault_library=static build-small
+ninja -C build-small
+DESTDIR=dest-static ninja -C build-small install
 
 for i in build build-clang
 do
