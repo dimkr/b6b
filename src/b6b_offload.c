@@ -47,6 +47,15 @@ static void *b6b_offload_thread_routine(void *arg)
 		 * B6B_OFFLOAD_RUNNING) when the previous user of the offload thread
 		 * calls b6b_yield() while waiting for completion */
 		atomic_store(&t->state, B6B_OFFLOAD_DONE);
+
+		/* in addition, notify the main thread using a signal: in the special
+		 * case of a single b6b thread we also need an alternative, blocking
+		 * mechanism for waiting until b6b_offload_done(); without this, the
+		 * only way to wait until b6b_offload_done() is a CPU-heavy loop of
+		 * b6b_yield() which doesn't do anything because there's no other
+		 * thread to switch to */
+		if (pthread_kill(t->main, t->sig) != 0)
+			pthread_exit(NULL);
 	}
 
 	pthread_exit(NULL);
@@ -113,5 +122,18 @@ int b6b_offload_start(struct b6b_offload_thread *t,
 	if (pthread_kill(t->tid, t->sig) != 0)
 		return 0;
 
+	return 1;
+}
+
+int b6b_offload_finish(struct b6b_offload_thread *t)
+{
+	int sig;
+
+	/* sigwait() should return almost instantly if b6b_offload_done(); we call
+	 * it to unqueue the signal */
+	if ((sigwait(&t->wmask, &sig) != 0) || (sig != t->sig))
+		return 0;
+
+	atomic_store(&(t)->state, B6B_OFFLOAD_IDLE);
 	return 1;
 }

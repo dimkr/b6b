@@ -23,9 +23,10 @@
 #	include <sys/queue.h>
 
 enum b6b_thread_flags {
-	B6B_THREAD_BG   = 1,
-	B6B_THREAD_FG   = 1 << 1,
-	B6B_THREAD_DONE = 1 << 2
+	B6B_THREAD_BG      = 1,
+	B6B_THREAD_FG      = 1 << 1,
+	B6B_THREAD_DONE    = 1 << 2,
+	B6B_THREAD_BLOCKED = 1 << 3
 };
 
 TAILQ_HEAD(b6b_threads, b6b_thread);
@@ -46,6 +47,7 @@ struct b6b_thread {
 #	define b6b_thread_init(h) TAILQ_INIT(h)
 #	define b6b_thread_first(h) TAILQ_FIRST(h)
 #	define b6b_thread_next(t) TAILQ_NEXT(t, ents)
+#	define b6b_thread_foreach(h, t) TAILQ_FOREACH(t, h, ents)
 #	define b6b_thread_foreach_safe(h, t, tt) TAILQ_FOREACH_SAFE(t, h, ents, tt)
 
 struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
@@ -69,6 +71,13 @@ static inline void b6b_thread_push(struct b6b_threads *threads,
 
 void b6b_thread_pop(struct b6b_threads *ts, struct b6b_thread *t);
 void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg);
+
+#	define b6b_thread_block(t) \
+	(t)->flags |= B6B_THREAD_BLOCKED
+#	define b6b_thread_unblock(t) \
+	(t)->flags &= ~B6B_THREAD_BLOCKED
+#	define b6b_thread_blocked(t) \
+	((t)->flags & B6B_THREAD_BLOCKED)
 
 #else
 

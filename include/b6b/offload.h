@@ -70,4 +70,5 @@ void b6b_offload_thread_stop(struct b6b_offload_thread *t);
 int b6b_offload_start(struct b6b_offload_thread *t,
                       void (*fn)(void *),
                       void *arg);
-#define b6b_offload_finish(t) atomic_store(&(t)->state, B6B_OFFLOAD_IDLE)
+
+int b6b_offload_finish(struct b6b_offload_thread *t);

@@ -472,25 +472,80 @@ int b6b_offload(struct b6b_interp *interp,
                 void (*fn)(void *),
                 void *arg)
 {
+	struct b6b_thread *t;
+	int swap, pending;
+
 	if (!b6b_threaded(interp))
 		fn(arg);
 	else {
-		while (!b6b_offload_ready(&interp->offth))
-			b6b_yield(interp);
+		b6b_thread_block(interp->fg);
 
-		if (!b6b_offload_start(&interp->offth, fn, arg))
+		if (!b6b_offload_ready(&interp->offth)) {
+			do {
+				/* if the offload thread is busy but no other thread is running,
+				 * this is clearly a serious bug */
+				if (!b6b_yield(interp)) {
+					b6b_thread_unblock(interp->fg);
+					return 0;
+				}
+			} while (!b6b_offload_ready(&interp->offth));
+		}
+
+		if (!b6b_offload_start(&interp->offth, fn, arg)) {
+			b6b_thread_unblock(interp->fg);
+			return 0;
+		}
+
+		while (!b6b_offload_done(&interp->offth)) {
+			/* if this is the only remaining active thread, we cannot poll for
+			 * b6b_offload_done() since b6b_yield() doesn't do anything; in this
+			 * case, we let b6b_offload_finish() block */
+			if (!b6b_threaded(interp))
+				break;
+
+			/* check whether there is at least one thread that waits for us to
+			 * complete the blocking operation and at least one thread which
+			 * doesn't */
+			pending = swap = 0;
+			b6b_thread_foreach(&interp->threads, t) {
+				if (t != interp->fg) {
+					if (b6b_thread_blocked(t)) {
+						pending = 1;
+						if (swap)
+							break;
+					}
+					else {
+						swap = 1;
+						if (pending)
+							break;
+					}
+				}
+			}
+
+			/* if all other threads are blocked by us, we want to stop this
+			 * polling loop since all they do is repeatedly calling
+			 * b6b_yield() */
+			if (!swap)
+				break;
+
+			/* if all other threads exited during the previous iterations of
+			 * this loop, we can (and should) block */
+			if (!b6b_yield(interp))
+				break;
+		}
+
+		b6b_thread_unblock(interp->fg);
+
+		if (!b6b_offload_finish(&interp->offth))
 			return 0;
 
-		while (!b6b_offload_done(&interp->offth))
+		/* if there's at least one thread which waits for us to complete the
+		 * blocking operation, we must give it a chance to run - otherwise, if
+		 * the next statement of the current thread also calls
+		 * b6b_offload_start(), that thread will spend more time in its
+		 * b6b_offload_ready() loop */
+		if (pending)
 			b6b_yield(interp);
-
-		b6b_offload_finish(&interp->offth);
-
-		/* we must give other threads a chance to run - otherwise, if the
-		 * current thread repeatedly calls b6b_offload_start(), it will always
-		 * be the first to signal b6b_offload_ready() and other threads will be
-		 * stuck in a b6b_offload_ready() loop */
-		b6b_yield(interp);
 	}
 
 	return 1;
