@@ -35,12 +35,14 @@ libb6b_srcs = [
 b6b_deps = [cc.find_library('m', required: true)]
 b6b_libs = []
 
+with_offload = false
 if get_option('with_threads')
 	add_project_arguments('-DB6B_HAVE_THREADS', language: 'c')
 	libb6b_srcs += ['b6b_co.c', 'b6b_sem.c']
 	b6b_deps += [dependency('threads')]
 
-	if cc.has_header('stdatomic.h')
+	with_offload = cc.has_header('stdatomic.h')
+	if with_offload
 		add_project_arguments('-DB6B_HAVE_OFFLOAD_THREAD', language: 'c')
 		libb6b_srcs += ['b6b_offload.c']
 

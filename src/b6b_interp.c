@@ -473,7 +473,7 @@ int b6b_offload(struct b6b_interp *interp,
                 void *arg)
 {
 	struct b6b_thread *t;
-	int swap, pending;
+	int swap, pending = 0;
 
 	if (!b6b_threaded(interp))
 		fn(arg);
@@ -496,7 +496,7 @@ int b6b_offload(struct b6b_interp *interp,
 			return 0;
 		}
 
-		while (!b6b_offload_done(&interp->offth)) {
+		do {
 			/* if this is the only remaining active thread, we cannot poll for
 			 * b6b_offload_done() since b6b_yield() doesn't do anything; in this
 			 * case, we let b6b_offload_finish() block */
@@ -532,7 +532,7 @@ int b6b_offload(struct b6b_interp *interp,
 			 * this loop, we can (and should) block */
 			if (!b6b_yield(interp))
 				break;
-		}
+		} while (!b6b_offload_done(&interp->offth));
 
 		b6b_thread_unblock(interp->fg);
 

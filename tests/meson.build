@@ -18,6 +18,10 @@ components = ['cast', 'list_parse', 'if', 'try', 'map', 'dict', 'str', 'file', '
 
 if get_option('with_threads')
 	components += ['spawn', 'co', 'sem']
+
+	if with_offload
+		components += ['offload']
+	endif
 endif
 
 if get_option('with_miniz')
