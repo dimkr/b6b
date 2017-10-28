@@ -14,22 +14,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-components = ['cast', 'list_parse', 'if', 'try', 'map', 'dict', 'str', 'file', 'signal', 'poll', 'proc', 'sh', 'math']
+tests = [
+	['cast', 'quick', 5],
+	['list_parse', 'quick', 5],
+	['if', 'quick', 5],
+	['try', 'quick', 5],
+	['map', 'quick', 5],
+	['dict', 'quick', 5],
+	['str', 'quick', 5],
+	['file', 'quick', 5],
+	['signal', 'quick', 5],
+	['poll', 'quick', 5],
+	['proc', 'quick', 5],
+	['sh', 'slow', 10],
+	['math', 'quick', 5]
+]
 
 if get_option('with_threads')
-	components += ['spawn', 'co', 'sem']
+	tests += [
+		['spawn', 'quick', 5],
+		['co', 'quick', 5],
+		['sem', 'quick', 5]
+	]
 
 	if with_offload
-		components += ['offload']
+		tests += [['offload', 'slow', 15]]
 	endif
 endif
 
 if get_option('with_miniz')
-	components += ['zlib']
+	tests += [['zlib', 'quick', 5]]
 endif
 
 if libffi.found()
-	components += ['ffi']
+	tests += [['ffi', 'quick', 5]]
 endif
 
 if get_option('with_threads')
@@ -39,13 +57,13 @@ else
 endif
 
 if get_option('default_library') != 'static'
-	foreach component: components
-		test_name = 'b6b_test_@0@'.format(component)
+	foreach test: tests
+		test_name = 'b6b_test_@0@'.format(test[0])
 		test_exe = executable(test_name,
 		                      '@0@.c'.format(test_name),
 		                      include_directories: b6b_includes,
 		                      dependencies: test_deps,
 		                      link_with: [libb6b])
-		test(test_name, test_exe, timeout: 10)
+		test(test[0], test_exe, timeout: test[2], suite: test[1])
 	endforeach
 endif

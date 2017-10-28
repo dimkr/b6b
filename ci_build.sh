@@ -41,8 +41,9 @@ DESTDIR=dest-static ninja -C build-small install
 
 for i in build build-clang
 do
+	meson test -C $i --no-rebuild --print-errorlogs --repeat 5
 	meson test -C $i --no-rebuild --print-errorlogs --repeat 5 --wrapper "taskset -c 0"
-	meson test -C $i --no-rebuild --print-errorlogs --num-processes 1 -t 50 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
-	meson test -C $i --no-rebuild --print-errorlogs --num-processes 1 -t 50 --wrapper "valgrind --tool=helgrind"
-	meson test -C $i --no-rebuild --print-errorlogs --num-processes 1 -t 50 --wrapper "valgrind --tool=helgrind --fair-sched=yes"
+	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
+	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind"
+	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --fair-sched=yes"
 done
