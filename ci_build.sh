@@ -19,9 +19,9 @@
 rm -rf build build-clang build-no-threads build-small
 
 export CFLAGS=-g
-meson build
-CC=clang meson -Dwith_doc=false build-clang
-meson -Dwith_doc=false -Dwith_threads=false build-no-threads
+meson -Dwith_valgrind=true build
+CC=clang meson -Dwith_doc=false -Dwith_valgrind=true build-clang
+meson -Dwith_doc=false -Dwith_threads=false -Dwith_valgrind=true build-no-threads
 meson -Dwith_doc=false -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
 
 # build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off

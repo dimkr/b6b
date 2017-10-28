@@ -30,7 +30,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <sys/syscall.h>
-#ifdef B6B_HAVE_HELGRIND
+#ifdef B6B_HAVE_VALGRIND
 #	include <valgrind/helgrind.h>
 #endif
 
@@ -584,7 +584,7 @@ int b6b_syscall(struct b6b_interp *interp,
 
 	va_end(ap);
 
-#ifdef B6B_HAVE_HELGRIND
+#ifdef B6B_HAVE_VALGRIND
 	VALGRIND_HG_DISABLE_CHECKING(&data, sizeof(data));
 #endif
 	if (!b6b_offload(interp, b6b_do_syscall, &data))

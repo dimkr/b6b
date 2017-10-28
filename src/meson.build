@@ -15,9 +15,12 @@
 # limitations under the License.
 
 cc = meson.get_compiler('c')
-debug = get_option('buildtype').startswith('debug')
 
-if debug and cc.has_header('valgrind/valgrind.h') and cc.has_header('valgrind/memcheck.h')
+with_valgrind = get_option('with_valgrind')
+if with_valgrind
+	if not cc.has_header('valgrind/valgrind.h') or not cc.has_header('valgrind/memcheck.h') or not cc.has_header('valgrind/helgrind.h')
+		error('Valgrind headers are missing')
+	endif
 	add_project_arguments('-DB6B_HAVE_VALGRIND', language: 'c')
 endif
 
@@ -45,10 +48,6 @@ if get_option('with_threads')
 	if with_offload
 		add_project_arguments('-DB6B_HAVE_OFFLOAD_THREAD', language: 'c')
 		libb6b_srcs += ['b6b_offload.c']
-
-		if debug and cc.has_header('valgrind/helgrind.h')
-			add_project_arguments('-DB6B_HAVE_HELGRIND', language: 'c')
-		endif
 	endif
 endif
 

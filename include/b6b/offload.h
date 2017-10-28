@@ -19,7 +19,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include <signal.h>
-#ifdef B6B_HAVE_HELGRIND
+#ifdef B6B_HAVE_VALGRIND
 #	include <valgrind/helgrind.h>
 #endif
 
@@ -49,7 +49,7 @@ static inline void b6b_offload_thread_init(struct b6b_offload_thread *t)
 {
 	atomic_store(&t->state, B6B_OFFLOAD_INIT);
 
-#ifdef B6B_HAVE_HELGRIND
+#ifdef B6B_HAVE_VALGRIND
 	/* all operations on t->state are atomic */
 	VALGRIND_HG_DISABLE_CHECKING(&t->state, sizeof(t->state));
 
