@@ -38,6 +38,12 @@ else
 	test_deps = []
 endif
 
+if get_option('with_valgrind')
+	timeout = 60
+else
+	timeout = 10
+endif
+
 if get_option('default_library') != 'static'
 	foreach component: components
 		test_name = 'b6b_test_@0@'.format(component)
@@ -46,6 +52,6 @@ if get_option('default_library') != 'static'
 		                      include_directories: b6b_includes,
 		                      dependencies: test_deps,
 		                      link_with: [libb6b])
-		test(test_name, test_exe)
+		test(test_name, test_exe, timeout: timeout)
 	endforeach
 endif
