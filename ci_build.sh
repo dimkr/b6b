@@ -28,31 +28,21 @@ meson -Dwith_doc=false -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=
 for i in build build-clang build-no-threads
 do
 	ninja -C $i
-	meson test -C $i --print-errorlogs
-	meson test -C $i --print-errorlogs --wrapper "taskset -c 0"
-
 	meson configure -Dbuildtype=release $i
-	ninja -C $i
-	meson test -C $i --print-errorlogs
-	# run the tests 5 times on a single CPU, to increase the chance of finding racy tests
-	meson test -C $i --print-errorlogs --repeat 5 --wrapper "taskset -c 0"
-
 	DESTDIR=dest ninja -C $i install
-
-	meson test -C $i --print-errorlogs --num-processes 1 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
 done
 
-ninja -C build-small
 DESTDIR=dest ninja -C build-small install
-meson test -C build-small --print-errorlogs
+meson test -C build-small --no-rebuild --print-errorlogs
 
 # rebuild the small build with a static library
 meson configure -Ddefault_library=static build-small
-ninja -C build-small
 DESTDIR=dest-static ninja -C build-small install
 
 for i in build build-clang
 do
-	meson test -C $i --print-errorlogs --num-processes 1 --repeat 5 --wrapper "valgrind --tool=helgrind"
-	meson test -C $i --print-errorlogs --num-processes 1 --wrapper "valgrind --tool=helgrind --fair-sched=yes"
+	meson test -C $i --no-rebuild --print-errorlogs --repeat 5 --wrapper "taskset -c 0"
+	meson test -C $i --no-rebuild --print-errorlogs --num-processes 1 -t 50 --wrapper "valgrind --leak-check=full --malloc-fill=1 --free-fill=1 --track-fds=yes"
+	meson test -C $i --no-rebuild --print-errorlogs --num-processes 1 -t 50 --wrapper "valgrind --tool=helgrind"
+	meson test -C $i --no-rebuild --print-errorlogs --num-processes 1 -t 50 --wrapper "valgrind --tool=helgrind --fair-sched=yes"
 done
