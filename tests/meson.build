@@ -39,7 +39,7 @@ else
 endif
 
 if get_option('with_valgrind')
-	timeout = 60
+	timeout = 120
 else
 	timeout = 10
 endif
