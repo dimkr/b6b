@@ -53,6 +53,7 @@ static void teardown(const char *buf, const ssize_t len)
 int main()
 {
 	struct b6b_interp interp;
+	size_t i;
 
 	assert((unlink("file") == 0) || (errno == ENOENT));
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -150,6 +151,19 @@ int main()
 	teardown("", 0);
 
 	assert(unlink("file") == 0);
+
+	/* regression test: /dev/zero is unseekable and b6b_strm_read() always
+	 * returned an empty string because b6b_stdio_peeksz() said there's nothing
+	 * to read */
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{[$open /dev/zero r] read 2}",
+	                     28) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen);
+	for (i = 0; i < interp.fg->_->slen; ++i)
+		assert(interp.fg->_->s[i] == 0);
+	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;
 }

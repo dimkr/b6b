@@ -27,6 +27,7 @@ ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 {
 	const struct b6b_stdio_strm *s = (const struct b6b_stdio_strm *)priv;
 	off_t here, end;
+	ssize_t len;
 
 	here = ftello(s->fp);
 	if ((here == (off_t)-1) || (here > SSIZE_MAX))
@@ -46,7 +47,14 @@ ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 		return -1;
 	}
 
-	return (ssize_t)(end - here);
+	len = (ssize_t)(end - here);
+	if (len > 0)
+		return len;
+
+	/* special, non-seekable files (e.g. proc and /dev/zero) behave like empty
+	 * files; therefore, we don't know the real amount we can read and fall back
+	 * to B6B_STRM_BUFSIZ */
+	return B6B_STRM_BUFSIZ;
 }
 
 ssize_t b6b_stdio_read(struct b6b_interp *interp,
