@@ -1,12 +1,14 @@
+site_name: b6b
+repo_url: https://github.com/dimkr/b6b
 pages:
 - Overview:
-    - Introduction: 'doc/introduction.md'
-    - Use Cases: 'doc/use_cases.md'
-- Tutorial: 'doc/tutorial.md'
-- Standard Library: 'doc/stdlib.md'
+    - Introduction: doc/introduction.md
+    - Use Cases: doc/use_cases.md
+- Tutorial: doc/tutorial.md
+- Standard Library: doc/stdlib.md
 - I/O:
-    - Streams: 'doc/streams.md'
-    - Event Loops: 'doc/evloop.md'
-    - File System: 'doc/fs.md'
-- Bindings: 'doc/bindings.md'
-- License: 'doc/license.md'
+    - Streams: doc/streams.md
+    - Event Loops: doc/evloop.md
+    - File System: doc/fs.md
+- Bindings: doc/bindings.md
+- License: doc/license.md
