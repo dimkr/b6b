@@ -15,6 +15,6 @@
 # limitations under the License.
 
 install_man('b6b.1')
-foreach md: ['bindings.md', 'core.md', 'evloop.md', 'fs.md', 'introduction.md', 'license.md', 'streams.md', 'tutorial.md', 'use_cases.md']
+foreach md: ['bindings.md', 'evloop.md', 'fs.md', 'introduction.md', 'license.md', 'stdlib.md', 'streams.md', 'tutorial.md', 'use_cases.md']
 	install_data(md, install_dir: docdir)
 endforeach
