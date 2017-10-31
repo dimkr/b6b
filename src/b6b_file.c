@@ -61,6 +61,7 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 		return NULL;
 
 	s->fp = fp;
+	s->interp = interp;
 	s->buf = NULL;
 	s->fd = fd;
 
@@ -172,14 +173,31 @@ static const char *b6b_file_mode(const char *mode,
 	return NULL;
 }
 
+struct b6b_file_fopen_data {
+	char *path;
+	const char *mode;
+	FILE *fp;
+	int rerrno;
+};
+
+static void b6b_file_do_fopen(void *arg)
+{
+	struct b6b_file_fopen_data *data = (struct b6b_file_fopen_data *)arg;
+
+	data->fp = fopen(data->path, data->mode);
+	if (!data->fp)
+		data->rerrno = errno;
+}
+
 static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
                                        struct b6b_obj *args)
 
 {
+	struct b6b_file_fopen_data data = {
+		.mode = B6B_FILE_DEF_FMODE
+	};
 	struct b6b_obj *path, *mode, *f;
-	const char *rmode = B6B_FILE_DEF_FMODE;
-	FILE *fp;
-	int fd, fl, err, bmode = _IONBF;
+	int err, fd, bmode = _IONBF;
 	const struct b6b_strm_ops *ops = &b6b_ro_file_ops;
 
 	switch (b6b_proc_get_args(interp, args, "os|s", NULL, &path, &mode)) {
@@ -187,28 +205,37 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 			if (!b6b_as_str(mode))
 				return B6B_ERR;
 
-			rmode = b6b_file_mode(mode->s, &bmode, &ops);
-			if (!rmode)
+			data.mode = b6b_file_mode(mode->s, &bmode, &ops);
+			if (!data.mode)
 				return b6b_return_strerror(interp, EINVAL);
 
 		case 2:
-			fp = fopen(path->s, rmode);
-			if (!fp)
-				return b6b_return_strerror(interp, errno);
+			/* path->s may be freed during context switch, while b6b_offload()
+			 * blocks */
+			data.path = b6b_strndup(path->s, path->slen);
+			if (b6b_unlikely(!data.path))
+				return B6B_ERR;
 
-			fd = fileno(fp);
-			fl = fcntl(fd, F_GETFL);
-			if ((fl < 0) ||
-			     (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0) ||
-			     (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0)) {
+			if (!b6b_offload(interp, b6b_file_do_fopen, &data)) {
+				free(data.path);
+				return B6B_ERR;
+			}
+
+			free(data.path);
+
+			if (!data.fp)
+				return b6b_return_strerror(interp, data.rerrno);
+
+			fd = fileno(data.fp);
+			if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
 				err = errno;
-				fclose(fp);
+				b6b_offload(interp, b6b_stdio_do_fclose, data.fp);
 				return b6b_return_strerror(interp, err);
 			}
 
-			f = b6b_file_new(interp, fp, fd, bmode, ops);
+			f = b6b_file_new(interp, data.fp, fd, bmode, ops);
 			if (!f) {
-				fclose(fp);
+				b6b_offload(interp, b6b_stdio_do_fclose, data.fp);
 				return B6B_ERR;
 			}
 

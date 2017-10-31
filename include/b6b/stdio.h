@@ -20,9 +20,12 @@
 
 struct b6b_stdio_strm {
 	FILE *fp;
+	struct b6b_interp *interp;
 	void *buf;
 	int fd;
 };
+
+void b6b_stdio_do_fclose(void *arg);
 
 ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv);
 ssize_t b6b_stdio_read(struct b6b_interp *interp,

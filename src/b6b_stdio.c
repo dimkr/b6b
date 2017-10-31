@@ -23,8 +23,26 @@
 
 #include <b6b.h>
 
+struct b6b_fseeko_data {
+	FILE *fp;
+	off_t off;
+	int whence;
+	int ret;
+	int rerrno;
+};
+
+static void b6b_stdio_do_fseeko(void *arg)
+{
+	struct b6b_fseeko_data *data = (struct b6b_fseeko_data *)arg;
+
+	data->ret = fseeko(data->fp, data->off, data->whence);
+	if (data->ret < 0)
+		data->rerrno = errno;
+}
+
 ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 {
+	struct b6b_fseeko_data data;
 	const struct b6b_stdio_strm *s = (const struct b6b_stdio_strm *)priv;
 	off_t here, end;
 	ssize_t len;
@@ -33,8 +51,14 @@ ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 	if ((here == (off_t)-1) || (here > SSIZE_MAX))
 		return -1;
 
-	if (fseek(s->fp, 0, SEEK_END) < 0) {
-		b6b_return_strerror(interp, errno);
+	data.fp = s->fp;
+	data.off = 0;
+	data.whence = SEEK_END;
+	if (!b6b_offload(interp, b6b_stdio_do_fseeko, &data))
+		return -1;
+
+	if (data.ret < 0) {
+		b6b_return_strerror(interp, data.rerrno);
 		return -1;
 	}
 
@@ -42,9 +66,16 @@ ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 	if ((end == (off_t)-1) || (end > SSIZE_MAX))
 		return -1;
 
-	if ((end > here) && (fseeko(s->fp, here, SEEK_SET) < 0)) {
-		b6b_return_strerror(interp, errno);
-		return -1;
+	if (end > here) {
+		data.off = here;
+		data.whence = SEEK_SET;
+		if (!b6b_offload(interp, b6b_stdio_do_fseeko, &data))
+			return -1;
+
+		if (data.ret < 0) {
+			b6b_return_strerror(interp, data.rerrno);
+			return -1;
+		}
 	}
 
 	len = (ssize_t)(end - here);
@@ -57,6 +88,23 @@ ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 	return B6B_STRM_BUFSIZ;
 }
 
+struct b6b_stdio_fread_data {
+	void *buf;
+	FILE *fp;
+	size_t len;
+	size_t ret;
+	int rerrno;
+};
+
+static void b6b_stdio_do_fread(void *arg)
+{
+	struct b6b_stdio_fread_data *data = (struct b6b_stdio_fread_data *)arg;
+
+	data->ret = fread(data->buf, 1, data->len, data->fp);
+	if (data->ret == 0)
+		data->rerrno = errno;
+}
+
 ssize_t b6b_stdio_read(struct b6b_interp *interp,
                        void *priv,
                        unsigned char *buf,
@@ -64,20 +112,42 @@ ssize_t b6b_stdio_read(struct b6b_interp *interp,
                        int *eof,
                        int *again)
 {
+	struct b6b_stdio_fread_data data;
 	const struct b6b_stdio_strm *s = (const struct b6b_stdio_strm *)priv;
-	size_t ret;
 
-	ret = fread(buf, 1, len, s->fp);
-	if (ret < len) {
+	data.buf = buf;
+	data.fp = s->fp;
+	data.len = len;
+	if (!b6b_offload(interp, b6b_stdio_do_fread, &data))
+		return -1;
+
+	if (data.ret < len) {
 		if (ferror(s->fp)) {
-			b6b_return_strerror(interp, errno);
+			b6b_return_strerror(interp, data.rerrno);
 			return -1;
 		}
 		if (feof(s->fp))
 			*eof = 1;
 	}
 
-	return (ssize_t)ret;
+	return (ssize_t)data.ret;
+}
+
+struct b6b_stdio_fwrite_data {
+	const void *buf;
+	FILE *fp;
+	size_t len;
+	size_t ret;
+	int rerrno;
+};
+
+static void b6b_stdio_do_fwrite(void *arg)
+{
+	struct b6b_stdio_fwrite_data *data = (struct b6b_stdio_fwrite_data *)arg;
+
+	data->ret = fwrite(data->buf, 1, data->len, data->fp);
+	if (data->ret == 0)
+		data->rerrno = errno;
 }
 
 ssize_t b6b_stdio_write(struct b6b_interp *interp,
@@ -85,21 +155,39 @@ ssize_t b6b_stdio_write(struct b6b_interp *interp,
                         const unsigned char *buf,
                         const size_t len)
 {
+	struct b6b_stdio_fwrite_data data;
 	const struct b6b_stdio_strm *s = (const struct b6b_stdio_strm *)priv;
-	size_t chunk, total = 0;
+	unsigned char *copy;
+	size_t total = 0;
 
+	/* we must copy the buffer, since it may be the string representation of an
+	 * object freed during context switch */
+	copy = (unsigned char *)malloc(len);
+	if (b6b_unlikely(!copy))
+		return -1;
+	memcpy(copy, buf, len);
+
+	data.fp = s->fp;
 	do {
-		chunk = fwrite(buf + total, 1, len - total, s->fp);
-		if (chunk == 0) {
+		data.buf = copy + total;
+		data.len = len - total;
+		if (!b6b_offload(interp, b6b_stdio_do_fwrite, &data)) {
+			free(copy);
+			return -1;
+		}
+
+		if (data.ret == 0) {
 			if (ferror(s->fp)) {
-				b6b_return_strerror(interp, errno);
+				free(copy);
+				b6b_return_strerror(interp, data.rerrno);
 				return -1;
 			}
 			break;
 		}
-		total += chunk;
+		total += data.ret;
 	} while (total < len);
 
+	free(copy);
 	return total;
 }
 
@@ -110,11 +198,17 @@ int b6b_stdio_fd(void *priv)
 	return s->fd;
 }
 
+void b6b_stdio_do_fclose(void *arg)
+{
+	fclose((FILE *)arg);
+}
+
 void b6b_stdio_close(void *priv)
 {
 	struct b6b_stdio_strm *s = (struct b6b_stdio_strm *)priv;
 
-	fclose(s->fp);
+	/* fclose() may block due to buffered writing */
+	b6b_offload(s->interp, b6b_stdio_do_fclose, s->fp);
 
 	if (s->buf)
 		free(s->buf);
@@ -149,6 +243,7 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 		return 0;
 
 	s->fp = fp;
+	s->interp = interp;
 	s->buf = NULL;
 	s->fd = fd;
 
