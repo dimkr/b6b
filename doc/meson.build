@@ -14,16 +14,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if get_option('with_doc')
-	install_man('b6b.1')
-
-	asciidoc = find_program('asciidoc', required: false)
-	if asciidoc.found()
-		custom_target('manual',
-		              input: 'b6b.txt',
-		              output: 'b6b.html',
-		              command: [asciidoc.path(), '-a', 'toc', '-a', 'toclevels=4', '-o', '@OUTPUT@', '@INPUT@'],
-		              install: true,
-		              install_dir: docdir)
-	endif
-endif
+install_man('b6b.1')
+install_data('index.md', install_dir: docdir)
