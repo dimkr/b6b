@@ -1,0 +1,12 @@
+pages:
+- Overview:
+    - Introduction: 'doc/introduction.md'
+    - Use Cases: 'doc/use_cases.md'
+- Tutorial: 'doc/tutorial.md'
+- Standard Library: 'doc/stdlib.md'
+- I/O:
+    - Streams: 'doc/streams.md'
+    - Event Loops: 'doc/evloop.md'
+    - File System: 'doc/fs.md'
+- Bindings: 'doc/bindings.md'
+- License: 'doc/license.md'
