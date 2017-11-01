@@ -1,14 +1,24 @@
 site_name: b6b
 repo_url: https://github.com/dimkr/b6b
 pages:
-- Overview:
-    - Introduction: introduction.md
-    - Use Cases: use_cases.md
-- Tutorial: tutorial.md
-- Standard Library: stdlib.md
-- I/O:
-    - Streams: streams.md
-    - Event Loops: evloop.md
-    - File System: fs.md
-- Bindings: bindings.md
-- License: license.md
+    - Home: index.md
+    - Tutorial: tutorial.md
+    - Standard Library:
+        - Interpreters: interp.md
+        - Objects: objects.md
+        - Flow Control: flow.md
+        - Strings: str.md
+        - Lists: list.md
+        - Dictionaries: dict.md
+        - Loops: loop.md
+        - Procedures: proc.md
+        - Exceptions: exc.md
+        - Evaluation: eval.md
+        - Threads: thread.md
+    - I/O:
+        - Streams: streams.md
+        - Event Loops: evloop.md
+        - File System: fs.md
+    - Bindings:
+        - zlib: zlib.md
+        - linenoise: linenoise.md

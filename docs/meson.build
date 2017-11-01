@@ -14,6 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-foreach md: ['bindings.md', 'evloop.md', 'fs.md', 'introduction.md', 'stdlib.md', 'streams.md', 'tutorial.md', 'use_cases.md']
+foreach md: ['dict.md', 'eval.md', 'evloop.md', 'exc.md', 'flow.md', 'fs.md', 'index.md', 'interp.md', 'linenoise.md', 'list.md', 'loop.md', 'objects.md', 'proc.md', 'str.md', 'streams.md', 'thread.md', 'tutorial.md', 'zlib.md']
 	install_data(md, install_dir: docdir)
 endforeach
