@@ -24,6 +24,7 @@ subdir('include')
 subdir('src')
 subdir('tests')
 subdir('doc')
+subdir('docs')
 subdir('examples')
 
 install_data('README.md', 'AUTHORS', 'COPYING',
