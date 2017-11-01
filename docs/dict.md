@@ -1,4 +1,3 @@
-
     {$dict.get {human 2 dog 4} snake 0}
 
 *dict.get* returns the value associated with a dictionary key. If the key is not found and a fallback value was specified, that value is returned. Otherwise, an error condition is triggered.

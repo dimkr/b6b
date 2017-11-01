@@ -1,4 +1,3 @@
-
     {$if [$== 4 3] {
     	{$stdout writeln a}
     } {

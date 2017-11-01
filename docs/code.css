@@ -1,0 +1,4 @@
+.hljs-keyword, .hljs-literal, .hljs-built_in, .hljs-variable, .hljs-type {
+	color: #333;
+	font-weight: normal;
+}

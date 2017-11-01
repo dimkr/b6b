@@ -1,4 +1,3 @@
-
     {$linenoise.read {> }}
 
 *linenoise.read* displays a prompt and reads a line of user input.

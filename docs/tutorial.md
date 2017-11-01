@@ -32,7 +32,7 @@ There are two kinds of objects in **b6b**:
 1. Anonymous objects
 2. Named objects
 
-Named objects have both a value and a name, while anonymous objects do not have a name. To obtain the value of a named object, prefix its name with '$'.
+Named objects have both a value and a name, while anonymous objects do not have a name. To obtain the value of a named object, prefix its name with *$*.
 
 # Statements
 
@@ -51,7 +51,7 @@ Every procedure has a return value. The return value of the previously executed 
 
 # Invocation
 
-In addition, a statement can invoke another statemenet by enclosing it in brackets:
+In addition, a statement can invoke another statement by enclosing it in brackets:
 
     {$stdout writeln [$+ 4 3]}
 

@@ -1,4 +1,3 @@
-
     {$open file.txt rb}
 
 *open* creates a file stream. The second argument may be *r* (read), *w* (create and write) or *a* (create or append), but can be suffixed with *+* (read and write), *b* (to enable full buffering) or *u* (to disable buffering).

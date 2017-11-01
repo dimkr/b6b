@@ -1,4 +1,3 @@
-
     {$local number 5}
 
 *local* assigns a name to object, in the local scope.

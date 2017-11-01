@@ -22,3 +22,5 @@ pages:
     - Bindings:
         - zlib: zlib.md
         - linenoise: linenoise.md
+theme: readthedocs
+extra_css: [code.css]

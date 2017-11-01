@@ -1,4 +1,3 @@
-
     {$spawn {
     	{$loop {
     		{$stdout writeln a}

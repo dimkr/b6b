@@ -1,4 +1,3 @@
-
     {$list.new a b c {d e}}
 
 *list.new* creates a new list containing its arguments.

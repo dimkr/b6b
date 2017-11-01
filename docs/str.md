@@ -1,4 +1,3 @@
-
     {$str.len abcd}
 
 *str.len* returns the length of a string.

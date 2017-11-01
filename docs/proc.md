@@ -1,4 +1,3 @@
-
     {$proc append_stuff {
     	{$list.append $. c}
     	{$return $.}
