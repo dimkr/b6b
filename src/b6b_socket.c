@@ -227,27 +227,66 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
 	return o;
 }
 
+struct b6b_socket_gai_data {
+	struct addrinfo hints;
+	char *host;
+	char *service;
+	struct addrinfo *res;
+	int out;
+};
+
+static void b6b_socket_do_getaddrinfo(void *arg)
+{
+	struct b6b_socket_gai_data *data = (struct b6b_socket_gai_data *)arg;
+
+	data->out = getaddrinfo(data->host,
+	                        data->service,
+	                        &data->hints,
+	                        &data->res);
+}
+
 static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
-                                           const char *host,
-                                           const char *service,
+                                           struct b6b_obj *host,
+                                           struct b6b_obj *service,
                                            const int socktype)
 {
-	struct addrinfo hints = {0}, *res;
+	struct b6b_socket_gai_data data = {.hints = {0}};
 	const char *s;
 	int out;
 
-	hints.ai_socktype = socktype;
-	hints.ai_family = AF_UNSPEC;
+	/* both strings must be copied since they may be freed during
+	 * b6b_offload() */
+	data.host = b6b_strndup(host->s, host->slen);
+	if (b6b_unlikely(!data.host))
+		return NULL;
 
-	out = getaddrinfo(host, service, &hints, &res);
-	if (out != 0) {
-		s = gai_strerror(out);
-		if (s)
-			b6b_return_str(interp, s, strlen(s));
+	data.service = b6b_strndup(service->s, service->slen);
+	if (b6b_unlikely(!data.service)) {
+		free(data.host);
 		return NULL;
 	}
 
-	return res;
+	data.hints.ai_socktype = socktype;
+	data.hints.ai_family = AF_UNSPEC;
+	out = b6b_offload(interp, b6b_socket_do_getaddrinfo, &data);
+
+	free(data.service);
+	free(data.host);
+
+	if (!out) {
+		if (data.res)
+			freeaddrinfo(data.res);
+		return NULL;
+	}
+
+	if (data.out == 0);
+		return data.res;
+
+	s = gai_strerror(data.out);
+	if (s)
+		b6b_return_str(interp, s, strlen(s));
+
+	return NULL;
 }
 
 static struct b6b_obj *b6b_socket_client_new(struct b6b_interp *interp,
@@ -315,10 +354,10 @@ static enum b6b_res b6b_socket_proc_inet_client(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	if (strcmp(t->s, "udp") == 0) {
-		res = b6b_socket_resolve(interp, h->s, s->s, SOCK_DGRAM);
+		res = b6b_socket_resolve(interp, h, s, SOCK_DGRAM);
 		ops = &b6b_udp_client_ops;
 	} else if (strcmp(t->s, "tcp") == 0)
-		res = b6b_socket_resolve(interp, h->s, s->s, SOCK_STREAM);
+		res = b6b_socket_resolve(interp, h, s, SOCK_STREAM);
 	else
 		return B6B_ERR;
 
@@ -526,12 +565,12 @@ static enum b6b_res b6b_socket_proc_inet_server(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	if ((argc == 4) && (strcmp(t->s, "udp") == 0))
-		res = b6b_socket_resolve(interp, h->s, s->s, SOCK_DGRAM);
+		res = b6b_socket_resolve(interp, h, s, SOCK_DGRAM);
 	else if (strcmp(t->s, "tcp") == 0) {
 		if (argc == 5)
 			backlog = b->i;
 
-		res = b6b_socket_resolve(interp, h->s, s->s, SOCK_STREAM);
+		res = b6b_socket_resolve(interp, h, s, SOCK_STREAM);
 	}
 	else
 		return B6B_ERR;
