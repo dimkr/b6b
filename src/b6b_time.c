@@ -39,6 +39,11 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 	if ((f->f <= 0) || (f->f > UINT_MAX))
 		return B6B_ERR;
 
+	/* we want to avoid costly offloading the nanosleep() call, if the interval
+	 * is zero */
+	if (!f->f)
+		return B6B_OK;
+
 	req.tv_sec = (time_t)floor(f->f);
 	req.tv_nsec = labs((long)(1000000000 * (f->f - (b6b_float)req.tv_sec)));
 

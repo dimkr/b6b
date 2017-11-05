@@ -194,6 +194,7 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 
 {
 	struct b6b_file_fopen_data data = {
+		.fp = NULL,
 		.mode = B6B_FILE_DEF_FMODE
 	};
 	struct b6b_obj *path, *mode, *f;
@@ -217,6 +218,8 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 				return B6B_ERR;
 
 			if (!b6b_offload(interp, b6b_file_do_fopen, &data)) {
+				if (data.fp)
+					b6b_offload(interp, b6b_stdio_do_fclose, data.fp);
 				free(data.path);
 				return B6B_ERR;
 			}
