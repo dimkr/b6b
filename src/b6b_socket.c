@@ -279,7 +279,7 @@ static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
 		return NULL;
 	}
 
-	if (data.out == 0);
+	if (data.out == 0)
 		return data.res;
 
 	s = gai_strerror(data.out);
