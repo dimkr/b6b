@@ -169,7 +169,7 @@ static enum b6b_res b6b_strm_writeln(struct b6b_interp *interp,
 	char *s;
 
 	s = (char *)malloc(len + 2);
-	if (!s)
+	if (b6b_unlikely(!s))
 		return B6B_ERR;
 
 	memcpy(s, buf, len);
