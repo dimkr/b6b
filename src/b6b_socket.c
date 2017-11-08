@@ -27,6 +27,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <byteswap.h>
 
 #include <b6b.h>
 
@@ -650,6 +651,40 @@ static enum b6b_res b6b_socket_proc_un_server(struct b6b_interp *interp,
 	return b6b_return(interp, o);
 }
 
+static enum b6b_res b6b_socket_proc_bswap16(struct b6b_interp *interp,
+                                            struct b6b_obj *args)
+{
+	struct b6b_obj *n;
+
+	if (!b6b_proc_get_args(interp, args, "oi", NULL, &n) ||
+	    (n->i < 0) ||
+	    (n->i > UINT16_MAX))
+		return B6B_ERR;
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return b6b_return(interp, b6b_ref(n));
+#else
+	return b6b_return_int(interp, (b6b_int)bswap_16((uint16_t)n->i));
+#endif
+}
+
+static enum b6b_res b6b_socket_proc_bswap32(struct b6b_interp *interp,
+                                            struct b6b_obj *args)
+{
+	struct b6b_obj *n;
+
+	if (!b6b_proc_get_args(interp, args, "oi", NULL, &n) ||
+	    (n->i < 0) ||
+	    (n->i > UINT32_MAX))
+		return B6B_ERR;
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return b6b_return(interp, b6b_ref(n));
+#else
+	return b6b_return_int(interp, (b6b_int)bswap_32((uint32_t)n->i));
+#endif
+}
+
 static const struct b6b_ext_obj b6b_socket[] = {
 	{
 		.name = "inet.client",
@@ -674,6 +709,30 @@ static const struct b6b_ext_obj b6b_socket[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "un.server",
 		.proc = b6b_socket_proc_un_server
+	},
+	{
+		.name = "htonl",
+		.type = B6B_TYPE_STR,
+		.val.s = "htonl",
+		.proc = b6b_socket_proc_bswap32
+	},
+	{
+		.name = "ntohl",
+		.type = B6B_TYPE_STR,
+		.val.s = "ntohl",
+		.proc = b6b_socket_proc_bswap32
+	},
+	{
+		.name = "htons",
+		.type = B6B_TYPE_STR,
+		.val.s = "htons",
+		.proc = b6b_socket_proc_bswap16
+	},
+	{
+		.name = "ntohs",
+		.type = B6B_TYPE_STR,
+		.val.s = "ntohs",
+		.proc = b6b_socket_proc_bswap16
 	}
 };
 __b6b_ext(b6b_socket);
