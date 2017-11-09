@@ -17,6 +17,7 @@
  */
 
 #include <stdlib.h>
+#include <limits.h>
 
 #include <b6b.h>
 
@@ -54,12 +55,42 @@ static enum b6b_res b6b_rand_proc_choice(struct b6b_interp *interp,
 	return b6b_return(interp, b6b_ref(li->o));
 }
 
+static enum b6b_res b6b_rand_proc_randint(struct b6b_interp *interp,
+                                          struct b6b_obj *args)
+{
+	struct b6b_obj *start, *end;
+	unsigned int delta;
+
+	if (!b6b_proc_get_args(interp, args, "oii", NULL, &start, &end) ||
+	    (start->i < INT_MIN) ||
+	    (start->i >= INT_MAX) ||
+	    (end->i <= start->i) ||
+	    (end->i > INT_MAX))
+		return B6B_ERR;
+
+	delta = (unsigned int)(end->i - start->i);
+	if (delta == UINT_MAX)
+		return B6B_ERR;
+
+	return b6b_return_int(
+	               interp,
+	               (b6b_int)(start->i +
+	                         ((unsigned int)(rand_r(&interp->seed) & UINT_MAX) %
+	                                         (delta + 1))));
+}
+
 static const struct b6b_ext_obj b6b_rand[] = {
 	{
 		.name = "choice",
 		.type = B6B_TYPE_STR,
 		.val.s = "choice",
 		.proc = b6b_rand_proc_choice
+	},
+	{
+		.name = "randint",
+		.type = B6B_TYPE_STR,
+		.val.s = "randint",
+		.proc = b6b_rand_proc_randint
 	}
 };
 __b6b_ext(b6b_rand);
