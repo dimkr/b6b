@@ -105,6 +105,28 @@ static enum b6b_res b6b_math_proc_mod(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
+static enum b6b_res b6b_math_proc_and(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "oii", NULL, &m, &n))
+		return b6b_return_int(interp, m->i & n->i);
+
+	return B6B_ERR;
+}
+
+static enum b6b_res b6b_math_proc_or(struct b6b_interp *interp,
+                                      struct b6b_obj *args)
+{
+	struct b6b_obj *m, *n;
+
+	if (b6b_proc_get_args(interp, args, "oii", NULL, &m, &n))
+		return b6b_return_int(interp, m->i | n->i);
+
+	return B6B_ERR;
+}
+
 static enum b6b_res b6b_math_proc_lt(struct b6b_interp *interp,
                                      struct b6b_obj *args)
 {
@@ -179,6 +201,18 @@ static const struct b6b_ext_obj b6b_math[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "%",
 		.proc = b6b_math_proc_mod
+	},
+	{
+		.name = "&",
+		.type = B6B_TYPE_STR,
+		.val.s = "&",
+		.proc = b6b_math_proc_and
+	},
+	{
+		.name = "|",
+		.type = B6B_TYPE_STR,
+		.val.s = "|",
+		.proc = b6b_math_proc_or
 	},
 	{
 		.name = "<",

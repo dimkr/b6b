@@ -244,6 +244,30 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$& 0 2}", 8) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$& 4 6}", 8) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 4);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$| 0 2}", 8) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 2);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$| 4 2}", 8) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 6);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$> 4 1}", 8) == B6B_OK);
 	assert(b6b_obj_istrue(interp.fg->_));
 	b6b_interp_destroy(&interp);
