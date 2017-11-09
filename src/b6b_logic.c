@@ -145,9 +145,9 @@ static const struct b6b_ext_obj b6b_logic[] = {
 		.proc = b6b_logic_proc_or
 	},
 	{
-		.name = "^",
+		.name = "^^",
 		.type = B6B_TYPE_STR,
-		.val.s = "^",
+		.val.s = "^^",
 		.proc = b6b_logic_proc_xor
 	},
 	{
