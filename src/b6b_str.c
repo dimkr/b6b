@@ -490,6 +490,38 @@ static enum b6b_res b6b_str_proc_split(struct b6b_interp *interp,
 	return b6b_return(interp, l);
 }
 
+static enum b6b_res b6b_str_proc_ord(struct b6b_interp *interp,
+                                     struct b6b_obj *args)
+{
+	struct b6b_obj *s, *l, *n;
+	size_t i;
+
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
+	    return B6B_ERR;
+
+	l = b6b_list_new();
+	if (b6b_unlikely(!l))
+		return B6B_ERR;
+
+	for (i = 0; i < s->slen; ++i) {
+		n = b6b_int_new((b6b_int)s->s[i]);
+		if (b6b_unlikely(!n)) {
+			b6b_destroy(l);
+			return B6B_ERR;
+		}
+
+		if (b6b_unlikely(!b6b_list_add(l, n))) {
+			b6b_destroy(n);
+			b6b_destroy(l);
+			return B6B_ERR;
+		}
+
+		b6b_unref(n);
+	}
+
+	return b6b_return(interp, l);
+}
+
 static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
                                         struct b6b_obj *args)
 {
@@ -701,6 +733,12 @@ static const struct b6b_ext_obj b6b_str[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "str.split",
 		.proc = b6b_str_proc_split
+	},
+	{
+		.name = "str.ord",
+		.type = B6B_TYPE_STR,
+		.val.s = "str.ord",
+		.proc = b6b_str_proc_ord
 	},
 	{
 		.name = "str.expand",
