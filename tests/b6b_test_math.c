@@ -243,6 +243,13 @@ int main()
 	assert(interp.fg->_->f == -2);
 	b6b_interp_destroy(&interp);
 
+	/* regression test: $% 3 4 used to return -1 */
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$% 3 4}", 8) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 3);
+	b6b_interp_destroy(&interp);
+
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$& 0 2}", 8) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));

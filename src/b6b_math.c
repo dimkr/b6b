@@ -97,6 +97,10 @@ static enum b6b_res b6b_math_proc_mod(struct b6b_interp *interp,
 #ifdef B6B_HAVE_FENV
 		if (errno || fetestexcept(FE_INVALID))
 			return B6B_ERR;
+
+		/* make sure the remainder has the same sign as n->f */
+		if ((p < 0) && (n->f > 0))
+			p += n->f;
 #endif
 
 		return b6b_return_float(interp, (b6b_float)p);
