@@ -18,6 +18,14 @@
 
 *str.split* splits a string, by a delimiter.
 
+    {$str.ord a}
+
+*str.ord* returns the numeric value of a character.
+
+    {$str.chr 0x61}
+
+*str.chr* returns the character associated with a given numeric value.
+
     {$str.expand {a\tb}}
 
 *str.expand* expands escape sequences in a string.
