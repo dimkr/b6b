@@ -493,33 +493,38 @@ static enum b6b_res b6b_str_proc_split(struct b6b_interp *interp,
 static enum b6b_res b6b_str_proc_ord(struct b6b_interp *interp,
                                      struct b6b_obj *args)
 {
-	struct b6b_obj *s, *l, *n;
-	size_t i;
+	struct b6b_obj *s;
 
-	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &s) || (s->slen != 1))
 	    return B6B_ERR;
 
-	l = b6b_list_new();
-	if (b6b_unlikely(!l))
+	return b6b_return_int(interp, (b6b_int)s->s[0]);
+}
+
+static enum b6b_res b6b_str_proc_chr(struct b6b_interp *interp,
+                                     struct b6b_obj *args)
+{
+	struct b6b_obj *n, *s;
+	char *buf;
+
+	if (!b6b_proc_get_args(interp, args, "oi", NULL, &n) ||
+	    (n->i < 0) ||
+	    (n->i > UCHAR_MAX))
+	    return B6B_ERR;
+
+	buf = (char *)malloc(2);
+	if (b6b_unlikely(!buf))
 		return B6B_ERR;
 
-	for (i = 0; i < s->slen; ++i) {
-		n = b6b_int_new((b6b_int)s->s[i]);
-		if (b6b_unlikely(!n)) {
-			b6b_destroy(l);
-			return B6B_ERR;
-		}
-
-		if (b6b_unlikely(!b6b_list_add(l, n))) {
-			b6b_destroy(n);
-			b6b_destroy(l);
-			return B6B_ERR;
-		}
-
-		b6b_unref(n);
+	s = b6b_str_new(buf, 1);
+	if (b6b_unlikely(!s)) {
+		free(buf);
+		return B6B_ERR;
 	}
 
-	return b6b_return(interp, l);
+	buf[0] = (char)n->i;
+	buf[1] = '\0';
+	return b6b_return(interp, s);
 }
 
 static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
@@ -739,6 +744,12 @@ static const struct b6b_ext_obj b6b_str[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "str.ord",
 		.proc = b6b_str_proc_ord
+	},
+	{
+		.name = "str.chr",
+		.type = B6B_TYPE_STR,
+		.val.s = "str.chr",
+		.proc = b6b_str_proc_chr
 	},
 	{
 		.name = "str.expand",
