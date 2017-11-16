@@ -218,33 +218,62 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$str.ord abc}", 14) == B6B_OK);
-	assert(b6b_as_list(interp.fg->_));
-	assert(!b6b_list_empty(interp.fg->_));
-	assert(b6b_as_float(b6b_list_first(interp.fg->_)->o));
-	assert(b6b_list_first(interp.fg->_)->o->f == 'a');
-	assert(b6b_list_next(b6b_list_first(interp.fg->_)));
-	assert(b6b_as_float(b6b_list_next(b6b_list_first(interp.fg->_))->o));
-	assert(b6b_list_next(b6b_list_first(interp.fg->_))->o->f == 'b');
-	assert(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_))));
-	assert(b6b_as_float(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))->o));
-	assert(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))->o->f == 'c');
-	assert(!b6b_list_next(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))));
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$str.ord a}", 12) == B6B_OK);
-	assert(b6b_as_list(interp.fg->_));
-	assert(!b6b_list_empty(interp.fg->_));
-	assert(b6b_as_float(b6b_list_first(interp.fg->_)->o));
-	assert(b6b_list_first(interp.fg->_)->o->f == 'a');
-	assert(!b6b_list_next(b6b_list_first(interp.fg->_)));
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 'a');
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_call_copy(&interp, "{$str.ord [$str.expand \\xff]}", 29) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 0xFF);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$str.ord {}}", 13) == B6B_OK);
-	assert(b6b_as_list(interp.fg->_));
-	assert(b6b_list_empty(interp.fg->_));
+	assert(b6b_call_copy(&interp, "{$str.ord [$str.expand \\0]}", 27) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.ord {}}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.ord aa}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr [$str.ord a]}", 23) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "a") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr 0xFF}", 15) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "\xFF") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr [$str.ord [$str.expand \\0]]}", 38) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert(interp.fg->_->s[0] == '\0');
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr {}}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr 256}", 14) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr -1}", 13) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
