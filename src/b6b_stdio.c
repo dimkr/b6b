@@ -42,7 +42,10 @@ static void b6b_stdio_do_fseeko(void *arg)
 
 ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 {
-	struct b6b_fseeko_data data;
+	struct b6b_fseeko_data data = {
+		.off = 0,
+		.whence = SEEK_END
+	};
 	const struct b6b_stdio_strm *s = (const struct b6b_stdio_strm *)priv;
 	off_t here, end;
 	ssize_t len;
@@ -52,8 +55,6 @@ ssize_t b6b_stdio_peeksz(struct b6b_interp *interp, void *priv)
 		return -1;
 
 	data.fp = s->fp;
-	data.off = 0;
-	data.whence = SEEK_END;
 	if (!b6b_offload(interp, b6b_stdio_do_fseeko, &data))
 		return -1;
 
@@ -112,12 +113,14 @@ ssize_t b6b_stdio_read(struct b6b_interp *interp,
                        int *eof,
                        int *again)
 {
-	struct b6b_stdio_fread_data data;
+	struct b6b_stdio_fread_data data = {
+		.buf = buf,
+		.len = len,
+		.rerrno = 0
+	};
 	const struct b6b_stdio_strm *s = (const struct b6b_stdio_strm *)priv;
 
-	data.buf = buf;
 	data.fp = s->fp;
-	data.len = len;
 	if (!b6b_offload(interp, b6b_stdio_do_fread, &data))
 		return -1;
 
