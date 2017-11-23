@@ -498,7 +498,7 @@ static enum b6b_res b6b_str_proc_ord(struct b6b_interp *interp,
 	if (!b6b_proc_get_args(interp, args, "os", NULL, &s) || (s->slen != 1))
 	    return B6B_ERR;
 
-	return b6b_return_int(interp, (b6b_int)s->s[0]);
+	return b6b_return_int(interp, (b6b_int)(unsigned char)s->s[0]);
 }
 
 static enum b6b_res b6b_str_proc_chr(struct b6b_interp *interp,
