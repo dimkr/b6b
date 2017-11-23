@@ -651,6 +651,65 @@ static enum b6b_res b6b_socket_proc_un_server(struct b6b_interp *interp,
 	return b6b_return(interp, o);
 }
 
+static enum b6b_res b6b_socket_proc_un_pair(struct b6b_interp *interp,
+                                            struct b6b_obj *args)
+{
+	struct b6b_obj *t, *a, *b, *l;
+	const struct b6b_strm_ops *ops = &b6b_un_stream_client_ops;
+	int fds[2], type = SOCK_STREAM;
+
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &t))
+		return B6B_ERR;
+
+	if (strcmp(t->s, "dgram") == 0) {
+		type = SOCK_DGRAM;
+		ops = &b6b_un_dgram_client_ops;
+	} else if (strcmp(t->s, "stream") != 0)
+		return B6B_ERR;
+
+	if (socketpair(AF_UNIX, type, 0, fds) < 0)
+		return b6b_return_strerror(interp, errno);
+
+	a = b6b_socket_new(interp,
+	                   fds[0],
+	                   NULL,
+	                   0,
+	                   NULL,
+	                   0,
+	                   "un.client",
+	                   ops);
+	if (!a) {
+		close(fds[1]);
+		close(fds[0]);
+		return B6B_ERR;
+	}
+
+	b = b6b_socket_new(interp,
+	                   fds[1],
+	                   NULL,
+	                   0,
+	                   NULL,
+	                   0,
+	                   "un.client",
+	                   ops);
+	if (!b) {
+		close(fds[1]);
+		b6b_destroy(a);
+		return B6B_ERR;
+	}
+
+	l = b6b_list_build(a, b, NULL);
+	if (b6b_unlikely(!l)) {
+		b6b_destroy(b);
+		b6b_destroy(a);
+		return B6B_ERR;
+	}
+
+	b6b_unref(b);
+	b6b_unref(a);
+	return b6b_return(interp, l);
+}
+
 static enum b6b_res b6b_socket_proc_bswap16(struct b6b_interp *interp,
                                             struct b6b_obj *args)
 {
@@ -709,6 +768,12 @@ static const struct b6b_ext_obj b6b_socket[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "un.server",
 		.proc = b6b_socket_proc_un_server
+	},
+	{
+		.name = "un.pair",
+		.type = B6B_TYPE_STR,
+		.val.s = "un.pair",
+		.proc = b6b_socket_proc_un_pair
 	},
 	{
 		.name = "htonl",

@@ -29,7 +29,8 @@ tests = [
 	['sh', 'slow', 10],
 	['math', 'quick', 5],
 	['bswap', 'quick', 5],
-	['rand', 'quick', 5]
+	['rand', 'quick', 5],
+	['socket', 'quick', 5]
 ]
 
 if get_option('with_threads')

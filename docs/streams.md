@@ -35,3 +35,7 @@
     {$un.server dgram /tmp/server 5}
 
 *un.server* creates a Unix socket server stream.
+
+    {$un.pair stream}
+
+*un.pair* creates a pair of connected Unix socket streams.
