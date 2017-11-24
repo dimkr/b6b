@@ -174,7 +174,16 @@ int main()
 	assert(b6b_as_float(o));
 	assert(o->f == 1339.333);
 
+	b6b_unref(b6b_list_pop(o, b6b_list_first(o)));
 	b6b_unref(s);
+	assert(b6b_list_empty(o));
+
+	s = b6b_str_copy("123\0abc", 7);
+	assert(s);
+	assert(b6b_list_add(o, s));
+	assert(!b6b_as_float(o));
+	b6b_unref(s);
+
 	b6b_unref(o);
 
 	return EXIT_SUCCESS;

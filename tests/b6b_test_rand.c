@@ -18,13 +18,16 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
+#include <limits.h>
 
 #include <b6b.h>
 
 int main()
 {
 	struct b6b_interp interp;
-	int occ[5] = {0, 0, 0, 0, 0};
+	char stmt[128];
+	int len, occ[5] = {0, 0, 0, 0, 0};
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$randint 1 10}", 15) == B6B_OK);
@@ -57,6 +60,21 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	len = sprintf(stmt, "{$randint %d %d}", INT_MIN, INT_MAX);
+	assert(b6b_call_copy(&interp, stmt, (size_t)len) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	len = sprintf(stmt, "{$randint %lld 0}", (long long)INT_MIN - 1);
+	assert(b6b_call_copy(&interp, stmt, (size_t)len) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	len = sprintf(stmt, "{$randint 0 %llu}", (unsigned long long)INT_MAX + 1);
+	assert(b6b_call_copy(&interp, stmt, (size_t)len) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	do {
 		assert(b6b_call_copy(&interp, "{$randint -2 2}", 15) == B6B_OK);
 		assert(b6b_as_int(interp.fg->_));
@@ -74,6 +92,10 @@ int main()
 		assert((interp.fg->_->i == 1) || (interp.fg->_->i == 2));
 		++occ[interp.fg->_->i];
 	} while (!occ[1] || !occ[2]);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$choice}", 9) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));

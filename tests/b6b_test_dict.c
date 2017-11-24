@@ -27,6 +27,10 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$dict.get {a b c d}}", 21) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$dict.get {a b c d} c}", 23) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(strcmp(interp.fg->_->s, "d") == 0);
