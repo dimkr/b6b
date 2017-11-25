@@ -302,8 +302,17 @@ struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 				return NULL;
 			}
 
-			if (!out)
+			if (!out) {
+				/* if no characters were converted and this isn't the end of the
+				 * string, there is a \0 within the string and it cannot be
+				 * decoded */
+				if (len) {
+					b6b_destroy(l);
+					return NULL;
+				}
+
 				break;
+			}
 
 			c = b6b_str_copy(s, out);
 			if (b6b_unlikely(!c)) {

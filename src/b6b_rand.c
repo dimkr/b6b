@@ -26,7 +26,7 @@ static enum b6b_res b6b_rand_proc_choice(struct b6b_interp *interp,
 {
 	struct b6b_obj *l;
 	struct b6b_litem *li;
-	int i, c;
+	unsigned int i, c;
 
 	if (!b6b_proc_get_args(interp, args, "ol", NULL, &l))
 		return B6B_ERR;
@@ -35,14 +35,14 @@ static enum b6b_res b6b_rand_proc_choice(struct b6b_interp *interp,
 	if (!li)
 		return B6B_ERR;
 
-	c = rand_r(&interp->seed);
+	c = (unsigned int)(rand_r(&interp->seed) & UINT_MAX);
 
-	for (i = 0; i < c; ++i) {
+	for (i = 1; i < c; ++i) {
 		li = b6b_list_next(li);
 		if (!li) {
 			/* if the list length is smaller than the random number, divide the
 			 * latter by the former */
-			c %= (i + 1);
+			c %= i;
 
 			li = b6b_list_first(l);
 			for (i = 1; i <= c; ++i)

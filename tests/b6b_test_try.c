@@ -30,6 +30,16 @@ int main()
 	assert(s);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$try}", 6) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$try {}}", 9) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$try {{$return 5}}}", 20) == B6B_RET);
 	assert(b6b_as_int(interp.fg->_));
 	assert(interp.fg->_->i == 5);
