@@ -89,7 +89,7 @@ int b6b_obj_hash(struct b6b_obj *o)
 		if (!b6b_as_str(o))
 			return 0;
 
-		o->hash = b6b_str_hash(o->s, o->slen);
+		o->hash = b6b_hash((const unsigned char *)o->s, o->slen);
 		o->flags |= B6B_OBJ_HASHED;
 	}
 

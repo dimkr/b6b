@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <locale.h>
+#include <string.h>
 
 #include <b6b.h>
 
@@ -34,6 +35,35 @@ int main()
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
 	assert(b6b_call_copy(&interp, "{\xd7\xa9\xd7\x9c\xd7\x95\xd7\x9d encode}", 17) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{{} decode}", 11) == B6B_OK);
+	assert(b6b_as_list(interp.fg->_));
+	assert(b6b_list_empty(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	/* decoding of an ASCII word should succeed */
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{abcd decode}", 13) == B6B_OK);
+	assert(b6b_as_list(interp.fg->_));
+	assert(!b6b_list_empty(interp.fg->_));
+	assert(b6b_as_str(b6b_list_first(interp.fg->_)->o));
+	assert(b6b_list_first(interp.fg->_)->o->slen == 1);
+	assert(strcmp(b6b_list_first(interp.fg->_)->o->s, "a") == 0);
+	assert(b6b_list_next(b6b_list_first(interp.fg->_)));
+	assert(b6b_as_str(b6b_list_next(b6b_list_first(interp.fg->_))->o));
+	assert(b6b_list_next(b6b_list_first(interp.fg->_))->o->slen == 1);
+	assert(strcmp(b6b_list_next(b6b_list_first(interp.fg->_))->o->s, "b") == 0);
+	assert(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_))));
+	assert(b6b_as_str(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))->o));
+	assert(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))->o->slen == 1);
+	assert(strcmp(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))->o->s, "c") == 0);
+	assert(b6b_list_next(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))));
+	assert(b6b_as_str(b6b_list_next(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_))))->o));
+	assert(b6b_list_next(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_))))->o->slen == 1);
+	assert(strcmp(b6b_list_next(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_))))->o->s, "d") == 0);
+	assert(!b6b_list_next(b6b_list_next(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_))))));
 	b6b_interp_destroy(&interp);
 
 	/* decoding of a Hebrew word should succeed */
@@ -77,7 +107,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{\x00a decode}", 12) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{\x00a decode}", 11) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	/* decoding of a single-letter Hebrew word should succeed */

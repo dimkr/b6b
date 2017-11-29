@@ -24,37 +24,32 @@
 int main()
 {
 	struct b6b_interp interp;
+	struct b6b_obj *b, *i;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if}", 5) == B6B_ERR);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 1 {{$exit 2}}}", 19) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(b6b_call_copy(&interp,
+	                     "{$ffi.unpack bi [$ffi.pack bi 122 1633837924]}",
+	                     46) == B6B_OK);
+	assert(b6b_as_list(interp.fg->_));
+	assert(b6b_list_parse(interp.fg->_, "ii", &b, &i) == 2);
+	assert(b->i == 122);
+	assert(i->i == 1633837924);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
-	                     "{$if 1 {{$exit 2}} {{$throw}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 0 {{$exit 2}}}", 19) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 0);
+	                     "{$ffi.unpack .bi [$ffi.pack .bi 122 1633837924]}",
+	                     48) == B6B_OK);
+	assert(b6b_as_list(interp.fg->_));
+	assert(b6b_list_parse(interp.fg->_, "ii", &b, &i) == 2);
+	assert(b->i == 122);
+	assert(i->i == 1633837924);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
-	                     "{$if 0 {{$throw}} {{$exit 2}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	                     "{$ffi.unpack bi [$ffi.pack .bi 122 1633837924]}",
+	                     47) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

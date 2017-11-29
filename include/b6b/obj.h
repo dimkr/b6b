@@ -23,9 +23,11 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 typedef long long b6b_int;
 #define B6B_INT_FMT "%lld"
+#define B6B_INT_MAX LLONG_MAX
 
 typedef double b6b_float;
 #define B6B_FLOAT_FMT "%.12f"

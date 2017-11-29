@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include <b6b.h>
 
@@ -26,35 +27,36 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if}", 5) == B6B_ERR);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 1 {{$exit 2}}}", 19) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 1 {{$exit 2}} {{$throw}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 0 {{$exit 2}}}", 19) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$str.chr [$str.ord a]}", 23) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 0);
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "a") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 0 {{$throw}} {{$exit 2}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(b6b_call_copy(&interp, "{$str.chr 0xFF}", 15) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "\xFF") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr [$str.ord [$str.expand \\0]]}", 38) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert(interp.fg->_->s[0] == '\0');
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr {}}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr 256}", 14) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.chr -1}", 13) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

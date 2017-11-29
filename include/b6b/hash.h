@@ -16,27 +16,31 @@
  * limitations under the License.
  */
 
-#ifndef _B6B_H_INCLUDED
-#	define _B6B_H_INCLUDED
+#include <inttypes.h>
 
-#	include <b6b/core.h>
-#	include <b6b/obj.h>
-#	include <b6b/hash.h>
-#	include <b6b/str.h>
-#	include <b6b/int.h>
-#	include <b6b/float.h>
-#	include <b6b/list.h>
-#	include <b6b/dict.h>
-#	include <b6b/frame.h>
-#	include <b6b/thread.h>
-#	ifdef B6B_HAVE_OFFLOAD_THREAD
-#		include <b6b/offload.h>
-#	endif
-#	include <b6b/interp.h>
-#	include <b6b/proc.h>
-#	include <b6b/ext.h>
-#	include <b6b/strm.h>
-#	include <b6b/fdops.h>
-#	include <b6b/stdio.h>
+static inline uint32_t b6b_hash_init(void)
+{
+	return 0;
+}
 
-#endif
+static inline void b6b_hash_update(uint32_t *hash,
+                                   const unsigned char *buf,
+                                   const size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; ++i) {
+		*hash += buf[i] + (*hash << 10);
+		*hash ^= (*hash >> 6);
+	}
+}
+
+static inline void b6b_hash_finish(uint32_t *hash)
+{
+	*hash += (*hash << 3);
+	*hash ^= (*hash >> 11);
+	*hash += (*hash << 15);
+}
+
+__attribute__((nonnull(1)))
+uint32_t b6b_hash(const unsigned char *buf, const size_t len);

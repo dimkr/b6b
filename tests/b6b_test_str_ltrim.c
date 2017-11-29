@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include <b6b.h>
 
@@ -26,50 +27,39 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$deflate [$str.join {} [$range 0 1000]]}",
-	                     41) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$ltrim {}}", 11) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen > 0);
-	assert(interp.fg->_->slen < 2894);
+	assert(!interp.fg->_->slen);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$deflate {}}", 13) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$ltrim {abc  }}", 16) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(strcmp(interp.fg->_->s, "abc  ") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$deflate a}", 12) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$ltrim abc}", 12) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen > 1);
+	assert(strcmp(interp.fg->_->s, "abc") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$inflate {}}", 13) == B6B_ERR);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
-	assert(b6b_call_copy(&interp,
-	                     "{$inflate [$deflate [$str.join {} [$range 0 1000]]]}",
-	                     52) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$ltrim { abc}}", 15) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 2894);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
-	assert(b6b_call_copy(
-	               &interp,
-	               "{$deflate [$deflate [$str.join {} [$range 0 1000]] 10] 10}",
-	               58) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen > 0);
-	assert(interp.fg->_->slen < 2894);
+	assert(strcmp(interp.fg->_->s, "abc") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$inflate [$str.join {} [$range 0 1000]]}",
-	                     41) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$ltrim {  abc}}", 16) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(strcmp(interp.fg->_->s, "abc") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ltrim {  abc  }}", 18) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(strcmp(interp.fg->_->s, "abc  ") == 0);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

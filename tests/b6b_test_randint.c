@@ -94,39 +94,5 @@ int main()
 	} while (!occ[1] || !occ[2]);
 	b6b_interp_destroy(&interp);
 
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$choice}", 9) == B6B_ERR);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$choice {}}", 12) == B6B_ERR);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$choice a}", 11) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 1);
-	assert(strcmp(interp.fg->_->s, "a") == 0);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$choice {a b}}", 15) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 1);
-	assert((strcmp(interp.fg->_->s, "a") == 0) ||
-	       (strcmp(interp.fg->_->s, "b") == 0));
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	occ[0] = occ[1] = occ[2] = occ[3] = occ[4] = 0;
-	do {
-		assert(b6b_call_copy(&interp, "{$choice {0 1 2 3 4}}", 21) == B6B_OK);
-		assert(b6b_as_int(interp.fg->_));
-		assert(interp.fg->_->i >= 0);
-		assert(interp.fg->_->i <= 4);
-		++occ[interp.fg->_->i];
-	} while (!occ[0] || !occ[1] || !occ[2] || !occ[3] || !occ[4]);
-	b6b_interp_destroy(&interp);
-
 	return EXIT_SUCCESS;
 }

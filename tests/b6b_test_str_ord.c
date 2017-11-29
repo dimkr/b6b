@@ -26,35 +26,29 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if}", 5) == B6B_ERR);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 1 {{$exit 2}}}", 19) == B6B_EXIT);
+	assert(b6b_call_copy(&interp, "{$str.ord a}", 12) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(interp.fg->_->f == 'a');
 	b6b_interp_destroy(&interp);
 
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 1 {{$exit 2}} {{$throw}}}",
-	                     30) == B6B_EXIT);
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_call_copy(&interp, "{$str.ord [$str.expand \\xff]}", 29) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(interp.fg->_->f == 0xFF);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 0 {{$exit 2}}}", 19) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 0);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 0 {{$throw}} {{$exit 2}}}",
-	                     30) == B6B_EXIT);
+	assert(b6b_call_copy(&interp, "{$str.ord [$str.expand \\0]}", 27) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(interp.fg->_->f == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.ord {}}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.ord aa}", 13) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

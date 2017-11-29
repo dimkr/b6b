@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-#include <elf.h>
 
 #include <b6b.h>
 

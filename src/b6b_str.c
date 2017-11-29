@@ -267,23 +267,6 @@ int b6b_as_str(struct b6b_obj *o)
 	return 1;
 }
 
-/* Jenkins's one-at-a-time hash */
-uint32_t b6b_str_hash(const char *s, const size_t len)
-{
-	size_t i;
-	uint32_t h = 0;
-
-	for (i = 0; i < len; ++i) {
-		h += s[i] + (h << 10);
-		h ^= (h >> 6);
-	}
-
-	h += (h << 3);
-	h ^= (h >> 11);
-	h += (h << 15);
-	return h;
-}
-
 struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 {
 	mbstate_t ps = {0};
@@ -297,21 +280,9 @@ struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 	if (len) {
 		do {
 			out = mbrtowc(NULL, s, len, &ps);
-			if ((out == (size_t)-1) || (out == (size_t)-2)) {
+			if ((out == 0) || (out == (size_t)-1) || (out == (size_t)-2)) {
 				b6b_destroy(l);
 				return NULL;
-			}
-
-			if (!out) {
-				/* if no characters were converted and this isn't the end of the
-				 * string, there is a \0 within the string and it cannot be
-				 * decoded */
-				if (len) {
-					b6b_destroy(l);
-					return NULL;
-				}
-
-				break;
 			}
 
 			c = b6b_str_copy(s, out);
@@ -329,6 +300,7 @@ struct b6b_obj *b6b_str_decode(const char *s, size_t len)
 			b6b_unref(c);
 
 			len -= out;
+			/* if the entire string was converted, stop */
 			if (!len)
 				break;
 
@@ -367,6 +339,7 @@ static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
                                        struct b6b_obj *args)
 {
 	struct b6b_obj *s, *start, *end;
+	size_t len;
 
 	if (!b6b_proc_get_args(interp, args, "osii", NULL, &s, &start, &end) ||
 	    (start->i < 0) ||
@@ -376,9 +349,13 @@ static enum b6b_res b6b_str_proc_range(struct b6b_interp *interp,
 	    (start->i > end->i))
 	    return B6B_ERR;
 
+	len = (size_t)(end->i - start->i);
+	if (len == SIZE_MAX)
+		return B6B_ERR;
+
 	return b6b_return_str(interp,
 	                      &s->s[(ptrdiff_t)start->i],
-	                      end->i - start->i);
+	                      len + 1);
 }
 
 static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,

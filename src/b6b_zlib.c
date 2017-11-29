@@ -39,7 +39,7 @@ static void b6b_zlib_do_deflate(void *arg)
 {
 	struct b6b_zlib_deflate_data *data = (struct b6b_zlib_deflate_data *)arg;
 
-	do {
+	while (data->rem) {
 		if (data->rem > B6B_DEFLATE_CHUNK_SZ)
 			data->strm.avail_in = B6B_DEFLATE_CHUNK_SZ;
 		else
@@ -49,7 +49,7 @@ static void b6b_zlib_do_deflate(void *arg)
 			return;
 
 		data->rem = (mz_uint)data->slen - data->strm.total_in;
-	} while (data->rem);
+	}
 
 	data->ok = 1;
 }

@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include <b6b.h>
 
@@ -26,35 +27,36 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if}", 5) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$list.index}", 13) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 1 {{$exit 2}}}", 19) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 1 {{$exit 2}} {{$throw}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 0 {{$exit 2}}}", 19) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$list.index {a b c} 0}", 23) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 0);
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "a") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 0 {{$throw}} {{$exit 2}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(b6b_call_copy(&interp, "{$list.index {a b c} 1}", 23) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "b") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.index {a b c} 2}", 23) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "c") == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.index {a b c} 3}", 23) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$list.index {a b c} -1}", 24) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

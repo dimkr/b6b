@@ -18,43 +18,46 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include <b6b.h>
 
 int main()
 {
 	struct b6b_interp interp;
+	int occ[5] = {0, 0, 0, 0, 0};
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if}", 5) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$choice}", 9) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 1 {{$exit 2}}}", 19) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(b6b_call_copy(&interp, "{$choice {}}", 12) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 1 {{$exit 2}} {{$throw}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$if 0 {{$exit 2}}}", 19) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$choice a}", 11) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 0);
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "a") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp,
-	                     "{$if 0 {{$throw}} {{$exit 2}}}",
-	                     30) == B6B_EXIT);
-	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 2);
+	assert(b6b_call_copy(&interp, "{$choice {a b}}", 15) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 1);
+	assert((strcmp(interp.fg->_->s, "a") == 0) ||
+	       (strcmp(interp.fg->_->s, "b") == 0));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	do {
+		assert(b6b_call_copy(&interp, "{$choice {0 1 2 3 4}}", 21) == B6B_OK);
+		assert(b6b_as_int(interp.fg->_));
+		assert(interp.fg->_->i >= 0);
+		assert(interp.fg->_->i <= 4);
+		++occ[interp.fg->_->i];
+	} while (!occ[0] || !occ[1] || !occ[2] || !occ[3] || !occ[4]);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

@@ -192,11 +192,16 @@ static enum b6b_res b6b_ffi_proc_memcpy(struct b6b_interp *interp,
 {
 	struct b6b_obj *addr, *len;
 	char *s;
+	const char *p;
 
-	if (!b6b_proc_get_args(interp, args, "oii", NULL, &addr, &len))
+	if (!b6b_proc_get_args(interp, args, "oii", NULL, &addr, &len) || !len->i)
 		return B6B_ERR;
 
-	s = b6b_strndup((char *)(intptr_t)addr->i, (size_t)len->i);
+	p = (char *)(intptr_t)addr->i;
+	if (!p)
+		return B6B_ERR;
+
+	s = b6b_strndup(p, (size_t)len->i);
 	if (b6b_unlikely(!s))
 		return B6B_ERR;
 
@@ -705,7 +710,7 @@ __b6b_ext(b6b_ffi);
 		"{$ffi.pack p [$1 address]}" \
 	"}}\n" \
 	"{$proc ffi.call {" \
-		"{$1 [$map x [$list.range $@ 2 [$list.len $@]] {{$x address}}]}" \
+		"{$1 [$map x [$list.range $@ 2 [$- [$list.len $@] 1]] {{$x address}}]}" \
 	"}}"
 
 static int b6b_ffi_init(struct b6b_interp *interp)

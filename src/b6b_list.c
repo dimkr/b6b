@@ -440,7 +440,7 @@ static enum b6b_res b6b_list_proc_extend(struct b6b_interp *interp,
 
 	if (b6b_proc_get_args(interp, args, "oll", NULL, &l, &l2) &&
 	    b6b_list_extend(l, l2))
-		return B6B_OK;
+		return b6b_return(interp, b6b_ref(l));
 
 	return B6B_ERR;
 }
@@ -452,7 +452,7 @@ static enum b6b_res b6b_list_proc_index(struct b6b_interp *interp,
 	struct b6b_litem *li;
 	b6b_int j;
 
-	if (b6b_proc_get_args(interp, args, "oli", NULL, &l, &i)) {
+	if (b6b_proc_get_args(interp, args, "oli", NULL, &l, &i) && (i->i >= 0)) {
 		li = b6b_list_first(l);
 		if (!li)
 			return B6B_ERR;
@@ -481,7 +481,8 @@ static enum b6b_res b6b_list_proc_range(struct b6b_interp *interp,
 
 	if (b6b_unlikely(start->i < 0) ||
 	    b6b_unlikely(end->i < 0) ||
-	    b6b_unlikely(start->i >= end->i))
+	    b6b_unlikely(end->i == B6B_INT_MAX) ||
+	    b6b_unlikely(start->i > end->i))
 		return B6B_ERR;
 
 	li = b6b_list_first(l);
@@ -498,6 +499,7 @@ static enum b6b_res b6b_list_proc_range(struct b6b_interp *interp,
 	if (b6b_unlikely(!r))
 		return B6B_ERR;
 
+	i = start->i;
 	do {
 		if (b6b_unlikely(!b6b_list_add(r, li->o))) {
 			b6b_destroy(r);

@@ -60,7 +60,7 @@
 	{$local hdrs {}}
 	{$map line [$list.range $lines 1 [$- [$list.len $lines] 1]] {
 		{$local parts [$str.split $line {: }]}
-		{$dict.set $hdrs [$rtrim [$list.index $parts 0]] [$ltrim [$str.join : [$list.range $parts 1 [$list.len $parts]]]]}
+		{$dict.set $hdrs [$rtrim [$list.index $parts 0]] [$ltrim [$str.join : [$list.range $parts 1 [$- [$list.len $parts] 1]]]]}
 	}}
 
 	{$dict.set $http.req_urls $1 [$list.index $info 1]}
