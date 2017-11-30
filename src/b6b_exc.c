@@ -54,10 +54,10 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 	}
 
 	if (argc == 4) {
+#ifdef B6B_HAVE_THREADS
 		exit = interp->exit;
 		/* if the try block triggered exit, postpone it and let the finally
 		 * block run */
-#ifdef B6B_HAVE_THREADS
 		interp->exit = 0;
 #endif
 		o = b6b_ref(interp->fg->_);
