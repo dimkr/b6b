@@ -26,6 +26,10 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$map}", 6) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
 	                     "{$map {} {1 2} {{$+ $x 1.5}}}",
 	                     29) == B6B_ERR);

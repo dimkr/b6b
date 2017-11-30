@@ -23,6 +23,7 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 {
 	struct b6b_obj *t, *e, *f, *o;
 	unsigned int argc;
+	int exit;
 	enum b6b_res res, eres = B6B_ERR, fres;
 
 	argc = b6b_proc_get_args(interp, args, "oo|oo", NULL, &t, &e, &f);
@@ -51,10 +52,15 @@ static enum b6b_res b6b_exc_proc_try(struct b6b_interp *interp,
 	}
 
 	if (argc == 4) {
+		exit = interp->exit;
+		/* if the try block triggered exit, postpone it and let the finally
+		 * block run */
+		interp->exit = 0;
 		o = b6b_ref(interp->fg->_);
 		fres = b6b_call(interp, f);
 		b6b_unref(interp->fg->_);
 		interp->fg->_ = o;
+		interp->exit = exit;
 
 		if ((res == B6B_RET) || (res == B6B_EXIT))
 			return res;

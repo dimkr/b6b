@@ -20,7 +20,6 @@
 #define _GNU_SOURCE
 
 #include <stdlib.h>
-#include <errno.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
@@ -29,10 +28,6 @@
 #include <limits.h>
 #include <time.h>
 #include <stdio.h>
-#include <sys/syscall.h>
-#ifdef B6B_HAVE_VALGRIND
-#	include <valgrind/helgrind.h>
-#endif
 
 #undef _GNU_SOURCE
 
@@ -553,50 +548,6 @@ int b6b_offload(struct b6b_interp *interp,
 
 #endif
 
-static void b6b_do_syscall(void *arg)
-{
-	struct b6b_syscall_data *data = (struct b6b_syscall_data *)arg;
-
-	data->rval = syscall(data->args[0],
-	                     data->args[1],
-	                     data->args[2],
-	                     data->args[3],
-	                     data->args[4],
-	                     data->args[5]);
-	if (data->rval < 0)
-		data->rerrno = errno;
-}
-
-int b6b_syscall(struct b6b_interp *interp,
-                int *ret,
-                const long nr,
-                ...)
-{
-	struct b6b_syscall_data data;
-	va_list ap;
-	int i;
-
-	va_start(ap, nr);
-
-	data.args[0] = nr;
-	for (i = 1; i < sizeof(data.args) / sizeof(data.args[0]); ++i)
-		data.args[i] = va_arg(ap, long);
-
-	va_end(ap);
-
-#ifdef B6B_HAVE_VALGRIND
-	VALGRIND_HG_DISABLE_CHECKING(&data, sizeof(data));
-#endif
-	if (!b6b_offload(interp, b6b_do_syscall, &data))
-		return 0;
-
-	*ret = data.rval;
-	if (data.rval < 0)
-		errno = data.rerrno;
-
-	return 1;
-}
-
 static enum b6b_res b6b_on_res(struct b6b_interp *interp,
                                const enum b6b_res res)
 {
@@ -823,6 +774,17 @@ static enum b6b_res b6b_interp_proc_nop(struct b6b_interp *interp,
 	return B6B_OK;
 }
 
+static enum b6b_res b6b_interp_proc_echo(struct b6b_interp *interp,
+                                         struct b6b_obj *args)
+{
+	struct b6b_obj *o;
+
+	if (!b6b_proc_get_args(interp, args, "oo", NULL, &o))
+		return B6B_ERR;
+
+	return b6b_return(interp, b6b_ref(o));
+}
+
 static enum b6b_res b6b_interp_proc_yield(struct b6b_interp *interp,
                                           struct b6b_obj *args)
 {
@@ -1001,8 +963,6 @@ static enum b6b_res b6b_interp_proc_repr(struct b6b_interp *interp,
 static enum b6b_res b6b_interp_proc_call(struct b6b_interp *interp,
                                          struct b6b_obj *args)
 {
-
-
 	struct b6b_obj *stmts;
 
 	if (b6b_proc_get_args(interp, args, "oo", NULL, &stmts))
@@ -1089,6 +1049,12 @@ static const struct b6b_ext_obj b6b_interp[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "nop",
 		.proc = b6b_interp_proc_nop
+	},
+	{
+		.name = "echo",
+		.type = B6B_TYPE_STR,
+		.val.s = "echo",
+		.proc = b6b_interp_proc_echo
 	},
 	{
 		.name = "yield",

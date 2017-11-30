@@ -174,6 +174,24 @@ int main()
 	assert(b6b_get(&interp, s));
 	b6b_interp_destroy(&interp);
 
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$try {{$exit 6}} {} {{$global x 0}}}",
+	                     37) == B6B_EXIT);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 6);
+	assert(b6b_get(&interp, s));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$try {{$return 6}} {} {{$global x 0}}}",
+	                     39) == B6B_RET);
+	assert(b6b_as_int(interp.fg->_));
+	assert(interp.fg->_->i == 6);
+	assert(b6b_get(&interp, s));
+	b6b_interp_destroy(&interp);
+
 	b6b_unref(s);
 
 	return EXIT_SUCCESS;

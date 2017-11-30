@@ -115,6 +115,8 @@ static enum b6b_res b6b_loop_proc_range(struct b6b_interp *interp,
 	                          &stepo)) {
 		case 4:
 			step = stepo->i;
+			if (step <= 0)
+				return B6B_ERR;
 
 		case 3:
 			if (start->i > end->i)

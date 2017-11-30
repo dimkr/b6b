@@ -18,6 +18,8 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
+#include <inttypes.h>
 
 #include <b6b.h>
 

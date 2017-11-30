@@ -30,6 +30,10 @@ int main()
 	int len, occ[5] = {0, 0, 0, 0, 0};
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$randint}", 10) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$randint 1 10}", 15) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f >= 1);

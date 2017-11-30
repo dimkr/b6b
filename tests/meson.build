@@ -20,6 +20,23 @@ core_tests = [
 	['istrue', 'quick', 5],
 	['list_parse', 'quick', 5],
 
+	['nop', 'quick', 5],
+	['echo', 'quick', 5],
+	['return', 'quick', 5],
+	['exit', 'quick', 5],
+	['throw', 'quick', 5],
+	['break', 'quick', 5],
+	['continue', 'quick', 5],
+
+	['eval', 'quick', 5],
+	['call', 'quick', 5],
+
+	['global', 'quick', 5],
+	['local', 'quick', 5],
+	['export', 'quick', 5],
+
+	['b6b', 'quick', 5],
+
 	['math', 'quick', 5],
 	['dict_get', 'quick', 5],
 	['dict_set', 'quick', 5],
@@ -50,6 +67,7 @@ core_tests = [
 
 	['if', 'quick', 5],
 	['try', 'quick', 5],
+	['range', 'quick', 5],
 	['map', 'quick', 5],
 	['proc', 'quick', 5],
 
