@@ -27,6 +27,10 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$proc}", 7) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$proc a {}} {$a}", 17) == B6B_OK);
 	b6b_interp_destroy(&interp);
 

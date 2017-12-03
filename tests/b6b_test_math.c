@@ -26,6 +26,10 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$+}", 4) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$+ 1 0}", 8) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == 1);
@@ -83,6 +87,10 @@ int main()
 	assert(b6b_call_copy(&interp, "{$+ 1.25 -2.5}", 14) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == -1.25);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$-}", 4) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -146,6 +154,10 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$*}", 4) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$* 0 2}", 8) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == 0);
@@ -182,6 +194,10 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$/}", 4) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$/ 0 2}", 8) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == 0);
@@ -213,6 +229,10 @@ int main()
 	assert(b6b_call_copy(&interp, "{$/ 4 -2.5}", 11) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == -1.6);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$%}", 4) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -263,6 +283,10 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$|}", 4) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$| 0 2}", 8) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == 2);
@@ -275,6 +299,10 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$^}", 4) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$^ 4 6}", 8) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == 2);
@@ -284,6 +312,10 @@ int main()
 	assert(b6b_call_copy(&interp, "{$^ 2 4}", 8) == B6B_OK);
 	assert(b6b_as_float(interp.fg->_));
 	assert(interp.fg->_->f == 6);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$>}", 4) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -304,6 +336,10 @@ int main()
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$> -4 1}", 9) == B6B_OK);
 	assert(!b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$<}", 4) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -329,6 +365,10 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$>=}", 5) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$>= 4 1}", 9) == B6B_OK);
 	assert(b6b_obj_istrue(interp.fg->_));
 	b6b_interp_destroy(&interp);
@@ -346,6 +386,10 @@ int main()
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$>= -4 1}", 10) == B6B_OK);
 	assert(!b6b_obj_istrue(interp.fg->_));
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$<=}", 5) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));

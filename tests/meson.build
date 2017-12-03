@@ -30,6 +30,7 @@ core_tests = [
 
 	['eval', 'quick', 5],
 	['call', 'quick', 5],
+	['source', 'quick', 5],
 
 	['global', 'quick', 5],
 	['local', 'quick', 5],
@@ -73,7 +74,9 @@ core_tests = [
 
 	['socket_endian', 'quick', 5],
 	['randint', 'quick', 5],
-	['choice', 'quick', 5]
+	['choice', 'quick', 5],
+
+	['sleep', 'slow', 7]
 ]
 
 stream_tests = [
@@ -126,6 +129,7 @@ else
 	test_deps = []
 endif
 
+here = meson.current_source_dir()
 if get_option('default_library') != 'static'
 	foreach test: core_tests + stream_tests + binding_tests
 		test_name = 'b6b_test_@0@'.format(test[0])
@@ -134,6 +138,6 @@ if get_option('default_library') != 'static'
 		                      include_directories: b6b_includes,
 		                      dependencies: test_deps,
 		                      link_with: [libb6b])
-		test(test[0], test_exe, timeout: test[2], suite: test[1])
+		test(test[0], test_exe, timeout: test[2], suite: test[1], workdir: here)
 	endforeach
 endif

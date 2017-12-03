@@ -971,6 +971,17 @@ static enum b6b_res b6b_interp_proc_call(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
+static enum b6b_res b6b_interp_proc_source(struct b6b_interp *interp,
+                                           struct b6b_obj *args)
+{
+	struct b6b_obj *path;
+
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &path) || !path->slen)
+		return B6B_ERR;
+
+	return b6b_source(interp, path->s);
+}
+
 #ifdef B6B_HAVE_THREADS
 
 static enum b6b_res b6b_interp_proc_spawn(struct b6b_interp *interp,
@@ -1127,6 +1138,12 @@ static const struct b6b_ext_obj b6b_interp[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "call",
 		.proc = b6b_interp_proc_call
+	},
+	{
+		.name = "source",
+		.type = B6B_TYPE_STR,
+		.val.s = "source",
+		.proc = b6b_interp_proc_source
 	},
 #ifdef B6B_HAVE_THREADS
 	{

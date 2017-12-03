@@ -36,7 +36,7 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	/* we assume sizeof(time_t) == 4 */
-	if ((f->f <= 0) || (f->f > UINT_MAX))
+	if ((f->f < 0) || (f->f > UINT_MAX))
 		return B6B_ERR;
 
 	/* we want to avoid costly offloading the nanosleep() call, if the interval

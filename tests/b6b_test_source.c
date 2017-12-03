@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include <string.h>
 
 #include <b6b.h>
 
@@ -27,34 +26,37 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$eval}", 7) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$source}", 9) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$eval abc}", 11) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 3);
-	assert(strcmp(interp.fg->_->s, "abc") == 0);
+	assert(b6b_call_copy(&interp, "{$source {}}", 12) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$eval {}}", 10) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 0);
+	assert(b6b_call_copy(&interp, "{$source data/empty.b6b}", 24) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$eval {[$echo 5]}}", 19) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$source data/exit.b6b}", 23) == B6B_EXIT);
 	assert(b6b_as_float(interp.fg->_));
-	assert(interp.fg->_->f == 5);
+	assert(interp.fg->_->f == 7);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$eval {[$echo 5}}", 18) == B6B_ERR);
+	assert(b6b_call_copy(&interp,
+	                     "{$source data/shebang.b6b}",
+	                     26) == B6B_EXIT);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 7);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$eval {[}}", 11) == B6B_ERR);
+	assert(b6b_call_copy(&interp,
+	                     "{$source data/multi.b6b}",
+	                     24) == B6B_EXIT);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 7);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;
