@@ -44,9 +44,9 @@ install:
   - pip3 install --user meson
 
 script:
-  - meson -Db_coverage=true -Dwith_doc=false build
+  - meson -Db_coverage=true build
   - ninja -C build
-  - mesontest -C build --print-errorlogs
+  - meson test -C build --print-errorlogs
   - docker build -t b6b -f Dockerfile .
   - docker run -w /root b6b ./ci_build.sh
 
@@ -60,6 +60,6 @@ addons:
       name: "dimkr/b6b"
       description: "Build submitted via Travis CI"
     notification_email: dima@dimakrasner.com
-    build_command_prepend: "meson -Dwith_doc=false build-coverity"
+    build_command_prepend: "meson build-coverity"
     build_command:  "ninja -C build-coverity"
     branch_pattern: master
