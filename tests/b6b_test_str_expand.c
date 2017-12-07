@@ -27,6 +27,10 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$str.expand {}}", 16) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 0);
@@ -42,6 +46,14 @@ int main()
 	assert(b6b_call_copy(&interp, "{$str.expand ab\0c}", 18) == B6B_OK);
 	assert(interp.fg->_->slen == 4);
 	assert(memcmp(interp.fg->_->s, "ab\0c", 4) == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand \\}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand a\\}", 16) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -86,6 +98,12 @@ int main()
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$str.expand a\\b}", 18) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$str.expand \\x17}", 18) == B6B_OK);
+	assert(interp.fg->_->slen == 1);
+	assert(strcmp(interp.fg->_->s, "\x17") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
