@@ -19,6 +19,16 @@
 #define b6b_likely(cond) __builtin_expect(!!(cond), 1)
 #define b6b_unlikely(cond) __builtin_expect(!!(cond), 0)
 
+/* if malloc() can return a non-NULL pointer when out of memory and writing to
+ * that address will crash the process, checking the return value of malloc() is
+ * useless; if malloc() gets to return NULL, we let the process crash due to
+ * dereference of NULL */
+#ifdef B6B_OPTIMISTIC_ALLOC
+#	define b6b_allocated(cond) 1
+#else
+#	define b6b_allocated(cond) b6b_likely(cond)
+#endif
+
 /**
  * @enum b6b_res
  * Procedure status codes, which control the flow of execution

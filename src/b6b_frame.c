@@ -24,7 +24,7 @@ struct b6b_frame *b6b_frame_new(struct b6b_frame *prev)
 {
 	struct b6b_frame *f = (struct b6b_frame *)malloc(sizeof(*f));
 
-	if (b6b_likely(f)) {
+	if (b6b_allocated(f)) {
 		f->locals = b6b_dict_new();
 		if (b6b_unlikely(!f->locals)) {
 			free(f);

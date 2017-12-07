@@ -34,7 +34,7 @@ char *b6b_strndup(const char *s, const size_t len)
 {
 	char *s2 = (char *)malloc(len + 1);
 
-	if (b6b_likely(s2)) {
+	if (b6b_allocated(s2)) {
 		memcpy(s2, s, len);
 		s2[len] = '\0';
 	}
@@ -130,7 +130,7 @@ int b6b_as_str(struct b6b_obj *o)
 					if (o->s) { /* non-empty with whitespace */
 						nlen = o->slen + li->o->slen + 3;
 						s2 = (char *)realloc(o->s, nlen + 1);
-						if (b6b_unlikely(!s2)) {
+						if (!b6b_allocated(s2)) {
 							free(o->s);
 							return 0;
 						}
@@ -147,7 +147,7 @@ int b6b_as_str(struct b6b_obj *o)
 					else { /* first, non-empty with whitespace */
 						o->slen = li->o->slen + 2;
 						o->s = (char *)malloc(o->slen + 1);
-						if (b6b_unlikely(!o->s))
+						if (!b6b_allocated(o->s))
 							return 0;
 
 						o->s[0] = '{';
@@ -160,7 +160,7 @@ int b6b_as_str(struct b6b_obj *o)
 					if (o->s) { /* non-empty without whitespace */
 						nlen = o->slen + li->o->slen + 1;
 						s2 = (char *)realloc(o->s, nlen + 1);
-						if (b6b_unlikely(!s2)) {
+						if (!b6b_allocated(s2)) {
 							free(o->s);
 							return 0;
 						}
@@ -185,7 +185,7 @@ int b6b_as_str(struct b6b_obj *o)
 				if (o->s) { /* empty */
 					nlen = o->slen + 3;
 					s2 = (char *)realloc(o->s, nlen + 1);
-					if (b6b_unlikely(!s2)) {
+					if (!b6b_allocated(s2)) {
 						free(o->s);
 						return 0;
 					}
@@ -200,7 +200,7 @@ int b6b_as_str(struct b6b_obj *o)
 				}
 				else { /* first, empty */
 					o->s = (char *)malloc(3);
-					if (b6b_unlikely(!o->s))
+					if (!b6b_allocated(o->s))
 						return 0;
 
 					o->s[0] = '{';
@@ -214,7 +214,7 @@ int b6b_as_str(struct b6b_obj *o)
 		/* special case: empty list */
 		if (!o->s) {
 			o->s = (char *)malloc(3);
-			if (b6b_unlikely(!o->s))
+			if (!b6b_allocated(o->s))
 				return 0;
 
 			o->s[0] = '{';
@@ -378,7 +378,7 @@ static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
 
 	len = li->o->slen;
 	s = (char *)malloc(len + 1);
-	if (b6b_unlikely(!s))
+	if (!b6b_allocated(s))
 		return B6B_ERR;
 
 	memcpy(s, li->o->s, li->o->slen);
@@ -392,7 +392,7 @@ static enum b6b_res b6b_str_proc_join(struct b6b_interp *interp,
 		mlen = len + d->slen + li->o->slen;
 
 		ms = (char *)realloc(s, mlen + 1);
-		if (b6b_unlikely(!ms)) {
+		if (!b6b_allocated(ms)) {
 			free(s);
 			return B6B_ERR;
 		}
@@ -499,7 +499,7 @@ static enum b6b_res b6b_str_proc_chr(struct b6b_interp *interp,
 	    return B6B_ERR;
 
 	buf = (char *)malloc(2);
-	if (b6b_unlikely(!buf))
+	if (!b6b_allocated(buf))
 		return B6B_ERR;
 
 	s = b6b_str_new(buf, 1);
@@ -524,7 +524,7 @@ static enum b6b_res b6b_str_proc_expand(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	s2 = (char *)malloc(s->slen + 1);
-	if (b6b_unlikely(!s2))
+	if (!b6b_allocated(s2))
 		return B6B_ERR;
 
 	last = s->slen - 1;

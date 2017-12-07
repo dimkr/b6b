@@ -100,7 +100,7 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 
 			evs = (struct epoll_event *)malloc(
 			                                 sizeof(struct epoll_event) * n->i);
-			if (!evs) {
+			if (!b6b_allocated(evs)) {
 				b6b_destroy(l);
 				return B6B_ERR;
 			}

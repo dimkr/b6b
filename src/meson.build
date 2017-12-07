@@ -51,6 +51,10 @@ if get_option('with_threads')
 	endif
 endif
 
+if get_option('optimistic_alloc')
+	add_project_arguments('-DB6B_OPTIMISTIC_ALLOC', language: 'c')
+endif
+
 with_linenoise = get_option('with_linenoise')
 if with_linenoise
 	libb6b_srcs += ['linenoise/linenoise.c', 'b6b_linenoise.c']

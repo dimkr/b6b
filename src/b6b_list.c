@@ -42,7 +42,7 @@ static int b6b_list_do_add(struct b6b_obj *l, struct b6b_obj *o)
 	struct b6b_litem *li;
 
 	li = (struct b6b_litem *)malloc(sizeof(*li));
-	if (b6b_unlikely(!li))
+	if (!b6b_allocated(li))
 		return 0;
 
 	li->o = b6b_ref(o);

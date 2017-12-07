@@ -107,7 +107,7 @@ static enum b6b_res b6b_signal_proc_signal(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	sig = (struct b6b_signal *)malloc(sizeof(*sig));
-	if (b6b_unlikely(!sig))
+	if (!b6b_allocated(sig))
 		return B6B_ERR;
 
 	if (sigemptyset(&sig->set) < 0) {

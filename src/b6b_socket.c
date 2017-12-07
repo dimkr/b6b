@@ -102,7 +102,7 @@ static struct b6b_obj *b6b_socket_inet_peer(struct b6b_interp *interp,
 	unsigned short port = ntohs(sin->sin_port);
 
 	buf = (char *)malloc(len);
-	if (b6b_unlikely(!buf))
+	if (!b6b_allocated(buf))
 		return NULL;
 
 	switch (s->peer.ss_family) {
@@ -211,7 +211,7 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
 	}
 
 	s = (struct b6b_socket *)malloc(sizeof(*s));
-	if (b6b_unlikely(!s)) {
+	if (!b6b_allocated(s)) {
 		close(fd);
 		return NULL;
 	}

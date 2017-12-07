@@ -46,7 +46,7 @@ struct b6b_obj *b6b_new(void)
 {
 	struct b6b_obj *o = (struct b6b_obj *)malloc(sizeof(*o));
 
-	if (o) {
+	if (b6b_allocated(o)) {
 		o->refc = 1;
 		o->proc = b6b_obj_proc;
 		o->del = NULL;

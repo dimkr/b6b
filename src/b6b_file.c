@@ -57,7 +57,7 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 	struct b6b_stdio_strm *s;
 
 	s = (struct b6b_stdio_strm *)malloc(sizeof(*s));
-	if (b6b_unlikely(!s))
+	if (!b6b_allocated(s))
 		return NULL;
 
 	s->fp = fp;
@@ -73,7 +73,7 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 
 	if (bmode == _IOFBF) {
 		s->buf = malloc(B6B_STRM_BUFSIZ);
-		if (b6b_unlikely(!s->buf)) {
+		if (!b6b_allocated(s->buf)) {
 			b6b_destroy(o);
 			return NULL;
 		}

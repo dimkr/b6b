@@ -237,7 +237,7 @@ static enum b6b_res b6b_ffi_func_proc(struct b6b_interp *interp,
 	f = (struct b6b_ffi_func *)o->priv;
 
 	argps = (void **)malloc(sizeof(void *) * f->argc);
-	if (b6b_unlikely(!argps))
+	if (!b6b_allocated(argps))
 		return B6B_ERR;
 
 	li = b6b_list_first(argpos);
@@ -272,7 +272,7 @@ static int b6b_ffi_get_types(struct b6b_interp *interp,
 	size_t i;
 
 	*types = (ffi_type **)malloc(sizeof(ffi_type *) * names->slen);
-	if (b6b_unlikely(!*types))
+	if (!b6b_allocated(*types))
 		return 0;
 
 	for (i = 0; i < names->slen; ++i) {
@@ -305,7 +305,7 @@ static enum b6b_res b6b_ffi_proc_func(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	f = (struct b6b_ffi_func *)malloc(sizeof(*f));
-	if (b6b_unlikely(!f))
+	if (!b6b_allocated(f))
 		return B6B_ERR;
 
 	f->rtype = b6b_ffi_type(interp, rtype->s[0]);
@@ -486,7 +486,7 @@ static enum b6b_res b6b_ffi_proc_pack(struct b6b_interp *interp,
 	}
 
 	buf = malloc(B6B_FFI_MAX_STRUCT_SZ);
-	if (b6b_unlikely(!buf))
+	if (!b6b_allocated(buf))
 		return B6B_ERR;
 
 	for (; i < fmt->slen; ++i, vli = b6b_list_next(vli)) {

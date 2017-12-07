@@ -81,7 +81,7 @@ static enum b6b_res b6b_strm_read(struct b6b_interp *interp,
 		len += est;
 
 		nbuf = (unsigned char *)realloc(buf, len);
-		if (b6b_unlikely(!nbuf)) {
+		if (!b6b_allocated(nbuf)) {
 			free(buf);
 			return B6B_ERR;
 		}
@@ -169,7 +169,7 @@ static enum b6b_res b6b_strm_writeln(struct b6b_interp *interp,
 	char *s;
 
 	s = (char *)malloc(len + 2);
-	if (b6b_unlikely(!s))
+	if (!b6b_allocated(s))
 		return B6B_ERR;
 
 	memcpy(s, buf, len);
@@ -317,7 +317,7 @@ static struct b6b_obj *b6b_strm_new(struct b6b_interp *interp,
 
 	if (b6b_unlikely(o)) {
 		strm = (struct b6b_strm *)malloc(sizeof(*strm));
-		if (b6b_unlikely(!strm)) {
+		if (!b6b_allocated(strm)) {
 			b6b_destroy(o);
 			return NULL;
 		}

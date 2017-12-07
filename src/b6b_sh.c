@@ -115,7 +115,7 @@ static struct b6b_obj *b6b_sh_new_pipe(struct b6b_interp *interp,
 	int fl, err;
 
 	s = (struct b6b_sh *)malloc(sizeof(*s));
-	if (b6b_unlikely(!s))
+	if (!b6b_allocated(s))
 		return NULL;
 
 	if (pipe2(fds, O_CLOEXEC) < 0) {

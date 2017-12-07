@@ -166,7 +166,7 @@ ssize_t b6b_stdio_write(struct b6b_interp *interp,
 	/* we must copy the buffer, since it may be the string representation of an
 	 * object freed during context switch */
 	copy = (unsigned char *)malloc(len);
-	if (b6b_unlikely(!copy))
+	if (!b6b_allocated(copy))
 		return -1;
 	memcpy(copy, buf, len);
 
@@ -242,7 +242,7 @@ static int b6b_stdio_wrap(struct b6b_interp *interp,
 	struct b6b_stdio_strm *s;
 
 	s = (struct b6b_stdio_strm *)malloc(sizeof(*s));
-	if (b6b_unlikely(!s))
+	if (!b6b_allocated(s))
 		return 0;
 
 	s->fp = fp;

@@ -85,7 +85,7 @@ static int b6b_thread_prep(struct b6b_thread *t,
 
 	if (!t->stack) {
 		t->stack = malloc(stksiz);
-		if (b6b_unlikely(!t->stack))
+		if (!b6b_allocated(t->stack))
 			goto bail;
 
 #ifdef B6B_HAVE_VALGRIND
@@ -139,7 +139,7 @@ struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
 	struct b6b_thread *t;
 
 	t = (struct b6b_thread *)malloc(sizeof(*t));
-	if (b6b_unlikely(!t))
+	if (!b6b_allocated(t))
 		return NULL;
 
 	if (!b6b_thread_prep(t,
@@ -173,7 +173,7 @@ struct b6b_thread *b6b_thread_self(struct b6b_frame *global,
 	struct b6b_thread *t;
 
 	t = (struct b6b_thread *)malloc(sizeof(*t));
-	if (b6b_unlikely(!t))
+	if (!b6b_allocated(t))
 		return NULL;
 
 	t->curr = b6b_frame_new(global);

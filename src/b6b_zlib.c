@@ -90,14 +90,14 @@ static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
 
 	/* copy the buffer, since s->s may be freed after context switch */
 	src = (unsigned char *)malloc(s->slen);
-	if (b6b_unlikely(!src)) {
+	if (!b6b_allocated(src)) {
 		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
 	dlen = (size_t)mz_deflateBound(&data.strm, (mz_ulong)s->slen);
 	dst = (unsigned char *)malloc(dlen);
-	if (b6b_unlikely(!dst)) {
+	if (!b6b_allocated(dst)) {
 		free(src);
 		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
@@ -160,7 +160,7 @@ static void b6b_zlib_do_inflate(void *arg)
 
 	do {
 		mdst = (unsigned char *)realloc(data->dst, data->dlen);
-		if (b6b_unlikely(!mdst))
+		if (!b6b_allocated(mdst))
 			return;
 
 		data->strm.next_out = mdst + (data->strm.next_out - data->dst);
@@ -207,7 +207,7 @@ static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	src = (unsigned char *)malloc(s->slen);
-	if (b6b_unlikely(!src)) {
+	if (!b6b_allocated(src)) {
 		mz_inflateEnd(&data.strm);
 		return B6B_ERR;
 	}

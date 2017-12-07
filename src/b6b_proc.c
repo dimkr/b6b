@@ -116,7 +116,7 @@ static enum b6b_res b6b_proc_proc_proc(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	priv = (struct b6b_proc *)malloc(sizeof(*priv));
-	if (b6b_unlikely(!priv))
+	if (!b6b_allocated(priv))
 		return B6B_ERR;
 
 	o = b6b_str_copy(n->s, n->slen);

@@ -725,7 +725,7 @@ enum b6b_res b6b_source(struct b6b_interp *interp, const char *path)
 	}
 
 	s = (char *)malloc((size_t)stbuf.st_size + 1);
-	if (b6b_unlikely(!s)) {
+	if (!b6b_allocated(s)) {
 		close(fd);
 		return B6B_ERR;
 	}
@@ -936,7 +936,7 @@ static enum b6b_res b6b_interp_proc_repr(struct b6b_interp *interp,
 				len = s->slen + 2;
 
 				buf = (char *)malloc(len + 1);
-				if (b6b_unlikely(!buf))
+				if (!b6b_allocated(buf))
 					return B6B_ERR;
 
 				buf[0] = '{';
@@ -1033,7 +1033,7 @@ static enum b6b_res b6b_interp_proc_b6b(struct b6b_interp *interp,
 		return B6B_ERR;
 
 	b6b = (struct b6b_interp *)malloc(sizeof(*b6b));
-	if (b6b_unlikely(!b6b))
+	if (!b6b_allocated(b6b))
 		return B6B_ERR;
 
 	o = b6b_str_fmt("b6b:%"PRIxPTR, (uintptr_t)b6b);
