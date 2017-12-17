@@ -36,6 +36,7 @@ core_tests = [
 	['local', 'quick', 5],
 	['export', 'quick', 5],
 
+	['repr', 'quick', 5],
 	['b6b', 'quick', 5],
 
 	['math', 'quick', 5],
