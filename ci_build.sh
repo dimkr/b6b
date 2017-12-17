@@ -39,6 +39,9 @@ meson test -C build-small --no-rebuild --print-errorlogs
 meson configure -Ddefault_library=static build-small
 DESTDIR=dest-static ninja -C build-small install
 
+# this is required to work around missing suppressions in glibc's symbol lookup
+export LD_BIND_NOW=1
+
 for i in build build-clang
 do
 	meson test -C $i --no-rebuild --print-errorlogs --repeat 5
