@@ -81,6 +81,7 @@ core_tests = [
 ]
 
 stream_tests = [
+	['strm', 'quick', 5],
 	['file', 'quick', 5],
 	['signal', 'quick', 5],
 	['un_pair', 'quick', 5],
