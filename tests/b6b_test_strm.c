@@ -140,7 +140,7 @@ int main()
 	/* reading should succeed */
 	setup(&interp, &b6b_memstream_ops, &o, &fp, buf, sizeof(buf));
 	assert(b6b_call_copy(&interp, "{$f read 4}", 11) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 4);
 	assert(strcmp(interp.fg->_->s, "abcd") == 0);
 	b6b_interp_destroy(&interp);
@@ -148,11 +148,11 @@ int main()
 	/* reading should advance the file pointer */
 	setup(&interp, &b6b_memstream_ops, &o, &fp, buf, sizeof(buf));
 	assert(b6b_call_copy(&interp, "{$f read 4}", 11) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 4);
 	assert(strcmp(interp.fg->_->s, "abcd") == 0);
 	assert(b6b_call_copy(&interp, "{$f read 4}", 11) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 4);
 	assert(strcmp(interp.fg->_->s, "efgh") == 0);
 	b6b_interp_destroy(&interp);
@@ -160,22 +160,22 @@ int main()
 	/* reading after EOF should return nothing */
 	setup(&interp, &b6b_memstream_ops, &o, 	&fp, buf, sizeof(buf));
 	assert(b6b_call_copy(&interp, "{$f read 4}", 11) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 4);
 	assert(strcmp(interp.fg->_->s, "abcd") == 0);
 	assert(b6b_call_copy(&interp, "{$f read 4}", 11) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 4);
 	assert(strcmp(interp.fg->_->s, "efgh") == 0);
 	assert(b6b_call_copy(&interp, "{$f read 4}", 11) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 0);
 	b6b_interp_destroy(&interp);
 
 	/* reading should be retried in the case of partial read */
 	setup(&interp, &b6b_slow_r_memstream_ops, &o, &fp, buf, sizeof(buf));
 	assert(b6b_call_copy(&interp, "{$f read 4}", 11) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 4);
 	assert(strcmp(interp.fg->_->s, "abcd") == 0);
 	b6b_interp_destroy(&interp);
@@ -183,7 +183,7 @@ int main()
 	/* reading should succeed if the amount of available data is unknown */
 	setup(&interp, &b6b_no_peek_memstream_ops, &o, &fp, buf, sizeof(buf));
 	assert(b6b_call_copy(&interp, "{$f read}", 9) == B6B_OK);
-	b6b_as_str(interp.fg->_);
+	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 8);
 	assert(strcmp(interp.fg->_->s, "abcdefgh") == 0);
 	b6b_interp_destroy(&interp);
