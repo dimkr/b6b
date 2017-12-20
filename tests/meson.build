@@ -39,7 +39,27 @@ core_tests = [
 	['repr', 'quick', 5],
 	['b6b', 'quick', 5],
 
-	['math', 'quick', 5],
+	['not', 'quick', 5],
+	['eq', 'quick', 5],
+	['ne', 'quick', 5],
+	['and', 'quick', 5],
+	['or', 'quick', 5],
+	['xor', 'quick', 5],
+
+	['add', 'quick', 5],
+	['sub', 'quick', 5],
+	['mul', 'quick', 5],
+	['div', 'quick', 5],
+	['mod', 'quick', 5],
+	['gt', 'quick', 5],
+	['ge', 'quick', 5],
+	['lt', 'quick', 5],
+	['le', 'quick', 5],
+
+	['bit_and', 'quick', 5],
+	['bit_or', 'quick', 5],
+	['bit_xor', 'quick', 5],
+
 	['dict_get', 'quick', 5],
 	['dict_set', 'quick', 5],
 	['dict_unset', 'quick', 5],

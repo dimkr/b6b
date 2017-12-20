@@ -44,7 +44,7 @@ install:
   - pip3 install --user meson
 
 script:
-  - meson -Db_coverage=true build
+  - meson -Db_coverage=true -Doptimistic_alloc=false build
   - ninja -C build
   - meson test -C build --print-errorlogs
   - docker build -t b6b -f Dockerfile .
