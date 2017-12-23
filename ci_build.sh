@@ -56,4 +56,4 @@ do
 	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
 done
 
-ninja test -C /builds/coverage
+meson test -C /builds/coverage
