@@ -57,4 +57,4 @@ done
 
 ninja -C build coverage
 cd build
-bash <(curl -s https://codecov.io/bash)
+curl -s https://codecov.io/bash | bash
