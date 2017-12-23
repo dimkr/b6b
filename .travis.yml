@@ -37,8 +37,9 @@ before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 script:
+  - ci_env=`bash <(curl -s https://codecov.io/env)`
   - docker build -t b6b -f Dockerfile .
-  - docker run -e CI=$CI -e TRAVIS=$TRAVIS -e TRAVIS_PULL_REQUEST_SHA=$TRAVIS_PULL_REQUEST_SHA -e TRAVIS_COMMIT=$TRAVIS_COMMIT -e TRAVIS_JOB_NUMBER=$TRAVIS_JOB_NUMBER -e TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST -e TRAVIS_JOB_ID=$TRAVIS_JOB_ID -e TRAVIS_REPO_SLUG=$TRAVIS_REPO_SLUG -e TRAVIS_OS_NAME=$TRAVIS_OS_NAME -e TRAVIS_TAG=$TRAVIS_TAG -e TRAVIS_BRANCH=$TRAVIS_BRANCH -w /root b6b ./ci_build.sh
+  - docker run $ci_env -w /root b6b ./ci_build.sh
 
 addons:
   coverity_scan:
