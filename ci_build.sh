@@ -19,7 +19,7 @@
 rm -rf build build-clang build-no-threads build-small
 
 export CFLAGS=-g
-meson -Dwith_valgrind=true build
+meson -Dwith_valgrind=true -Db_coverage=true -Doptimistic_alloc=false build
 CC=clang meson -Dwith_valgrind=true build-clang
 meson -Dwith_threads=false -Dwith_valgrind=true build-no-threads
 meson -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
@@ -54,3 +54,7 @@ do
 	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
 	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
 done
+
+ninja -C build coverage
+cd build
+bash <(curl -s https://codecov.io/bash)
