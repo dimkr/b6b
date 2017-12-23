@@ -44,6 +44,7 @@ script:
   - docker run -v $PWD/builds:/builds -w /root b6b ./ci_build.sh
 
 after_success:
+  - ln -s $PWD /tmp/b6b
   - cd builds/coverage; bash <(curl -s https://codecov.io/bash)
 
 addons:

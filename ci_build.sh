@@ -16,6 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# we want coverage data to point to source files at identical paths, inside and outside of the container
+ln -s `pwd` /tmp/b6b
+cd /tmp/b6b
+
 export CFLAGS=-g
 meson -Dwith_valgrind=true /builds/gcc
 CC=clang meson -Dwith_valgrind=true /builds/clang
