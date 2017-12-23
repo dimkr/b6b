@@ -16,31 +16,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-rm -rf build build-clang build-no-threads build-small build-coverage
-
 export CFLAGS=-g
-meson -Dwith_valgrind=true build
-CC=clang meson -Dwith_valgrind=true build-clang
-meson -Dwith_threads=false -Dwith_valgrind=true build-no-threads
-meson -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
-meson -Db_coverage=true -Doptimistic_alloc=false build-coverage
+meson -Dwith_valgrind=true /builds/gcc
+CC=clang meson -Dwith_valgrind=true /builds/clang
+meson -Dwith_threads=false -Dwith_valgrind=true /builds/no-threads
+meson -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false /builds/small
+meson -Db_coverage=true -Doptimistic_alloc=false /builds/coverage
 
 # build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off
-for i in build build-clang build-no-threads
+for i in /builds/gcc /builds/clang /builds/no-threads
 do
 	ninja -C $i
 	meson configure -Dbuildtype=release $i
 	DESTDIR=dest ninja -C $i install
 done
 
-DESTDIR=dest ninja -C build-small install
-meson test -C build-small --no-rebuild --print-errorlogs
+DESTDIR=dest ninja -C /builds/small install
+meson test -C /builds/small --no-rebuild --print-errorlogs
 
 # rebuild the small build with a static library
-meson configure -Ddefault_library=static build-small
-DESTDIR=dest-static ninja -C build-small install
+meson configure -Ddefault_library=static /builds/small
+DESTDIR=dest-static ninja -C /builds/small install
 
-for i in build build-clang
+# run all tests
+for i in /builds/gcc /builds/clang
 do
 	meson test -C $i --no-rebuild --print-errorlogs --repeat 5
 	meson test -C $i --no-rebuild --print-errorlogs --wrapper "taskset -c 0"
@@ -49,13 +48,12 @@ done
 # this is required to work around missing suppressions in glibc's symbol lookup
 export LD_BIND_NOW=1
 
-for i in build build-clang
+# run all tests, with Valgrind
+for i in /builds/gcc /builds/clang
 do
 	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --leak-check=full --error-exitcode=1 --malloc-fill=1 --free-fill=1 --track-fds=yes"
 	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
 	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
 done
 
-cd build-coverage
-ninja test
-curl -s https://codecov.io/bash | bash
+ninja test -C /builds/coverage
