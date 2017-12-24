@@ -38,22 +38,27 @@ meson test -C build-small --no-rebuild --print-errorlogs
 meson configure -Ddefault_library=static build-small
 DESTDIR=dest-static ninja -C build-small install
 
-# run all tests
 for i in build-gcc build-clang
 do
-	meson test -C $i --no-rebuild --print-errorlogs --repeat 5
-	meson test -C $i --no-rebuild --print-errorlogs --wrapper "taskset -c 0"
+	# run all single-threaded tests
+	meson test -C $i --no-rebuild --print-errorlogs --no-suite b6b:threaded
+
+	# run multi-threaded tests on a single CPU and 5 additional times, to increase the chance of triggering race conditions
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --wrapper "taskset -c 0"
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --repeat 5
 done
 
 # this is required to work around missing suppressions in glibc's symbol lookup
 export LD_BIND_NOW=1
 
-# run all tests, with Valgrind
 for i in build-gcc build-clang
 do
-	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --leak-check=full --error-exitcode=1 --malloc-fill=1 --free-fill=1 --track-fds=yes"
-	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
-	meson test -C $i --no-rebuild --print-errorlogs --no-suite=b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
+	# run all tests except extremely slow ones with Valgrind
+	meson test -C $i --no-rebuild --print-errorlogs --no-suite b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --leak-check=full --error-exitcode=1 --malloc-fill=1 --free-fill=1 --track-fds=yes"
+
+	# run multi-threaded tests with Helgrind
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
 done
 
 meson test -C build-coverage

@@ -97,16 +97,16 @@ core_tests = [
 	['randint', 'quick', 5],
 	['choice', 'quick', 5],
 
-	['sleep', 'slow', 7]
+	['sleep', 'threaded', 7]
 ]
 
 stream_tests = [
 	['strm', 'quick', 5],
-	['file', 'quick', 5],
+	['file', 'threaded', 5],
 	['signal', 'quick', 5],
 	['un_pair', 'quick', 5],
 	['timer', 'quick', 10],
-	['poll', 'quick', 5],
+	['poll', 'threaded', 5],
 	['sh', 'slow', 10]
 ]
 
@@ -114,23 +114,23 @@ binding_tests = []
 
 if get_option('with_threads')
 	core_tests += [
-		['spawn', 'quick', 5],
-		['co', 'quick', 5],
+		['spawn', 'threaded', 5],
+		['co', 'threaded', 5],
 	]
 
 	if with_offload
-		core_tests += [['offload', 'slow', 15]]
+		core_tests += [['offload', 'threaded', 15]]
 	endif
 
-	stream_tests += [['sem', 'quick', 5]]
+	stream_tests += [['sem', 'threaded', 5]]
 endif
 
 if get_option('with_miniz')
 	binding_tests += [
-		['deflate', 'quick', 5],
-		['inflate', 'quick', 5],
-		['compress', 'quick', 5],
-		['decompress', 'quick', 5]
+		['deflate', 'threaded', 5],
+		['inflate', 'threaded', 5],
+		['compress', 'threaded', 5],
+		['decompress', 'threaded', 5]
 	]
 endif
 
