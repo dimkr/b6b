@@ -34,18 +34,11 @@ services:
   - docker
 
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y curl
-  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
 
 script:
   - docker build -t b6b -f Dockerfile .
-  - mkdir builds
-  - docker run -v $PWD/builds:/builds -w /root b6b ./ci_build.sh
-
-after_success:
-  - ln -s $PWD /tmp/b6b
-  - cd builds/coverage; bash <(curl -s https://codecov.io/bash)
+  - docker run `curl -s https://codecov.io/env | bash` -w /root b6b ./ci_build.sh
 
 addons:
   coverity_scan:
