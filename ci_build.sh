@@ -54,11 +54,11 @@ export LD_BIND_NOW=1
 for i in build-gcc build-clang
 do
 	# run all tests except extremely slow ones with Valgrind
-	meson test -C $i --no-rebuild --print-errorlogs --no-suite b6b:slow --num-processes 1 -t 2 --wrapper "valgrind --leak-check=full --error-exitcode=1 --malloc-fill=1 --free-fill=1 --track-fds=yes"
+	meson test -C $i --no-rebuild --print-errorlogs --no-suite b6b:slow --num-processes 1 -t 3 --wrapper "valgrind --leak-check=full --error-exitcode=1 --malloc-fill=1 --free-fill=1 --track-fds=yes"
 
 	# run multi-threaded tests with Helgrind
-	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
-	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 2 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
 done
 
 meson test -C build-coverage
