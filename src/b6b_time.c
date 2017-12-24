@@ -22,6 +22,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include <sys/syscall.h>
+#ifdef B6B_HAVE_VALGRIND
+#	include <valgrind/helgrind.h>
+#endif
 
 #include <b6b.h>
 
@@ -46,6 +49,10 @@ static enum b6b_res b6b_time_proc_sleep(struct b6b_interp *interp,
 
 	req.tv_sec = (time_t)floor(f->f);
 	req.tv_nsec = labs((long)(1000000000 * (f->f - (b6b_float)req.tv_sec)));
+
+#ifdef B6B_HAVE_VALGRIND
+	VALGRIND_HG_DISABLE_CHECKING(&rem, sizeof(rem));
+#endif
 
 	do {
 		if (!b6b_syscall(interp, &ret, __NR_nanosleep, &req, &rem))
