@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,18 @@ int main()
 {
 	struct b6b_interp interp;
 	size_t i;
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$open /dev/zero r}",
+	                     19) == B6B_OK);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$open /dev/zero x}",
+	                     19) == B6B_ERR);
+	b6b_interp_destroy(&interp);
 
 	assert((unlink("/tmp/.file") == 0) || (errno == ENOENT));
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
