@@ -2,7 +2,7 @@
 
 # This file is part of b6b.
 #
-# Copyright 2017 Dima Krasner
+# Copyright 2017, 2018 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ do
 	meson test -C $i --no-rebuild --print-errorlogs --no-suite b6b:slow --num-processes 1 -t 3 --wrapper "valgrind --leak-check=full --error-exitcode=1 --malloc-fill=1 --free-fill=1 --track-fds=yes"
 
 	# run multi-threaded tests with Helgrind
-	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
-	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --no-suite b6b:intensive --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
+	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --no-suite b6b:intensive --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
 done
 
 meson test -C build-coverage

@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017 Dima Krasner
+# Copyright 2017, 2018 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ if get_option('with_threads')
 	]
 
 	if with_offload
-		core_tests += [['offload', ['threaded', 'slow'], 15]]
+		core_tests += [['offload', ['threaded', 'slow', 'intensive'], 15]]
 	endif
 
 	stream_tests += [['sem', ['threaded', 'quick'], 5]]
