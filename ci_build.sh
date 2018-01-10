@@ -22,6 +22,7 @@ CC=clang meson -Dwith_valgrind=true build-clang
 meson -Dwith_threads=false -Dwith_valgrind=true build-no-threads
 meson -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
 meson -Db_coverage=true -Doptimistic_alloc=false build-coverage
+CFLAGS="-fsanitize=address -fno-omit-frame-pointer -g" LDFLAGS=-fsanitize=address meson build-asan
 
 # build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off
 for i in build-gcc build-clang build-no-threads
@@ -47,6 +48,9 @@ do
 	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --wrapper "taskset -c 0"
 	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --repeat 5
 done
+
+# run all tests except extremely slow ones with AddressSanitizer
+meson test -C build-asan --print-errorlogs --no-suite b6b:intensive -t 2
 
 # this is required to work around missing suppressions in glibc's symbol lookup
 export LD_BIND_NOW=1
