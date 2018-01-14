@@ -114,7 +114,11 @@ int main()
 	                     116) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == sizeof(data));
-	assert(memcmp(interp.fg->_->s, &data, sizeof(data)) == 0);
+	assert(memcmp(interp.fg->_->s,
+	              &data,
+	              sizeof(data) - offsetof(struct test_data, f)) == 0);
+	assert(((const struct test_data *)interp.fg->_->s)->f == data.f);
+	assert(((const struct test_data *)interp.fg->_->s)->d == data.d);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -123,7 +127,11 @@ int main()
 	                     117) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == sizeof(pdata));
-	assert(memcmp(interp.fg->_->s, &pdata, sizeof(pdata)) == 0);
+	assert(memcmp(interp.fg->_->s,
+	              &pdata,
+	              sizeof(pdata) - offsetof(struct packed_test_data, f)) == 0);
+	assert(((const struct packed_test_data *)interp.fg->_->s)->f == pdata.f);
+	assert(((const struct packed_test_data *)interp.fg->_->s)->d == pdata.d);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;
