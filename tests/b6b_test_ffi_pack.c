@@ -19,6 +19,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include <b6b.h>
 
