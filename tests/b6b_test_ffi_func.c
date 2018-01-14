@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 #include <assert.h>
-#include <string.h>
 
 #include <b6b.h>
 
@@ -27,34 +26,37 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$ffi.buf}", 10) == B6B_ERR);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$ffi.buf abcd}", 15) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 4);
-	assert(strcmp(interp.fg->_->s, "abcd") == 0);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$ffi.buf abc\0d}", 16) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 5);
-	assert(memcmp(interp.fg->_->s, "abc\0d", 5) == 0);
-	b6b_interp_destroy(&interp);
-
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{[$ffi.buf abc]}", 16) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$ffi.func}", 11) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
-	                     "{$ffi.memcpy [[$ffi.buf abcd] address] 3}",
-	                     41) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 3);
-	assert(strcmp(interp.fg->_->s, "abc") == 0);
+	                     "{$ffi.func [[$ffi.dlopen {}] dlsym fopen] p pp}",
+	                     47) == B6B_OK);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$ffi.func 0 p pp}",
+	                     18) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$ffi.func [[$ffi.dlopen {}] dlsym fopen] pp pp}",
+	                     48) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$ffi.func [[$ffi.dlopen {}] dlsym fopen] p px}",
+	                     47) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$ffi.func [[$ffi.dlopen {}] dlsym sync] i {}}",
+	                     46) == B6B_OK);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

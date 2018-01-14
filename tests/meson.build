@@ -141,6 +141,7 @@ if libffi.found()
 		['ffi_pack', 'quick', 5],
 		['ffi_unpack', 'quick', 5],
 		['ffi_dlopen', 'quick', 5],
+		['ffi_func', 'quick', 5],
 		['ffi_call', 'quick', 5],
 	]
 endif

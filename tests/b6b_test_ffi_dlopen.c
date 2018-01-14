@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,32 @@ int main()
 	struct b6b_interp interp;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.dlopen}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$ffi.dlopen libz.so.1}", 23) == B6B_OK);
 	b6b_interp_destroy(&interp);
 
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{[$ffi.dlopen libz.so.1] handle}",
+	                     32) == B6B_OK);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{[$ffi.dlopen libz.so.1] handlx}",
+	                     32) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{[$ffi.dlopen libz.so.1]}", 25) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.dlopen abcd}", 18) == B6B_ERR);
+	b6b_interp_destroy(&interp);
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$ffi.dlopen {}}", 16) == B6B_OK);
 	b6b_interp_destroy(&interp);
@@ -47,6 +70,20 @@ int main()
 	assert(b6b_call_copy(&interp,
 	                     "{[$ffi.dlopen libz.so.1] dlsym abcd}",
 	                     36) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{[$ffi.dlopen libz.so.1] dlsym}",
+	                     31) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{[$ffi.dlopen {}] dlsym b6b_interp_new_argv}",
+	                     44) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == (float)(uintptr_t)b6b_interp_new_argv);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

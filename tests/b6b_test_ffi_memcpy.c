@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,10 @@ int main()
 	const char *s;
 	size_t len;
 	int out;
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.memcpy}", 13) == B6B_ERR);
+	b6b_interp_destroy(&interp);
 
 	s = gai_strerror(EAI_SERVICE);
 	assert(s);

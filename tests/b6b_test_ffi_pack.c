@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,81 @@
  * limitations under the License.
  */
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <assert.h>
 
 #include <b6b.h>
 
+struct test_data {
+	int i;
+	unsigned int ui;
+	long l;
+	unsigned long ul;
+	void *p;
+	char c;
+	unsigned char uc;
+	short s;
+	unsigned short us;
+	int64_t i64;
+	uint64_t ui64;
+	float f;
+	double d;
+};
+
+struct packed_test_data {
+	int i;
+	char c;
+	unsigned int ui;
+	unsigned char uc;
+	long l;
+	short s;
+	unsigned long ul;
+	unsigned short us;
+	void *p;
+	float f;
+	int64_t i64;
+	double d;
+	uint64_t ui64;
+} __attribute__((packed));
+
 int main()
 {
 	struct b6b_interp interp;
+	const struct test_data data = {
+		.i = 65535,
+		.ui = 65536,
+		.l = 1048575,
+		.ul = 4294967291LU,
+		.p = (void *)(uintptr_t)1234,
+		.c = 127,
+		.uc = 255,
+		.s = 80,
+		.us = 8080,
+		.i64 = 4294967297,
+		.ui64 = 1099511627775,
+		.f = 1.33,
+		.d = 1.444444
+	};
+	const struct packed_test_data pdata = {
+		.i = 65535,
+		.ui = 65536,
+		.l = 1048575,
+		.ul = 4294967291LU,
+		.p = (void *)(uintptr_t)1234,
+		.c = 127,
+		.uc = 255,
+		.s = 80,
+		.us = 8080,
+		.i64 = 4294967297,
+		.ui64 = 1099511627775,
+		.f = 1.33,
+		.d = 1.444444
+	};
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack}", 11) == B6B_ERR);
+	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$ffi.pack {}}", 14) == B6B_ERR);
@@ -38,20 +105,25 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$ffi.pack bi 122 1633837924}", 29) == B6B_OK);
-	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen >= sizeof(unsigned char) + sizeof(int));
-	assert(interp.fg->_->slen % 2 == 0);
-	assert((unsigned char)interp.fg->_->s[0] == 122);
-	assert(*(int *)&interp.fg->_->s[interp.fg->_->slen - sizeof(int)] == 1633837924);
+	assert(b6b_call_copy(&interp, "{$ffi.pack . 100}", 17) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$ffi.pack .bi 122 1633837924}", 30) == B6B_OK);
+	assert(b6b_call_copy(&interp,
+	                     "{$ffi.pack iIlLpbBhHqQfd 65535 65536 1048575 4294967291 1234 127 255 80 8080 4294967297 1099511627775 1.33 1.444444}",
+	                     116) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == sizeof(unsigned char) + sizeof(int));
-	assert((unsigned char)interp.fg->_->s[0] == 122);
-	assert(*(int *)&interp.fg->_->s[interp.fg->_->slen - sizeof(int)] == 1633837924);
+	assert(interp.fg->_->slen == sizeof(data));
+	assert(memcmp(interp.fg->_->s, &data, sizeof(data)) == 0);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$ffi.pack .ibIBlhLHpfqdQ 65535 127 65536 255 1048575 80 4294967291 8080 1234 1.33 4294967297 1.444444 1099511627775}",
+	                     117) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == sizeof(pdata));
+	assert(memcmp(interp.fg->_->s, &pdata, sizeof(pdata)) == 0);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ union b6b_ffi_val {
 	unsigned int uint;
 	long slong;
 	unsigned long ulong;
-	int64_t int64;
+	int64_t sint64;
 	uint64_t uint64;
 	float f;
 	double d;
@@ -154,37 +154,67 @@ static struct b6b_obj *b6b_ffi_decode(const void *val,
                                       const size_t len,
                                       ffi_type *type)
 {
+	union b6b_ffi_val valu;
+
 	if (len < type->size)
 		return NULL;
 
-	if (type == &ffi_type_sint)
-		return b6b_int_new((b6b_int)*(int *)val);
-	else if (type == &ffi_type_uint)
-		return b6b_int_new((b6b_int)*(unsigned int *)val);
-	else if (type == &ffi_type_slong)
-		return b6b_int_new((b6b_int)*(long *)val);
-	else if (type == &ffi_type_ulong)
-		return b6b_int_new((b6b_int)*(unsigned long *)val);
-	else if (type == &ffi_type_pointer)
-		return b6b_int_new((b6b_int)(intptr_t)*(void **)val);
-	else if (type == &ffi_type_schar)
-		return b6b_int_new((b6b_int)*(char *)val);
-	else if (type == &ffi_type_uchar)
-		return b6b_int_new((b6b_int)*(unsigned char *)val);
-	else if (type == &ffi_type_sshort)
-		return b6b_int_new((b6b_int)*(short *)val);
-	else if (type == &ffi_type_ushort)
+	/* we copy *val using memcpy() to avoid SIGBUS on architectures with a
+	 * strict alignment requirement */
+	if (type == &ffi_type_sint) {
+		memcpy(&valu.sint, val, sizeof(valu.sint));
+		return b6b_int_new((b6b_int)valu.sint);
+	}
+	else if (type == &ffi_type_uint) {
+		memcpy(&valu.uint, val, sizeof(valu.uint));
+		return b6b_int_new((b6b_int)valu.uint);
+	}
+	else if (type == &ffi_type_slong) {
+		memcpy(&valu.slong, val, sizeof(valu.slong));
+		return b6b_int_new((b6b_int)valu.slong);
+	}
+	else if (type == &ffi_type_ulong) {
+		memcpy(&valu.ulong, val, sizeof(valu.ulong));
+		return b6b_int_new((b6b_int)valu.ulong);
+	}
+	else if (type == &ffi_type_pointer) {
+		memcpy(&valu.voidp, val, sizeof(valu.voidp));
+		return b6b_int_new((b6b_int)(intptr_t)valu.voidp);
+	}
+	else if (type == &ffi_type_schar) {
+		memcpy(&valu.schar, val, sizeof(valu.schar));
+		return b6b_int_new((b6b_int)valu.schar);
+	}
+	else if (type == &ffi_type_uchar) {
+		memcpy(&valu.uchar, val, sizeof(valu.uchar));
+		return b6b_int_new((b6b_int)valu.uchar);
+	}
+	else if (type == &ffi_type_sshort) {
+		memcpy(&valu.sshort, val, sizeof(valu.sshort));
+		return b6b_int_new((b6b_int)valu.sshort);
+	}
+	else if (type == &ffi_type_ushort) {
+		memcpy(&valu.ushort, val, sizeof(valu.ushort));
 		return b6b_int_new((b6b_int)*(unsigned short *)val);
-	else if (type == &ffi_type_sint64)
-		return b6b_int_new((b6b_int)*(int64_t *)val);
-	else if (type == &ffi_type_uint64)
-		return b6b_int_new((b6b_int)*(uint64_t *)val);
-	else if (type == &ffi_type_float)
-		return b6b_float_new((b6b_float)*(float *)val);
-	else if (type == &ffi_type_double)
-		return b6b_float_new((b6b_float)*(double *)val);
-	else
-		return NULL;
+	}
+	else if (type == &ffi_type_sint64) {
+		memcpy(&valu.sint64, val, sizeof(valu.sint64));
+		return b6b_int_new((b6b_int)valu.sint64);
+	}
+	else if (type == &ffi_type_uint64) {
+		memcpy(&valu.uint64, val, sizeof(valu.uint64));
+		return b6b_int_new((b6b_int)valu.uint64);
+	}
+	else if (type == &ffi_type_float) {
+		memcpy(&valu.f, val, sizeof(valu.f));
+		return b6b_float_new((b6b_float)valu.f);
+	}
+	else if (type == &ffi_type_double) {
+		memcpy(&valu.d, val, sizeof(valu.d));
+		return b6b_float_new((b6b_float)valu.d);
+	}
+
+	return NULL;
 }
 
 static enum b6b_res b6b_ffi_proc_memcpy(struct b6b_interp *interp,
@@ -292,6 +322,7 @@ static enum b6b_res b6b_ffi_proc_func(struct b6b_interp *interp,
 	struct b6b_obj *addr, *rtype, *atypes;
 	struct b6b_ffi_func *f;
 	struct b6b_obj *o;
+	void *p;
 
 	if (!b6b_proc_get_args(interp,
 	                       args,
@@ -302,6 +333,10 @@ static enum b6b_res b6b_ffi_proc_func(struct b6b_interp *interp,
 	                       &atypes) ||
 	    (rtype->slen != 1) ||
 	    (atypes->slen > UINT_MAX))
+		return B6B_ERR;
+
+	p = (void *)(intptr_t)addr->i;
+	if (!p)
 		return B6B_ERR;
 
 	f = (struct b6b_ffi_func *)malloc(sizeof(*f));
@@ -337,7 +372,7 @@ static enum b6b_res b6b_ffi_proc_func(struct b6b_interp *interp,
 		return B6B_ERR;
 	}
 
-	f->p = (void *)(intptr_t)addr->i;
+	f->p = p;
 
 	o->priv = f;
 	o->proc = b6b_ffi_func_proc;
@@ -428,9 +463,9 @@ static int b6b_ffi_encode(struct b6b_interp *interp,
 		if (!b6b_as_int(o) || (o->i < INT64_MIN) || (o->i > INT64_MAX))
 			return 0;
 
-		val->int64 = (int64_t)o->i;
+		val->sint64 = (int64_t)o->i;
 		if (p)
-			*p = &val->int64;
+			*p = &val->sint64;
 	}
 	else if (type == &ffi_type_uint64) {
 		if (!b6b_as_int(o) || (o->i < 0) || (o->i > UINT64_MAX))
@@ -508,14 +543,18 @@ static enum b6b_res b6b_ffi_proc_pack(struct b6b_interp *interp,
 
 		if (!pack) {
 			pad = len % type->alignment;
-			end = len + pad;
-			if (end > B6B_FFI_MAX_STRUCT_SZ) {
-				free(buf);
-				return B6B_ERR;
-			}
+			if (pad) {
+				pad = type->alignment - pad;
 
-			memset(buf + len, 0, pad);
-			len = end;
+				end = len + pad;
+				if (end > B6B_FFI_MAX_STRUCT_SZ) {
+					free(buf);
+					return B6B_ERR;
+				}
+
+				memset(buf + len, 0, pad);
+				len = end;
+			}
 		}
 
 		end = len + type->size;
@@ -574,11 +613,13 @@ static enum b6b_res b6b_ffi_proc_unpack(struct b6b_interp *interp,
 		if (!packed) {
 			pad = off % type->alignment;
 			if (pad) {
-				off += pad;
-				if (off >= o->slen) {
+				pad = type->alignment - pad;
+				if (o->slen - off <= pad) {
 					b6b_destroy(l);
 					return B6B_ERR;
 				}
+
+				off += pad;
 			}
 		}
 
@@ -640,18 +681,25 @@ static enum b6b_res b6b_ffi_proc_dlopen(struct b6b_interp *interp,
                                         struct b6b_obj *args)
 {
 	struct b6b_obj *path, *o;
+	const char *s;
 	void *p;
 
 	if (!b6b_proc_get_args(interp, args, "os", NULL, &path))
 		return B6B_ERR;
+
+	dlerror();
 
 	if (path->slen)
 		p = dlopen(path->s, RTLD_LAZY);
 	else
 		p = dlopen(NULL, RTLD_LAZY);
 
-	if (!p)
+	if (!p) {
+		s = dlerror();
+		if (s)
+			b6b_return_str(interp, s, strlen(s));
 		return B6B_ERR;
+	}
 
 	o = b6b_str_fmt("so:%"PRIxPTR, (uintptr_t)p);
 	if (b6b_unlikely(!o)) {

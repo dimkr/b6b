@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,12 @@ int main()
 	                     152) == B6B_OK);
 	assert(b6b_as_int(interp.fg->_));
 	assert(interp.fg->_->i == 16711935);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0));
+	assert(b6b_call_copy(&interp,
+	                     "{$local a [$ffi.buf b6b_interp_new_argv]} {$ffi.call [$ffi.func [[$ffi.dlopen {}] dlsym dlsym] p pp] [$ffi.pack p [[$ffi.dlopen {}] handle]] [$ffi.pack p [$a address]]}",
+	                     168) == B6B_OK);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;
