@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,9 +41,15 @@ int main()
 	assert(listen(s, 5) == 0);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$poll 1}", 9) == B6B_ERR);
 	assert(b6b_call_copy(&interp, "{$local p [$poll]}", 18) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$p}", 4) == B6B_ERR);
 	assert(b6b_call_copy(&interp, "{$local s [$un.client stream addr]}", 35) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$p add}", 8) == B6B_ERR);
 	assert(b6b_call_copy(&interp, "{$p add [$s fd] $POLLINOUT}", 27) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$p add [$s fd] $POLLINOUT}", 27) == B6B_OK);
+
+	assert(b6b_call_copy(&interp, "{$p wait 0 0}", 13) == B6B_ERR);
 
 	c = accept(s, NULL, NULL);
 	assert(c >= 0);
@@ -132,6 +138,17 @@ int main()
 	assert(b6b_as_list(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))->o));
 	assert(b6b_list_empty(b6b_list_next(b6b_list_next(b6b_list_first(interp.fg->_)))->o));
 
+	assert(b6b_call_copy(&interp, "{$p remove -1}", 14) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$p add -1 $POLLIN}", 19) == B6B_ERR);
+
+	assert(b6b_call_copy(&interp,
+	                     "{$p remove [[$open /dev/null] fd] $POLLIN}",
+	                     42) == B6B_ERR);
+	assert(b6b_call_copy(&interp,
+	                     "{$p add [[$open /dev/null] fd] $POLLIN}",
+	                     39) == B6B_ERR);
+
+	assert(b6b_call_copy(&interp, "{$p remove [$s fd]}", 19) == B6B_OK);
 	assert(b6b_call_copy(&interp, "{$p remove [$s fd]}", 19) == B6B_OK);
 	b6b_interp_destroy(&interp);
 

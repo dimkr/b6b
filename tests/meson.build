@@ -102,7 +102,7 @@ core_tests = [
 
 stream_tests = [
 	['strm', 'quick', 5],
-	['file', ['threaded', 'quick'], 5],
+	['open', ['threaded', 'quick'], 5],
 	['signal', 'quick', 5],
 	['un_pair', 'quick', 5],
 	['timer', 'slow', 10],

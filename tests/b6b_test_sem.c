@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,10 @@
 int main()
 {
 	struct b6b_interp interp;
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, 0x0));
+	assert(b6b_call_copy(&interp, "{$sem}", 6) == B6B_ERR);
+	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, 0x0));
 	assert(b6b_call_copy(&interp, "{$global s [$sem 0]} {$global x {}} {$spawn {{$loop {{$if [$s read] {{$break}}}}} {$loop {{$global x [$str.join {} [$list.new $x a]]} {$yield}}}}} {$spawn {{$loop {{$if [$s read] {{$break}}}}} {$loop {{$global x [$str.join {} [$list.new $x b]]} {$yield}}}}} {$spawn {{$loop {{$if [$s read] {{$break}}}}} {$loop {{$global x [$str.join {} [$list.new $x c]]} {$yield}}}}} {$map i {1 2 3} {{$map j [$range 1 1000] {{$nop}}} {$s write 1} {$yield}}} {$map j [$range 1 1000] {{$nop}}} {$return $x}", 490) == B6B_RET);
