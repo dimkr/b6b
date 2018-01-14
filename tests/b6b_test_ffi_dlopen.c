@@ -74,6 +74,12 @@ int main()
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
+	                     "{[$ffi.dlopen libz.so.1] dlsyx crc32}",
+	                     37) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
 	                     "{[$ffi.dlopen libz.so.1] dlsym}",
 	                     31) == B6B_ERR);
 	b6b_interp_destroy(&interp);

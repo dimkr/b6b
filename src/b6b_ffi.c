@@ -36,8 +36,10 @@ union b6b_ffi_val {
 	unsigned int uint;
 	long slong;
 	unsigned long ulong;
+#if INT64_MAX > LONG_MAX
 	int64_t sint64;
 	uint64_t uint64;
+#endif
 	float f;
 	double d;
 	void *voidp;
@@ -197,6 +199,7 @@ static struct b6b_obj *b6b_ffi_decode(const void *val,
 		memcpy(&valu.ushort, val, sizeof(valu.ushort));
 		return b6b_int_new((b6b_int)*(unsigned short *)val);
 	}
+#if INT64_MAX > LONG_MAX
 	else if (type == &ffi_type_sint64) {
 		memcpy(&valu.sint64, val, sizeof(valu.sint64));
 		return b6b_int_new((b6b_int)valu.sint64);
@@ -205,6 +208,7 @@ static struct b6b_obj *b6b_ffi_decode(const void *val,
 		memcpy(&valu.uint64, val, sizeof(valu.uint64));
 		return b6b_int_new((b6b_int)valu.uint64);
 	}
+#endif
 	else if (type == &ffi_type_float) {
 		memcpy(&valu.f, val, sizeof(valu.f));
 		return b6b_float_new((b6b_float)valu.f);
@@ -459,6 +463,7 @@ static int b6b_ffi_encode(struct b6b_interp *interp,
 		if (p)
 			*p = &val->ushort;
 	}
+#if INT64_MAX > LONG_MAX
 	else if (type == &ffi_type_sint64) {
 		if (!b6b_as_int(o) || (o->i < INT64_MIN) || (o->i > INT64_MAX))
 			return 0;
@@ -475,6 +480,7 @@ static int b6b_ffi_encode(struct b6b_interp *interp,
 		if (p)
 			*p = &val->uint64;
 	}
+#endif
 	else if (type == &ffi_type_float) {
 		if (!b6b_as_float(o))
 			return 0;

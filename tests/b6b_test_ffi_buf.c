@@ -57,5 +57,9 @@ int main()
 	assert(strcmp(interp.fg->_->s, "abc") == 0);
 	b6b_interp_destroy(&interp);
 
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{[$ffi.buf abc] addres}", 23) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
 	return EXIT_SUCCESS;
 }

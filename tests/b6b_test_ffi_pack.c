@@ -110,6 +110,58 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack i a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack I a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack l a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack L a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack p a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack b a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack B a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack h a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack H a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack q a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack Q a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack f a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.pack d a}", 15) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
 	                     "{$ffi.pack iIlLpbBhHqQfd 65535 65536 1048575 4294967291 1234 127 255 80 8080 4294967297 1099511627775 1.33 1.444444}",
 	                     116) == B6B_OK);

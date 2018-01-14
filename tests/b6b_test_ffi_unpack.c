@@ -39,6 +39,14 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.unpack . xy}", 18) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$ffi.unpack bI xy}", 19) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
 	                     "{$ffi.unpack iIlLpbBhHqQfd [$ffi.pack iIlLpbBhHqQfd 65535 65536 1048575 4294967291 1234 127 255 80 8080 4294967297 1099511627775 1.33 1.444444]}",
 	                     144) == B6B_OK);
