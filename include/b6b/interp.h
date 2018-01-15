@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,8 @@ struct b6b_interp {
 
 static inline int b6b_threaded(struct b6b_interp *interp)
 {
-	return b6b_thread_next(b6b_thread_first(&interp->threads)) ? 1 : 0;
+	const struct b6b_thread *t = b6b_thread_first(&interp->threads);
+	return (t && b6b_thread_next(t)) ? 1 : 0;
 }
 
 #else

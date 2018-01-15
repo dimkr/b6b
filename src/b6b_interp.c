@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -244,7 +244,7 @@ static void b6b_join(struct b6b_interp *interp)
 	/* destroy the main thread */
 	t = b6b_thread_first(&interp->threads);
 	if (t)
-		b6b_thread_destroy(t);
+		b6b_thread_pop(&interp->threads, t);
 
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
 	b6b_offload_thread_stop(&interp->offth);
