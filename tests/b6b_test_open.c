@@ -199,6 +199,7 @@ int main()
 		assert(interp.fg->_->s[i] == 0);
 	b6b_interp_destroy(&interp);
 
+#ifdef B6B_HAVE_OFFLOAD_THREAD
 	/* regression test: use-after-free in b6b_threaded() during cleanup, when
 	 * all threads have been freed while the global frame still holds a
 	 * reference to a file and its fclose() is offloaded */
@@ -207,6 +208,7 @@ int main()
 	                     "{$global a [$open /dev/null]} {$spawn {{$exit}}} {$loop {{$yield}}}",
 	                     67) == B6B_EXIT);
 	b6b_interp_destroy(&interp);
+#endif
 
 	return EXIT_SUCCESS;
 }
