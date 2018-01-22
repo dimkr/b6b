@@ -53,6 +53,7 @@ static void teardown(const char *buf, const ssize_t len)
 int main()
 {
 	struct b6b_interp interp;
+	struct stat stbuf;
 	size_t i;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -209,6 +210,60 @@ int main()
 	                     67) == B6B_EXIT);
 	b6b_interp_destroy(&interp);
 #endif
+
+	/* written data to line-buffered files should be flushed upon \n */
+	setup("", 0);
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$global f [$open /tmp/.file w]}",
+	                     32) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$f write abc}", 14) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 3);
+	assert(stat("/tmp/.file", &stbuf) == 0);
+	assert(stbuf.st_size == 0);
+	assert(b6b_call_copy(&interp, "{$f write {d\ne}}", 16) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 3);
+	teardown("abcd\n", 5);
+	b6b_interp_destroy(&interp);
+
+	/* data written to block-buffered files should be flushed after each chunk
+	 * of B6B_STRM_BUFSIZ bytes */
+	setup("", 0);
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$global f [$open /tmp/.file wb]}",
+	                     33) == B6B_OK);
+	for (i = 0; i < B6B_STRM_BUFSIZ; i += 4096) {
+		assert(b6b_call_copy(&interp,
+		                     "{$f write [[$open /dev/zero ru] read 4096]}",
+		                     43) == B6B_OK);
+		assert(b6b_as_float(interp.fg->_));
+		assert(interp.fg->_->f == 4096);
+		assert(stat("/tmp/.file", &stbuf) == 0);
+		assert(stbuf.st_size == 0);
+	}
+	assert(b6b_call_copy(&interp,
+	                     "{$f write a}",
+	                     12) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 1);
+	assert(stat("/tmp/.file", &stbuf) == 0);
+	assert(stbuf.st_size == B6B_STRM_BUFSIZ);
+	b6b_interp_destroy(&interp);
+
+	/* written data to unbuffered files should be written immediately */
+	setup("", 0);
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$global f [$open /tmp/.file wu]}",
+	                     33) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$f write abc}", 14) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 3);
+	teardown("abc", 3);
+	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;
 }

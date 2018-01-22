@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,6 +126,7 @@ ssize_t b6b_stdio_read(struct b6b_interp *interp,
 
 	if (data.ret < len) {
 		if (ferror(s->fp)) {
+			clearerr(s->fp);
 			b6b_return_strerror(interp, data.rerrno);
 			return -1;
 		}
@@ -181,6 +182,7 @@ ssize_t b6b_stdio_write(struct b6b_interp *interp,
 
 		if (data.ret == 0) {
 			if (ferror(s->fp)) {
+				clearerr(s->fp);
 				free(copy);
 				b6b_return_strerror(interp, data.rerrno);
 				return -1;

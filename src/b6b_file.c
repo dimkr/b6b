@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,12 @@
 
 #include <b6b.h>
 
-#define B6B_FILE_DEF_FMODE "r"
+struct b6b_file_mode {
+	const char *mode;
+	const char *fmode;
+	const struct b6b_strm_ops *ops;
+	int bmode;
+};
 
 static const struct b6b_strm_ops b6b_ro_file_ops = {
 	.peeksz = b6b_stdio_peeksz,
@@ -46,6 +51,34 @@ static const struct b6b_strm_ops b6b_rw_file_ops = {
 	.fd = b6b_stdio_fd,
 	.close = b6b_stdio_close
 };
+
+static const struct b6b_file_mode b6b_file_modes[] = {
+	{"r", "r", &b6b_ro_file_ops, _IOLBF},
+	{"w", "w", &b6b_wo_file_ops, _IOLBF},
+	{"a", "a", &b6b_wo_file_ops, _IOLBF},
+
+	{"rb", "r", &b6b_ro_file_ops, _IOFBF},
+	{"wb", "w", &b6b_wo_file_ops, _IOFBF},
+	{"ab", "a", &b6b_wo_file_ops, _IOFBF},
+
+	{"ru", "r", &b6b_ro_file_ops, _IONBF},
+	{"wu", "w", &b6b_wo_file_ops, _IONBF},
+	{"au", "a", &b6b_wo_file_ops, _IONBF},
+
+	{"r+", "r+", &b6b_wo_file_ops, _IOLBF},
+	{"w+", "w+", &b6b_wo_file_ops, _IOLBF},
+	{"a+", "a+", &b6b_wo_file_ops, _IOLBF},
+
+	{"r+b", "r+", &b6b_wo_file_ops, _IOFBF},
+	{"w+b", "w+", &b6b_wo_file_ops, _IOFBF},
+	{"a+b", "a+", &b6b_wo_file_ops, _IOFBF},
+
+	{"r+u", "r+", &b6b_wo_file_ops, _IONBF},
+	{"w+u", "w+", &b6b_wo_file_ops, _IONBF},
+	{"a+u", "a+", &b6b_wo_file_ops, _IONBF}
+};
+
+#define b6b_file_def_mode b6b_file_modes[0]
 
 static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
                                     FILE *fp,
@@ -71,103 +104,31 @@ static struct b6b_obj *b6b_file_new(struct b6b_interp *interp,
 		return NULL;
 	}
 
-	if (bmode == _IOFBF) {
+	if (bmode == _IONBF)
+		setbuf(fp, NULL);
+	else {
 		s->buf = malloc(B6B_STRM_BUFSIZ);
 		if (!b6b_allocated(s->buf)) {
 			b6b_destroy(o);
 			return NULL;
 		}
 
-		if (setvbuf(fp, s->buf, _IOFBF, B6B_STRM_BUFSIZ) != 0) {
+		if (setvbuf(fp, s->buf, bmode, B6B_STRM_BUFSIZ) != 0) {
 			b6b_destroy(o);
 			return NULL;
 		}
-	} else if (bmode == _IONBF)
-		setbuf(fp, NULL);
+	}
 
 	return o;
 }
 
-static const char *b6b_file_mode(const char *mode,
-                                 int *bmode,
-                                 const struct b6b_strm_ops **ops)
+static const struct b6b_file_mode *b6b_file_mode(const char *mode)
 {
-	if (strcmp("r", mode) == 0) {
-		*bmode = _IOLBF;
-		*ops = &b6b_ro_file_ops;
-		return mode;
-	}
-	else if ((strcmp("w", mode) == 0) || (strcmp("a", mode) == 0)) {
-		*bmode = _IOLBF;
-		*ops = &b6b_wo_file_ops;
-		return mode;
-	}
-	else if (strcmp("rb", mode) == 0) {
-		*bmode = _IOFBF;
-		*ops = &b6b_ro_file_ops;
-		return "r";
-	}
-	else if (strcmp("wb", mode) == 0) {
-		*bmode = _IOFBF;
-		*ops = &b6b_wo_file_ops;
-		return "w";
-	}
-	else if (strcmp("ab", mode) == 0) {
-		*bmode = _IOFBF;
-		*ops = &b6b_wo_file_ops;
-		return "a";
-	}
-	else if (strcmp("ru", mode) == 0) {
-		*bmode = _IONBF;
-		*ops = &b6b_ro_file_ops;
-		return "r";
-	}
-	else if (strcmp("wu", mode) == 0) {
-		*bmode = _IONBF;
-		*ops = &b6b_wo_file_ops;
-		return "w";
-	}
-	else if (strcmp("au", mode) == 0) {
-		*bmode = _IONBF;
-		*ops = &b6b_wo_file_ops;
-		return "a";
-	}
-	else if ((strcmp("r+", mode) == 0) ||
-	         (strcmp("w+", mode) == 0) ||
-	         (strcmp("a+", mode) == 0)) {
-		*bmode = _IOLBF;
-		*ops = &b6b_rw_file_ops;
-		return mode;
-	}
-	else if (strcmp("r+b", mode) == 0) {
-		*bmode = _IOFBF;
-		*ops = &b6b_rw_file_ops;
-		return "r+";
-	}
-	else if (strcmp("w+b", mode) == 0) {
-		*bmode = _IOFBF;
-		*ops = &b6b_rw_file_ops;
-		return "w+";
-	}
-	else if (strcmp("a+b", mode) == 0) {
-		*bmode = _IOFBF;
-		*ops = &b6b_rw_file_ops;
-		return "a+";
-	}
-	else if (strcmp("r+u", mode) == 0) {
-		*bmode = _IONBF;
-		*ops = &b6b_rw_file_ops;
-		return "r+";
-	}
-	else if (strcmp("w+u", mode) == 0) {
-		*bmode = _IONBF;
-		*ops = &b6b_rw_file_ops;
-		return "w+";
-	}
-	else if (strcmp("a+u", mode) == 0) {
-		*bmode = _IONBF;
-		*ops = &b6b_rw_file_ops;
-		return "a+";
+	unsigned int i;
+
+	for (i = 0; i < sizeof(b6b_file_modes) / sizeof(b6b_file_modes[0]); ++i) {
+		if (strcmp(b6b_file_modes[i].mode, mode) == 0)
+			return &b6b_file_modes[i];
 	}
 
 	return NULL;
@@ -175,7 +136,7 @@ static const char *b6b_file_mode(const char *mode,
 
 struct b6b_file_fopen_data {
 	char *path;
-	const char *mode;
+	const char *fmode;
 	FILE *fp;
 	int rerrno;
 };
@@ -184,7 +145,7 @@ static void b6b_file_do_fopen(void *arg)
 {
 	struct b6b_file_fopen_data *data = (struct b6b_file_fopen_data *)arg;
 
-	data->fp = fopen(data->path, data->mode);
+	data->fp = fopen(data->path, data->fmode);
 	if (!data->fp)
 		data->rerrno = errno;
 }
@@ -195,20 +156,22 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 {
 	struct b6b_file_fopen_data data = {
 		.fp = NULL,
-		.mode = B6B_FILE_DEF_FMODE
+		.fmode = b6b_file_def_mode.fmode
 	};
+	const struct b6b_file_mode *fmode = &b6b_file_def_mode;
 	struct b6b_obj *path, *mode, *f;
-	int err, fd, bmode = _IONBF;
-	const struct b6b_strm_ops *ops = &b6b_ro_file_ops;
+	int err, fd;
 
 	switch (b6b_proc_get_args(interp, args, "os|s", NULL, &path, &mode)) {
 		case 3:
 			if (!b6b_as_str(mode))
 				return B6B_ERR;
 
-			data.mode = b6b_file_mode(mode->s, &bmode, &ops);
-			if (!data.mode)
+			fmode = b6b_file_mode(mode->s);
+			if (!fmode)
 				return b6b_return_strerror(interp, EINVAL);
+
+			data.fmode = fmode->fmode;
 
 		case 2:
 			/* path->s may be freed during context switch, while b6b_offload()
@@ -236,7 +199,7 @@ static enum b6b_res b6b_file_proc_open(struct b6b_interp *interp,
 				return b6b_return_strerror(interp, err);
 			}
 
-			f = b6b_file_new(interp, data.fp, fd, bmode, ops);
+			f = b6b_file_new(interp, data.fp, fd, fmode->bmode, fmode->ops);
 			if (!f) {
 				b6b_offload(interp, b6b_stdio_do_fclose, data.fp);
 				return B6B_ERR;
