@@ -94,6 +94,7 @@ core_tests = [
 	['proc', 'quick', 5],
 
 	['socket_endian', 'quick', 5],
+	['nslookup', 'quick', 5],
 	['randint', 'quick', 5],
 	['choice', 'quick', 5],
 
@@ -107,7 +108,10 @@ stream_tests = [
 	['un_pair', 'quick', 5],
 	['timer', 'slow', 10],
 	['poll', ['threaded', 'quick'], 5],
-	['sh', 'slow', 10]
+	['sh', 'slow', 10],
+	['un_server', 'quick', 5],
+	['un_client', 'quick', 5],
+	['inet_server', 'quick', 5]
 ]
 
 binding_tests = []

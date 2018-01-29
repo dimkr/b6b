@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,8 @@ static ssize_t b6b_socket_readfrom(struct b6b_interp *interp,
 	socklen_t plen = sizeof(s->peer);
 
 	*again = 0;
+	/* note: in b6b_socket_file_peer(), we rely on recvfrom()'s behavior when
+	 * the peer address is unknown: it assigns AF_UNSPEC in ss_family */
 	return b6b_fd_on_read(interp,
 	                      recvfrom(s->fd,
 	                               buf,
@@ -89,37 +91,31 @@ static ssize_t b6b_socket_write(struct b6b_interp *interp,
 	return b6b_fd_send(interp, (void *)(intptr_t)s->fd, buf, len);
 }
 
-static struct b6b_obj *b6b_socket_inet_peer(struct b6b_interp *interp,
-                                            void *priv)
+static struct b6b_obj *b6b_socket_stringify_address(
+                                              const struct sockaddr_storage *ss)
 {
 	char *buf;
-	struct b6b_obj *o, *l;
-	const struct b6b_socket *s = (const struct b6b_socket *)priv;
-	struct sockaddr_in *sin = (struct sockaddr_in *)&s->peer;
-	struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&s->peer;
-	const void *addr = &sin->sin_addr;
-	size_t len = INET6_ADDRSTRLEN + sizeof(":65535");
-	unsigned short port = ntohs(sin->sin_port);
+	struct b6b_obj *o;
+	const void *addr = &((const struct sockaddr_in *)ss)->sin_addr;
+	size_t len = INET6_ADDRSTRLEN;
+
+	switch (ss->ss_family) {
+		case AF_INET:
+			break;
+
+		case AF_INET6:
+			addr = &((const struct sockaddr_in6 *)ss)->sin6_addr;
+			break;
+
+		default:
+			return NULL;
+	}
 
 	buf = (char *)malloc(len);
 	if (!b6b_allocated(buf))
 		return NULL;
 
-	switch (s->peer.ss_family) {
-		case AF_INET:
-			break;
-
-		case AF_INET6:
-			addr = &sin6->sin6_addr;
-			port = ntohs(sin6->sin6_port);
-			break;
-
-		default:
-			free(buf);
-			return NULL;
-	}
-
-	if (!inet_ntop(s->peer.ss_family, addr, buf, len)) {
+	if (!inet_ntop(ss->ss_family, addr, buf, len)) {
 		free(buf);
 		return NULL;
 	}
@@ -129,6 +125,20 @@ static struct b6b_obj *b6b_socket_inet_peer(struct b6b_interp *interp,
 		free(buf);
 		return NULL;
 	}
+
+	return o;
+}
+
+static struct b6b_obj *b6b_socket_inet_peer(struct b6b_interp *interp,
+                                            void *priv)
+{
+	struct b6b_obj *o, *l;
+	const struct b6b_socket *s = (const struct b6b_socket *)priv;
+	unsigned short port;
+
+	o = b6b_socket_stringify_address(&s->peer);
+	if (!o)
+		return NULL;
 
 	l = b6b_list_new();
 	if (b6b_unlikely(!l)) {
@@ -142,6 +152,20 @@ static struct b6b_obj *b6b_socket_inet_peer(struct b6b_interp *interp,
 		return NULL;
 	}
 	b6b_unref(o);
+
+	switch (s->peer.ss_family) {
+		case AF_INET:
+			port = ntohs(((struct sockaddr_in *)&s->peer)->sin_port);
+			break;
+
+		case AF_INET6:
+			port = ntohs(((struct sockaddr_in6 *)&s->peer)->sin6_port);
+			break;
+
+		default:
+			b6b_destroy(l);
+			return NULL;
+	}
 
 	o = b6b_int_new((b6b_int)port);
 	if (b6b_unlikely(!o)) {
@@ -165,7 +189,10 @@ static struct b6b_obj *b6b_socket_file_peer(struct b6b_interp *interp,
 	const struct b6b_socket *s = (const struct b6b_socket *)priv;
 	const struct sockaddr_un *sun = (const struct sockaddr_un *)&s->peer;
 
-	return b6b_str_copy(sun->sun_path, strlen(sun->sun_path));
+	if (sun->sun_family == AF_UNIX)
+		return b6b_str_copy(sun->sun_path, strlen(sun->sun_path));
+
+	return b6b_ref(interp->null);
 }
 
 static int b6b_socket_fd(void *priv)
@@ -220,6 +247,8 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
 	memcpy(&s->addr, addr, (size_t)alen);
 	if (peer)
 		memcpy(&s->peer, peer, (size_t)plen);
+	else
+		s->peer.ss_family = AF_UNSPEC;
 
 	o = b6b_strm_fmt(interp, ops, s, type);
 	if (b6b_unlikely(!o))
@@ -251,7 +280,7 @@ static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
                                            struct b6b_obj *service,
                                            const int socktype)
 {
-	struct b6b_socket_gai_data data = {.hints = {0}};
+	struct b6b_socket_gai_data data = {.hints = {0}, .service = NULL};
 	const char *s;
 	int out;
 
@@ -261,10 +290,12 @@ static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
 	if (b6b_unlikely(!data.host))
 		return NULL;
 
-	data.service = b6b_strndup(service->s, service->slen);
-	if (b6b_unlikely(!data.service)) {
-		free(data.host);
-		return NULL;
+	if (service) {
+		data.service = b6b_strndup(service->s, service->slen);
+		if (b6b_unlikely(!data.service)) {
+			free(data.host);
+			return NULL;
+		}
 	}
 
 	data.hints.ai_socktype = socktype;
@@ -288,6 +319,47 @@ static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
 		b6b_return_str(interp, s, strlen(s));
 
 	return NULL;
+}
+
+static enum b6b_res b6b_socket_proc_nslookup(struct b6b_interp *interp,
+                                             struct b6b_obj *args)
+{
+	struct b6b_obj *h, *l, *o;
+	struct addrinfo *res, *resp;
+
+	if (!b6b_proc_get_args(interp, args, "os", NULL, &h))
+		return B6B_ERR;
+
+	l = b6b_list_new();
+	if (!b6b_allocated(l))
+		return B6B_ERR;
+
+	res = b6b_socket_resolve(interp, h, NULL, SOCK_DGRAM);
+	if (!res) {
+		b6b_destroy(l);
+		return B6B_ERR;
+	}
+
+	for (resp = res; resp; resp = resp->ai_next) {
+		o = b6b_socket_stringify_address(
+		                        (const struct sockaddr_storage *)resp->ai_addr);
+		if (!o) {
+			b6b_destroy(l);
+			freeaddrinfo(res);
+			return B6B_ERR;
+		}
+
+		if (b6b_unlikely(!b6b_list_add(l, o))) {
+			b6b_destroy(l);
+			freeaddrinfo(res);
+			return B6B_ERR;
+		}
+
+		b6b_unref(o);
+	}
+
+	freeaddrinfo(res);
+	return b6b_return(interp, l);
 }
 
 static struct b6b_obj *b6b_socket_client_new(struct b6b_interp *interp,
@@ -424,12 +496,13 @@ static enum b6b_res b6b_socket_proc_un_client(struct b6b_interp *interp,
 	return b6b_return(interp, o);
 }
 
-static struct b6b_obj *b6b_server_socket_new(struct b6b_interp *interp,
-                                             const struct addrinfo *res,
-                                             const b6b_int backlog,
-                                             const struct b6b_strm_ops *stream_ops,
-                                             const struct b6b_strm_ops *dgram_ops,
-                                             const char *type)
+static struct b6b_obj *b6b_server_socket_new(
+                                          struct b6b_interp *interp,
+                                          const struct addrinfo *res,
+                                          const b6b_int backlog,
+                                          const struct b6b_strm_ops *stream_ops,
+                                          const struct b6b_strm_ops *dgram_ops,
+                                          const char *type)
 {
 	const struct b6b_strm_ops *ops = stream_ops;
 	int fd, err, one = 1;
@@ -448,8 +521,8 @@ static struct b6b_obj *b6b_server_socket_new(struct b6b_interp *interp,
 	}
 
 	if ((setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0) ||
-		(bind(fd, res->ai_addr, res->ai_addrlen) < 0) ||
-		((res->ai_socktype == SOCK_STREAM) && (listen(fd, (int)backlog) < 0))) {
+	    (bind(fd, res->ai_addr, res->ai_addrlen) < 0) ||
+	    ((res->ai_socktype == SOCK_STREAM) && (listen(fd, (int)backlog) < 0))) {
 		err = errno;
 		close(fd);
 		b6b_return_strerror(interp, err);
@@ -745,6 +818,12 @@ static enum b6b_res b6b_socket_proc_bswap32(struct b6b_interp *interp,
 }
 
 static const struct b6b_ext_obj b6b_socket[] = {
+	{
+		.name = "nslookup",
+		.type = B6B_TYPE_STR,
+		.val.s = "nslookup",
+		.proc = b6b_socket_proc_nslookup
+	},
 	{
 		.name = "inet.client",
 		.type = B6B_TYPE_STR,
