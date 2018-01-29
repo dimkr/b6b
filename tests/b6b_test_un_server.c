@@ -24,8 +24,10 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <errno.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+#ifndef __SANITIZE_ADDRESS__
+#	include <sys/time.h>
+#	include <sys/resource.h>
+#endif
 
 #include <b6b.h>
 
@@ -34,7 +36,9 @@ int main()
 	struct b6b_interp interp;
 	struct sockaddr_un dst = {.sun_family = AF_UNIX},
 	                   src = {.sun_family = AF_UNIX};
+#ifndef __SANITIZE_ADDRESS__
 	struct rlimit rlim;
+#endif
 	char buf[4];
 	int s1, s2, s3;
 
@@ -196,12 +200,14 @@ int main()
 	assert(interp.fg->_->slen == 0);
 	b6b_interp_destroy(&interp);
 
+#ifndef __SANITIZE_ADDRESS__
 	assert(getrlimit(RLIMIT_NOFILE, &rlim) == 0);
 	rlim.rlim_cur = 1;
 	assert(setrlimit(RLIMIT_NOFILE, &rlim) == 0);
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$un.server stream /tmp/x}", 26) == B6B_ERR);
 	b6b_interp_destroy(&interp);
+#endif
 
 	return EXIT_SUCCESS;
 }

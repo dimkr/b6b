@@ -65,17 +65,17 @@ static const struct b6b_file_mode b6b_file_modes[] = {
 	{"wu", "w", &b6b_wo_file_ops, _IONBF},
 	{"au", "a", &b6b_wo_file_ops, _IONBF},
 
-	{"r+", "r+", &b6b_wo_file_ops, _IOLBF},
-	{"w+", "w+", &b6b_wo_file_ops, _IOLBF},
-	{"a+", "a+", &b6b_wo_file_ops, _IOLBF},
+	{"r+", "r+", &b6b_rw_file_ops, _IOLBF},
+	{"w+", "w+", &b6b_rw_file_ops, _IOLBF},
+	{"a+", "a+", &b6b_rw_file_ops, _IOLBF},
 
-	{"r+b", "r+", &b6b_wo_file_ops, _IOFBF},
-	{"w+b", "w+", &b6b_wo_file_ops, _IOFBF},
-	{"a+b", "a+", &b6b_wo_file_ops, _IOFBF},
+	{"r+b", "r+", &b6b_rw_file_ops, _IOFBF},
+	{"w+b", "w+", &b6b_rw_file_ops, _IOFBF},
+	{"a+b", "a+", &b6b_rw_file_ops, _IOFBF},
 
-	{"r+u", "r+", &b6b_wo_file_ops, _IONBF},
-	{"w+u", "w+", &b6b_wo_file_ops, _IONBF},
-	{"a+u", "a+", &b6b_wo_file_ops, _IONBF}
+	{"r+u", "r+", &b6b_rw_file_ops, _IONBF},
+	{"w+u", "w+", &b6b_rw_file_ops, _IONBF},
+	{"a+u", "a+", &b6b_rw_file_ops, _IONBF}
 };
 
 #define b6b_file_def_mode b6b_file_modes[0]

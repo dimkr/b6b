@@ -21,15 +21,19 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+#ifndef __SANITIZE_ADDRESS__
+#	include <sys/time.h>
+#	include <sys/resource.h>
+#endif
 
 #include <b6b.h>
 
 int main()
 {
 	struct b6b_interp interp;
+#ifndef __SANITIZE_ADDRESS__
 	struct rlimit rlim;
+#endif
 
 	assert((unlink("/tmp/x") == 0) || (errno == ENOENT));
 	assert((unlink("/tmp/abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabc") == 0) || (errno == ENOENT));
@@ -106,6 +110,7 @@ int main()
 	                     128) == B6B_OK);
 	b6b_interp_destroy(&interp);
 
+#ifndef __SANITIZE_ADDRESS__
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(getrlimit(RLIMIT_NOFILE, &rlim) == 0);
 	assert(b6b_call_copy(&interp, "{$un.server stream /tmp/x}", 26) == B6B_OK);
@@ -113,6 +118,7 @@ int main()
 	assert(setrlimit(RLIMIT_NOFILE, &rlim) == 0);
 	assert(b6b_call_copy(&interp, "{$un.client stream /tmp/x}", 26) == B6B_ERR);
 	b6b_interp_destroy(&interp);
+#endif
 
 	return EXIT_SUCCESS;
 }
