@@ -111,7 +111,8 @@ stream_tests = [
 	['sh', 'slow', 10],
 	['un_server', 'quick', 5],
 	['un_client', 'quick', 5],
-	['inet_server', 'quick', 5]
+	['inet_server', 'quick', 5],
+	['inet_client', 'quick', 5]
 ]
 
 binding_tests = []

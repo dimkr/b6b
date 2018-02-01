@@ -107,12 +107,13 @@ int main()
 	assert(s1 >= 0);
 	assert(connect(s1, (const struct sockaddr *)&dst, sizeof(dst)) == 0);
 	assert(send(s1, "abcd", 4, 0) == 4);
+	assert(send(s1, "efgh", 4, 0) == 4);
 	assert(b6b_call_copy(&interp,
 	                     "{[$list.index [$_ accept] 0] read}",
 	                     34) == B6B_OK);
 	assert(b6b_as_str(interp.fg->_));
-	assert(interp.fg->_->slen == 4);
-	assert(strcmp(interp.fg->_->s, "abcd") == 0);
+	assert(interp.fg->_->slen == 8);
+	assert(strcmp(interp.fg->_->s, "abcdefgh") == 0);
 	assert(close(s1) == 0);
 	b6b_interp_destroy(&interp);
 

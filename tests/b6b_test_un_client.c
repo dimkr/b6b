@@ -81,8 +81,19 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$un.server stream /tmp/x}", 26) == B6B_OK);
-	assert(b6b_call_copy(&interp, "{$un.client dgram /tmp/x}", 25) == B6B_ERR);
+	assert(b6b_call_copy(&interp,
+	                     "{$local s [$un.server dgram /tmp/x]}",
+	                     36) == B6B_OK);
+	assert(b6b_call_copy(&interp,
+	                    "{$local c [$un.client dgram /tmp/x]}",
+	                    36) == B6B_OK);
+	assert(b6b_call_copy(&interp, "{$c write abcd}", 15) == B6B_OK);
+	assert(b6b_as_float(interp.fg->_));
+	assert(interp.fg->_->f == 4);
+	assert(b6b_call_copy(&interp, "{$s read}", 9) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 4);
+	assert(strcmp(interp.fg->_->s, "abcd") == 0);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
