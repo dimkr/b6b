@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,27 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#ifndef __SANITIZE_ADDRESS__
+#	include <sys/time.h>
+#	include <sys/resource.h>
+#endif
 
 #include <b6b.h>
 
 int main()
 {
 	struct b6b_interp interp;
+#ifndef __SANITIZE_ADDRESS__
+	struct rlimit rlim;
+#endif
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$un.pair}", 35) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$un.pair streaf}", 17) == B6B_ERR);
+	b6b_interp_destroy(&interp);
 
 	/* bi-directional reading and writing should succeed */
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -102,6 +117,15 @@ int main()
 	assert(b6b_list_next(b6b_list_first(interp.fg->_))->o->slen == 2);
 	assert(strcmp(b6b_list_next(b6b_list_first(interp.fg->_))->o->s, "cd") == 0);
 	b6b_interp_destroy(&interp);
+
+#ifndef __SANITIZE_ADDRESS__
+	assert(getrlimit(RLIMIT_NOFILE, &rlim) == 0);
+	rlim.rlim_cur = 1;
+	assert(setrlimit(RLIMIT_NOFILE, &rlim) == 0);
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp, "{$un.pair dgram}", 16) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+#endif
 
 	return EXIT_SUCCESS;
 }

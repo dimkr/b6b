@@ -112,11 +112,35 @@ int main()
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
+	                     "{$inet.server tcp localhost 2924}",
+	                     33) == B6B_OK);
+	assert(b6b_call_copy(&interp,
+	                     "{$inet.client tcp localhost 2924}",
+	                     33) == B6B_OK);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$inet.server tcp localhost 2924}",
+	                     33) == B6B_OK);
+	assert(b6b_call_copy(&interp,
+	                     "{$inet.client tcp localhosf 2924}",
+	                     33) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
 	                     "{$inet.server tcp 127.0.0.1 2924}",
 	                     33) == B6B_OK);
 	assert(b6b_call_copy(&interp,
 	                     "{$inet.client tcf 127.0.0.1 2924}",
 	                     33) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$inet.client tcp 255.255.255.255 2924}",
+	                     39) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	return EXIT_SUCCESS;

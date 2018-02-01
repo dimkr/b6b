@@ -33,12 +33,19 @@ int main()
 	struct b6b_interp interp;
 	struct sockaddr_in dst = {.sin_family = AF_INET},
 	                   src = {.sin_family = AF_INET};
+	struct sockaddr_in6 dst6 = {
+		.sin6_family = AF_INET6,
+		.sin6_addr = IN6ADDR_LOOPBACK_INIT
+	}, src6 = {
+		.sin6_family = AF_INET6,
+		.sin6_addr = IN6ADDR_LOOPBACK_INIT
+	};
 	char buf[4];
 	int s;
 
-	src.sin_port = htons(2923);
+	src.sin_port = src6.sin6_port = htons(2923);
 	src.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-	dst.sin_port = htons(2924);
+	dst.sin_port = dst6.sin6_port = htons(2924);
 	dst.sin_addr.s_addr = src.sin_addr.s_addr;
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
@@ -70,6 +77,24 @@ int main()
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
 	                     "{$inet.server tcc 127.0.0.1 2924}",
+	                     33) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$inet.server tcp 1.2.3.4 2924}",
+	                     33) == B6B_ERR);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$inet.server tcp localhost 2924}",
+	                     33) == B6B_OK);
+	b6b_interp_destroy(&interp);
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$inet.server tcp localhosf 2924}",
 	                     33) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
@@ -151,6 +176,41 @@ int main()
 	assert(close(s) == 0);
 	b6b_interp_destroy(&interp);
 
+
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_call_copy(&interp,
+	                     "{$global a [$inet.server udp ::1 2924]}",
+	                     39) == B6B_OK);
+	s = socket(AF_INET6, SOCK_DGRAM, 0);
+	assert(s >= 0);
+	assert(sendto(s,
+	              "abcd",
+	              4,
+	              0,
+	              (const struct sockaddr *)&dst6,
+	              sizeof(dst6)) == 4);
+	assert(sendto(s,
+	              "efgh",
+	              4,
+	              0,
+	              (const struct sockaddr *)&dst6,
+	              sizeof(dst6)) == 4);
+	assert(b6b_call_copy(&interp, "{$a read}", 9) == B6B_OK);
+	assert(b6b_as_str(interp.fg->_));
+	assert(interp.fg->_->slen == 4);
+	assert(strcmp(interp.fg->_->s, "abcd") == 0);
+	assert(b6b_call_copy(&interp, "{$a peer}", 9) == B6B_OK);
+	assert(b6b_as_list(interp.fg->_));
+	assert(!b6b_list_empty(interp.fg->_));
+	assert(b6b_as_str(b6b_list_first(interp.fg->_)->o));
+	assert(b6b_list_first(interp.fg->_)->o->slen == sizeof("::1") - 1);
+	assert(strcmp(b6b_list_first(interp.fg->_)->o->s, "::1") == 0);
+	assert(b6b_list_next(b6b_list_first(interp.fg->_)));
+	assert(b6b_as_float(b6b_list_next(b6b_list_first(interp.fg->_))->o));
+	assert(b6b_list_next(b6b_list_first(interp.fg->_))->o->f > 0);
+	assert(b6b_list_next(b6b_list_first(interp.fg->_))->o->f < USHRT_MAX);
+	assert(close(s) == 0);
+	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp,
