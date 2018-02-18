@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 
+/* for accept4() */
+#define _GNU_SOURCE
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -30,6 +33,8 @@
 #include <byteswap.h>
 
 #include <b6b.h>
+
+#undef _GNU_SOURCE
 
 #define B6B_SERVER_DEF_BACKLOG 5
 
@@ -548,9 +553,12 @@ static int b6b_socket_stream_accept(struct b6b_interp *interp,
 	struct sockaddr_storage addr, peer;
 	socklen_t alen = sizeof(addr), plen = sizeof(peer);
 	const struct b6b_socket *s = (const struct b6b_socket *)priv;
-	int fd, fl, err;
+	int fd, err;
 
-	fd = accept(s->fd, (struct sockaddr *)&peer, &plen);
+	fd = accept4(s->fd,
+	             (struct sockaddr *)&peer,
+	             &plen,
+	             SOCK_NONBLOCK | SOCK_CLOEXEC);
 	if (fd < 0) {
 		if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EMFILE)) {
 			*o = NULL;
@@ -562,14 +570,6 @@ static int b6b_socket_stream_accept(struct b6b_interp *interp,
 	}
 
 	if (getpeername(fd, (struct sockaddr *)&addr, &alen) < 0) {
-		err = errno;
-		close(fd);
-		b6b_return_strerror(interp, err);
-		return 0;
-	}
-
-	fl = fcntl(fd, F_GETFL);
-	if ((fl < 0) || (fcntl(fd, F_SETFL, fl | O_NONBLOCK) < 0)) {
 		err = errno;
 		close(fd);
 		b6b_return_strerror(interp, err);
