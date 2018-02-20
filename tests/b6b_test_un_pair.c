@@ -34,7 +34,7 @@ int main()
 #endif
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$un.pair}", 35) == B6B_ERR);
+	assert(b6b_call_copy(&interp, "{$un.pair}", 10) == B6B_ERR);
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
