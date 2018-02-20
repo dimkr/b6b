@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#include <inttypes.h>
+#include <arpa/inet.h>
 
 #include <b6b.h>
 
@@ -56,10 +58,17 @@ static void b6b_zlib_do_deflate(void *arg)
 
 static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
                                      struct b6b_obj *args,
-                                     const int wbits)
+                                     const int wbits,
+                                     const size_t head,
+                                     const size_t foot,
+                                     void (*finish)(const unsigned char *,
+                                                    const size_t,
+                                                    const unsigned char *,
+                                                    const size_t,
+                                                    const int))
 {
 	struct b6b_zlib_deflate_data data = {.strm = {0}};
-	size_t dlen;
+	size_t dlen, max, tot;
 	struct b6b_obj *s, *l, *o;
 	unsigned char *src, *dst;
 	int level = MZ_DEFAULT_COMPRESSION;
@@ -77,7 +86,8 @@ static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
 			return B6B_ERR;
 	}
 
-	if (s->slen > UINT32_MAX)
+	max = UINT32_MAX - head - foot;
+	if (s->slen > max)
 		return B6B_ERR;
 
 	if (mz_deflateInit2(&data.strm,
@@ -88,41 +98,54 @@ static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
 	                    MZ_DEFAULT_STRATEGY) != MZ_OK)
 		return B6B_ERR;
 
+	data.slen = s->slen;
+	dlen = (size_t)mz_deflateBound(&data.strm, (mz_ulong)data.slen);
+	if (dlen >= max) {
+		mz_deflateEnd(&data.strm);
+		return B6B_ERR;
+	}
+
 	/* copy the buffer, since s->s may be freed after context switch */
-	src = (unsigned char *)malloc(s->slen);
+	src = (unsigned char *)malloc(data.slen);
 	if (!b6b_allocated(src)) {
 		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
-	dlen = (size_t)mz_deflateBound(&data.strm, (mz_ulong)s->slen);
-	dst = (unsigned char *)malloc(dlen);
+	dst = (unsigned char *)malloc(dlen + head + foot + 1);
 	if (!b6b_allocated(dst)) {
 		free(src);
 		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
-	data.slen = s->slen;
 	memcpy(src, s->s, data.slen);
 
 	data.strm.next_in = src;
-	data.strm.next_out = dst;
+	/* compressed data should start after the header and mz_deflate() does not
+	 * know about the extra room for the footer */
+	data.strm.next_out = dst + head;
 	data.strm.avail_out = (mz_uint32)dlen;
 
-	data.rem = (mz_uint)s->slen;
+	data.rem = (mz_uint)data.slen;
 	data.ok = 0;
 	if (!b6b_offload(interp, b6b_zlib_do_deflate, &data) ||
 	    !data.ok ||
-	    (mz_deflate(&data.strm, MZ_FINISH) != MZ_STREAM_END)) {
+	    (mz_deflate(&data.strm, MZ_FINISH) != MZ_STREAM_END) ||
+	    (data.strm.total_out > max)) {
 		free(dst);
 		free(src);
 		mz_deflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 
+	if (finish)
+		finish(src, data.slen, dst, (size_t)data.strm.total_out, level);
+
 	free(src);
-	o = b6b_str_new((char *)dst, (size_t)data.strm.total_out);
+	tot = (size_t)(data.strm.total_out + head + foot);
+	dst[tot] = '\0';
+	o = b6b_str_new((char *)dst, tot);
 	mz_deflateEnd(&data.strm);
 	if (b6b_unlikely(!o)) {
 		free(dst);
@@ -135,13 +158,72 @@ static enum b6b_res b6b_zlib_deflate(struct b6b_interp *interp,
 static enum b6b_res b6b_zlib_proc_deflate(struct b6b_interp *interp,
                                           struct b6b_obj *args)
 {
-	return b6b_zlib_deflate(interp, args, -MZ_DEFAULT_WINDOW_BITS);
+	return b6b_zlib_deflate(interp, args, -MZ_DEFAULT_WINDOW_BITS, 0, 0, NULL);
 }
 
 static enum b6b_res b6b_zlib_proc_compress(struct b6b_interp *interp,
                                            struct b6b_obj *args)
 {
-	return b6b_zlib_deflate(interp, args, MZ_DEFAULT_WINDOW_BITS);
+	return b6b_zlib_deflate(interp, args, MZ_DEFAULT_WINDOW_BITS, 0, 0, NULL);
+}
+
+struct gzip_hdr {
+	uint16_t sig;
+	uint8_t meth;
+	uint8_t fl;
+	uint32_t tm;
+	uint8_t cfl;
+	uint8_t os;
+} __attribute__((packed));
+
+struct gzip_ftr {
+	uint32_t crc;
+	uint32_t len;
+} __attribute__((packed));
+
+static void b6b_zlib_gzip_finish(const unsigned char *buf,
+                                 const size_t len,
+                                 const unsigned char *cbuf,
+                                 const size_t clen,
+                                 const int level)
+{
+	struct gzip_hdr *hdr = (struct gzip_hdr *)cbuf;
+	struct gzip_ftr *ftr = (struct gzip_ftr *)(cbuf + sizeof(*hdr) + clen);
+
+	hdr->sig = htons(0x1f8b);
+	hdr->meth = 8;
+	hdr->fl = 0;
+	/* we do not disclose local time - for example, in the case of a
+	 * timing-based vulnerability we don't want to let an attacker know the
+	 * local time through HTTP gzip compression */
+	hdr->tm = 0;
+	switch (level) {
+		case MZ_BEST_COMPRESSION:
+			hdr->cfl = 2;
+			break;
+
+		case MZ_BEST_SPEED:
+			hdr->cfl = 4;
+			break;
+
+		default:
+			hdr->cfl = 0;
+	}
+	hdr->os = 3;
+
+	ftr->crc = mz_crc32(mz_crc32(0, NULL, 0), buf, len);
+	ftr->len = (uint32_t)(len % UINT32_MAX);
+}
+
+static enum b6b_res b6b_zlib_proc_gzip(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
+{
+	return b6b_zlib_deflate(interp,
+	                        args,
+	                        -MZ_DEFAULT_WINDOW_BITS,
+	                        sizeof(struct gzip_hdr),
+	                        sizeof(struct gzip_ftr),
+	                        b6b_zlib_gzip_finish);
 }
 
 struct b6b_zlib_inflate_data {
@@ -191,37 +273,40 @@ static void b6b_zlib_do_inflate(void *arg)
 
 static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
                                      struct b6b_obj *args,
-                                     const int wbits)
+                                     const int wbits,
+                                     const size_t head,
+                                     const size_t foot)
 {
 	struct b6b_zlib_inflate_data data = {.strm = {0}};
 	struct b6b_obj *s, *o;
+	size_t junk;
 	unsigned char *src;
 
 	if (!b6b_proc_get_args(interp, args, "os", NULL, &s))
 		return B6B_ERR;
 
-	if (s->slen > UINT32_MAX)
+	junk = head + foot;
+	if ((s->slen > UINT32_MAX) || (s->slen <= junk))
 		return B6B_ERR;
 
 	if (mz_inflateInit2(&data.strm, wbits) != MZ_OK)
 		return B6B_ERR;
 
-	src = (unsigned char *)malloc(s->slen);
+	data.slen = s->slen - junk;
+	src = (unsigned char *)malloc(data.slen);
 	if (!b6b_allocated(src)) {
 		mz_inflateEnd(&data.strm);
 		return B6B_ERR;
 	}
+	memcpy(src, s->s + head, data.slen);
 
-	data.dlen = B6B_INFLATE_OUT_CHUNK_SZ;
-	data.slen = s->slen;
-	memcpy(src, s->s, s->slen);
-
+	data.dlen = B6B_INFLATE_OUT_CHUNK_SZ + 1;
 	data.strm.next_in = src;
 	data.strm.next_out = NULL;
 	data.strm.avail_out = 0;
 
 	data.dst = NULL;
-	data.rem = (mz_uint)s->slen;
+	data.rem = (mz_uint)data.slen;
 	data.ok = 0;
 	if (!b6b_offload(interp, b6b_zlib_do_inflate, &data) ||
 	    !data.ok ||
@@ -233,6 +318,7 @@ static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
 	}
 
 	free(src);
+	data.dst[data.strm.total_out] = '\0';
 	o = b6b_str_new((char *)data.dst, (size_t)data.strm.total_out);
 	mz_inflateEnd(&data.strm);
 	if (b6b_unlikely(!o)) {
@@ -246,13 +332,23 @@ static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
 static enum b6b_res b6b_zlib_proc_inflate(struct b6b_interp *interp,
                                           struct b6b_obj *args)
 {
-	return b6b_zlib_inflate(interp, args, -MZ_DEFAULT_WINDOW_BITS);
+	return b6b_zlib_inflate(interp, args, -MZ_DEFAULT_WINDOW_BITS, 0, 0);
 }
 
 static enum b6b_res b6b_zlib_proc_decompress(struct b6b_interp *interp,
                                              struct b6b_obj *args)
 {
-	return b6b_zlib_inflate(interp, args, MZ_DEFAULT_WINDOW_BITS);
+	return b6b_zlib_inflate(interp, args, MZ_DEFAULT_WINDOW_BITS, 0, 0);
+}
+
+static enum b6b_res b6b_zlib_proc_gunzip(struct b6b_interp *interp,
+                                             struct b6b_obj *args)
+{
+	return b6b_zlib_inflate(interp,
+	                        args,
+	                        -MZ_DEFAULT_WINDOW_BITS,
+	                        sizeof(struct gzip_hdr),
+	                        sizeof(struct gzip_ftr));
 }
 
 static const struct b6b_ext_obj b6b_zlib[] = {
@@ -269,6 +365,12 @@ static const struct b6b_ext_obj b6b_zlib[] = {
 		.proc = b6b_zlib_proc_compress
 	},
 	{
+		.name = "gzip",
+		.type = B6B_TYPE_STR,
+		.val.s = "gzip",
+		.proc = b6b_zlib_proc_gzip
+	},
+	{
 		.name = "inflate",
 		.type = B6B_TYPE_STR,
 		.val.s = "inflate",
@@ -279,6 +381,12 @@ static const struct b6b_ext_obj b6b_zlib[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "decompress",
 		.proc = b6b_zlib_proc_decompress
+	},
+	{
+		.name = "gunzip",
+		.type = B6B_TYPE_STR,
+		.val.s = "gunzip",
+		.proc = b6b_zlib_proc_gunzip
 	}
 };
 __b6b_ext(b6b_zlib);

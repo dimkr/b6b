@@ -135,7 +135,9 @@ if get_option('with_miniz')
 		['deflate', ['threaded', 'quick'], 5],
 		['inflate', ['threaded', 'quick'], 5],
 		['compress', ['threaded', 'quick'], 5],
-		['decompress', ['threaded', 'quick'], 5]
+		['decompress', ['threaded', 'quick'], 5],
+		['gzip', ['threaded', 'quick'], 5],
+		['gunzip', ['threaded', 'quick'], 5]
 	]
 endif
 

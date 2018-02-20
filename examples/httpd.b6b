@@ -3,7 +3,7 @@
 {#
 	This file is part of b6b.
 
-	Copyright 2017 Dima Krasner
+	Copyright 2017, 2018 Dima Krasner
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@
 {$global http.reps {}}
 {$global http.body_cache {}}
 {$global http.cbody_cache {}}
-{$global http.deflate_hdr [$list.new Content-Encoding deflate]}
+{$global http.gzip_hdr [$list.new Content-Encoding gzip]}
 
 {$global http.sep [$str.expand \r\n\r\n]}
 {$global http.eol [$str.expand \r\n]}
@@ -136,11 +136,11 @@
 		{$local resp_hdrs [$list.new [$list.new Server $http.banner]]}
 
 		{# if the client understands compression, compress the body}
-		{$if [$list.in deflate [$map x [$str.split [$dict.get $hdrs Accept-Encoding {}] ,] {{$ltrim $x}}]] {
-			{$list.append $resp_hdrs $http.deflate_hdr}
+		{$if [$list.in gzip [$map x [$str.split [$dict.get $hdrs Accept-Encoding {}] ,] {{$ltrim $x}}]] {
+			{$list.append $resp_hdrs $http.gzip_hdr}
 			{$local cbody [$dict.get $http.cbody_cache $url {}]}
 			{$if [$! [$str.len $cbody]] {
-				{$local cbody [$compress $body 1]}
+				{$local cbody [$gzip $body 1]}
 				{# cache the compressed file contents, too}
 				{$dict.set $http.cbody_cache $url $cbody}
 				{$export cbody}
