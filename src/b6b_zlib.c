@@ -241,19 +241,6 @@ static void b6b_zlib_do_inflate(void *arg)
 	unsigned char *mdst;
 
 	do {
-		mdst = (unsigned char *)realloc(data->dst, data->dlen);
-		if (!b6b_allocated(mdst))
-			return;
-
-		data->strm.next_out = mdst + (data->strm.next_out - data->dst);
-		data->dst = mdst;
-		data->strm.avail_out += B6B_INFLATE_OUT_CHUNK_SZ;
-
-		if (data->rem > B6B_INFLATE_IN_CHUNK_SZ)
-			data->strm.avail_in = B6B_INFLATE_IN_CHUNK_SZ;
-		else
-			data->strm.avail_in = data->rem;
-
 		switch (mz_inflate(&data->strm, 0))  {
 			case MZ_OK:
 				break;
@@ -266,8 +253,25 @@ static void b6b_zlib_do_inflate(void *arg)
 				return;
 		}
 
-		data->rem = (mz_uint)data->slen - data->strm.total_in;
+		if (data->dlen >= SIZE_MAX - B6B_INFLATE_OUT_CHUNK_SZ - 1)
+			break;
+
 		data->dlen += B6B_INFLATE_OUT_CHUNK_SZ;
+
+		mdst = (unsigned char *)realloc(data->dst, data->dlen + 1);
+		if (!b6b_allocated(mdst))
+			return;
+
+		data->strm.next_out = mdst + (data->strm.next_out - data->dst);
+		data->dst = mdst;
+		data->strm.avail_out += data->dlen - data->strm.total_out;
+
+		data->rem = (mz_uint)data->slen - data->strm.total_in;
+
+		if (data->rem > B6B_INFLATE_IN_CHUNK_SZ)
+			data->strm.avail_in = B6B_INFLATE_IN_CHUNK_SZ;
+		else
+			data->strm.avail_in = data->rem;
 	} while (1);
 }
 
@@ -275,7 +279,9 @@ static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
                                      struct b6b_obj *args,
                                      const int wbits,
                                      const size_t head,
-                                     const size_t foot)
+                                     const size_t foot,
+                                     size_t (*get_size)(const unsigned char *,
+                                                        const size_t))
 {
 	struct b6b_zlib_inflate_data data = {.strm = {0}};
 	struct b6b_obj *s, *o;
@@ -289,23 +295,38 @@ static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
 	if ((s->slen > UINT32_MAX) || (s->slen <= junk))
 		return B6B_ERR;
 
+	if (get_size) {
+		data.dlen = get_size((const unsigned char *)s->s, s->slen);
+		if (data.dlen == 0) {
+			data.dlen = 1;
+		} else if (data.dlen == SIZE_MAX)
+			return B6B_ERR;
+	} else
+		data.dlen = B6B_INFLATE_OUT_CHUNK_SZ;
+
 	if (mz_inflateInit2(&data.strm, wbits) != MZ_OK)
 		return B6B_ERR;
+
+	data.dst = (unsigned char *)malloc(data.dlen + 1);
+	if (!data.dst) {
+		mz_inflateEnd(&data.strm);
+		return B6B_ERR;
+	}
 
 	data.slen = s->slen - junk;
 	src = (unsigned char *)malloc(data.slen);
 	if (!b6b_allocated(src)) {
+		free(data.dst);
 		mz_inflateEnd(&data.strm);
 		return B6B_ERR;
 	}
 	memcpy(src, s->s + head, data.slen);
 
-	data.dlen = B6B_INFLATE_OUT_CHUNK_SZ + 1;
 	data.strm.next_in = src;
-	data.strm.next_out = NULL;
-	data.strm.avail_out = 0;
+	data.strm.next_out = data.dst;
+	data.strm.avail_in = data.slen;
+	data.strm.avail_out = data.dlen;
 
-	data.dst = NULL;
 	data.rem = (mz_uint)data.slen;
 	data.ok = 0;
 	if (!b6b_offload(interp, b6b_zlib_do_inflate, &data) ||
@@ -332,13 +353,21 @@ static enum b6b_res b6b_zlib_inflate(struct b6b_interp *interp,
 static enum b6b_res b6b_zlib_proc_inflate(struct b6b_interp *interp,
                                           struct b6b_obj *args)
 {
-	return b6b_zlib_inflate(interp, args, -MZ_DEFAULT_WINDOW_BITS, 0, 0);
+	return b6b_zlib_inflate(interp, args, -MZ_DEFAULT_WINDOW_BITS, 0, 0, NULL);
 }
 
 static enum b6b_res b6b_zlib_proc_decompress(struct b6b_interp *interp,
                                              struct b6b_obj *args)
 {
-	return b6b_zlib_inflate(interp, args, MZ_DEFAULT_WINDOW_BITS, 0, 0);
+	return b6b_zlib_inflate(interp, args, MZ_DEFAULT_WINDOW_BITS, 0, 0, NULL);
+}
+
+static size_t b6b_zlib_gzip_get_size(const unsigned char *buf,
+                                     const size_t len)
+{
+	struct gzip_ftr *ftr = (struct gzip_ftr *)(buf + len - sizeof(*ftr));
+
+	return (size_t)ftr->len;
 }
 
 static enum b6b_res b6b_zlib_proc_gunzip(struct b6b_interp *interp,
@@ -348,7 +377,8 @@ static enum b6b_res b6b_zlib_proc_gunzip(struct b6b_interp *interp,
 	                        args,
 	                        -MZ_DEFAULT_WINDOW_BITS,
 	                        sizeof(struct gzip_hdr),
-	                        sizeof(struct gzip_ftr));
+	                        sizeof(struct gzip_ftr),
+	                        b6b_zlib_gzip_get_size);
 }
 
 static const struct b6b_ext_obj b6b_zlib[] = {
