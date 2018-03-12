@@ -75,9 +75,9 @@
 }}
 
 {$proc on_request {
+	{$local fd [$1 fd]}
 	{$local chunk [$1 read $.]}
 	{$if [$str.len $chunk] {
-		{$local fd [$1 fd]}
 		{$local data [$dict.get $http.reqs $fd {}]}
 
 		{$if [$> [$+ [$str.len $data] [$str.len $chunk]] $http.req_max] {
@@ -98,6 +98,7 @@
 			{$dict.set $http.reqs $fd $data}
 		}}
 	} {
+		{$forget_client $fd}
 		{$throw}
 	}}
 } [$+ $http.req_max 1]}
