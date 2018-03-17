@@ -285,15 +285,25 @@ static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
                                            struct b6b_obj *service,
                                            const int socktype)
 {
-	struct b6b_socket_gai_data data = {.hints = {0}, .service = NULL};
+	struct b6b_socket_gai_data data = {
+		.hints = {
+			.ai_flags = AI_ADDRCONFIG | AI_V4MAPPED,
+			.ai_family = AF_UNSPEC
+		},
+		.host = NULL,
+		.service = NULL
+	};
 	const char *s;
 	int out;
 
 	/* both strings must be copied since they may be freed during
 	 * b6b_offload() */
-	data.host = b6b_strndup(host->s, host->slen);
-	if (b6b_unlikely(!data.host))
-		return NULL;
+	if (host->slen) {
+		data.host = b6b_strndup(host->s, host->slen);
+		if (b6b_unlikely(!data.host))
+			return NULL;
+	} else
+		data.hints.ai_flags |= AI_PASSIVE;
 
 	if (service) {
 		data.service = b6b_strndup(service->s, service->slen);
@@ -304,7 +314,6 @@ static struct addrinfo *b6b_socket_resolve(struct b6b_interp *interp,
 	}
 
 	data.hints.ai_socktype = socktype;
-	data.hints.ai_family = AF_UNSPEC;
 	out = b6b_offload(interp, b6b_socket_do_getaddrinfo, &data);
 
 	free(data.service);
@@ -428,7 +437,7 @@ static enum b6b_res b6b_socket_proc_inet_client(struct b6b_interp *interp,
 	struct addrinfo *res;
 	const struct b6b_strm_ops *ops = &b6b_tcp_client_ops;
 
-	if (!b6b_proc_get_args(interp, args, "osss", NULL, &t, &h, &s))
+	if (!b6b_proc_get_args(interp, args, "osss", NULL, &t, &h, &s) || !h->slen)
 		return B6B_ERR;
 
 	if (strcmp(t->s, "udp") == 0) {
