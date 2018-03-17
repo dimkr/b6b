@@ -55,15 +55,18 @@ int main()
 	assert(!b6b_list_next(b6b_list_first(interp.fg->_)));
 	b6b_interp_destroy(&interp);
 
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
-	assert(b6b_call_copy(&interp, "{$nslookup ::1}", 15) == B6B_OK);
-	assert(b6b_as_list(interp.fg->_));
-	assert(!b6b_list_empty(interp.fg->_));
-	assert(b6b_as_str(b6b_list_first(interp.fg->_)->o));
-	assert(b6b_list_first(interp.fg->_)->o->slen == sizeof("::1") - 1);
-	assert(strcmp(b6b_list_first(interp.fg->_)->o->s, "::1") == 0);
-	assert(!b6b_list_next(b6b_list_first(interp.fg->_)));
-	b6b_interp_destroy(&interp);
+	/* test is broken on Travis CI because IPv6 is not configured */
+	if (!getenv("TRAVIS")) {
+		assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+		assert(b6b_call_copy(&interp, "{$nslookup ::1}", 15) == B6B_OK);
+		assert(b6b_as_list(interp.fg->_));
+		assert(!b6b_list_empty(interp.fg->_));
+		assert(b6b_as_str(b6b_list_first(interp.fg->_)->o));
+		assert(b6b_list_first(interp.fg->_)->o->slen == sizeof("::1") - 1);
+		assert(strcmp(b6b_list_first(interp.fg->_)->o->s, "::1") == 0);
+		assert(!b6b_list_next(b6b_list_first(interp.fg->_)));
+		b6b_interp_destroy(&interp);
+	}
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
 	assert(b6b_call_copy(&interp, "{$nslookup localhost}", 21) == B6B_OK);

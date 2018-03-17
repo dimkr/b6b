@@ -189,7 +189,10 @@ int main()
 	                    "{$global a [$inet.server udp ::1 2924]}",
 	                    39);
 	/* test is broken on Travis CI because IPv6 is not configured */
-	if (res == B6B_OK) {
+	if (getenv("TRAVIS"))
+		assert(res == B6B_ERR);
+	else {
+		assert(res == B6B_OK);
 		s = socket(AF_INET6, SOCK_DGRAM, 0);
 		assert(s >= 0);
 		assert(sendto(s,
@@ -219,9 +222,7 @@ int main()
 		assert(b6b_list_next(b6b_list_first(interp.fg->_))->o->f > 0);
 		assert(b6b_list_next(b6b_list_first(interp.fg->_))->o->f < USHRT_MAX);
 		assert(close(s) == 0);
-	} else
-		assert(res == B6B_ERR);
-
+	}
 	b6b_interp_destroy(&interp);
 
 	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
