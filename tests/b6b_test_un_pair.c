@@ -23,6 +23,9 @@
 #	include <sys/time.h>
 #	include <sys/resource.h>
 #endif
+#ifdef B6B_HAVE_VALGRIND
+#	include <valgrind/valgrind.h>
+#endif
 
 #include <b6b.h>
 
@@ -119,6 +122,12 @@ int main()
 	b6b_interp_destroy(&interp);
 
 #ifndef __SANITIZE_ADDRESS__
+#	ifdef B6B_HAVE_VALGRIND
+	/* setrlimit() doesn't work and socketpair() succeeds because the former is
+	 * emulated by Valgrind */
+	if (RUNNING_ON_VALGRIND)
+		return EXIT_SUCCESS;
+#	endif
 	assert(getrlimit(RLIMIT_NOFILE, &rlim) == 0);
 	rlim.rlim_cur = 1;
 	assert(setrlimit(RLIMIT_NOFILE, &rlim) == 0);
