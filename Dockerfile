@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:artful
+FROM ubuntu:bionic
 
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
