@@ -112,7 +112,8 @@ stream_tests = [
 	['un_server', 'quick', 5],
 	['un_client', 'quick', 5],
 	['inet_server', 'quick', 5],
-	['inet_client', 'quick', 5]
+	['inet_client', 'quick', 5],
+	['evloop_after', 'quick', 5]
 ]
 
 binding_tests = []
