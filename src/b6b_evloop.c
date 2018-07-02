@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2018 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,14 +51,9 @@
 
 #define B6B_EVLOOP_AFTER \
 	"{$0 add [$timer $2] [$proc _ {" \
-		"{$try {" \
-			"{$call [$list.index $. 0]}" \
-		"} {" \
-			"{$throw}" \
-		"} {" \
-			"{$try {{[$list.index $. 1] remove $1}}}" \
-		"}}" \
-	"} [$list.new [$list.new [$list.new $3]] $0]] {} {}}"
+		"{$call $.}\n" \
+		"{$throw}" \
+	"} [$list.new [$list.new $3]]] {} {}}"
 
 #define B6B_EVLOOP_EVERY \
 	"{$0 add [$timer $2] [$proc _ {" \
