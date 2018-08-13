@@ -8,6 +8,10 @@
 
     {$list.append $list f}
 
+*list.copy* copies a list.
+
+    {$list.copy $list}
+
 *list.append* appends an item to a list.
 
     {$list.extend $list {f g}}

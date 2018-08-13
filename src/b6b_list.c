@@ -102,6 +102,25 @@ int b6b_list_add(struct b6b_obj *l, struct b6b_obj *o)
 	return 1;
 }
 
+static struct b6b_obj *b6b_list_copy(struct b6b_obj *l)
+{
+	struct b6b_litem *li;
+	struct b6b_obj *l2;
+
+	l2 = b6b_list_new();
+	if (b6b_unlikely(!l2))
+		return NULL;
+
+	b6b_list_foreach(l, li) {
+		if (b6b_unlikely(!b6b_list_do_add(l2, li->o))) {
+			b6b_destroy(l2);
+			return NULL;
+		}
+	}
+
+	return l2;
+}
+
 int b6b_list_extend(struct b6b_obj *l, struct b6b_obj *l2)
 {
 	struct b6b_litem *li;
@@ -433,6 +452,20 @@ static enum b6b_res b6b_list_proc_append(struct b6b_interp *interp,
 	return B6B_ERR;
 }
 
+static enum b6b_res b6b_list_proc_copy(struct b6b_interp *interp,
+                                       struct b6b_obj *args)
+{
+	struct b6b_obj *l, *l2;
+
+	if (b6b_proc_get_args(interp, args, "ol", NULL, &l)) {
+		l2 = b6b_list_copy(l);
+		if (l2)
+			return b6b_return(interp, l2);
+	}
+
+	return B6B_ERR;
+}
+
 static enum b6b_res b6b_list_proc_extend(struct b6b_interp *interp,
                                          struct b6b_obj *args)
 {
@@ -582,6 +615,12 @@ static const struct b6b_ext_obj b6b_list[] = {
 		.type = B6B_TYPE_STR,
 		.val.s = "list.len",
 		.proc = b6b_list_proc_len
+	},
+	{
+		.name = "list.copy",
+		.type = B6B_TYPE_STR,
+		.val.s = "list.copy",
+		.proc = b6b_list_proc_copy
 	},
 	{
 		.name = "list.append",
