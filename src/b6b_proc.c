@@ -125,7 +125,7 @@ static enum b6b_res b6b_proc_proc_proc(struct b6b_interp *interp,
 		return B6B_ERR;
 	}
 
-	if (b6b_unlikely(!b6b_global(interp, n, o))) {
+	if (n->slen && b6b_unlikely(!b6b_global(interp, n, o))) {
 		b6b_destroy(o);
 		free(priv);
 		return B6B_ERR;
