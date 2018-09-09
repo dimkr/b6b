@@ -182,7 +182,7 @@ static enum b6b_res b6b_strm_writeln(struct b6b_interp *interp,
 }
 
 static enum b6b_res b6b_strm_accept(struct b6b_interp *interp,
-                                   struct b6b_strm *strm)
+                                    struct b6b_strm *strm)
 {
 	struct b6b_obj *l, *o;
 
