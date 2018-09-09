@@ -249,10 +249,7 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
 	}
 
 	s->fd = fd;
-	if (addr)
-		memcpy(&s->addr, addr, (size_t)alen);
-	else
-		s->addr.ss_family = AF_UNSPEC;
+	memcpy(&s->addr, addr, (size_t)alen);
 
 	if (peer)
 		memcpy(&s->peer, peer, (size_t)plen);
