@@ -249,7 +249,11 @@ static struct b6b_obj *b6b_socket_new(struct b6b_interp *interp,
 	}
 
 	s->fd = fd;
-	memcpy(&s->addr, addr, (size_t)alen);
+	if (addr)
+		memcpy(&s->addr, addr, (size_t)alen);
+	else
+		s->addr.ss_family = AF_UNSPEC;
+
 	if (peer)
 		memcpy(&s->peer, peer, (size_t)plen);
 	else
@@ -559,8 +563,8 @@ static int b6b_socket_stream_accept(struct b6b_interp *interp,
                                     const struct b6b_strm_ops *ops,
                                     const char *type)
 {
-	struct sockaddr_storage addr, peer;
-	socklen_t alen = sizeof(addr), plen = sizeof(peer);
+	struct sockaddr_storage peer;
+	socklen_t plen = sizeof(peer);
 	const struct b6b_socket *s = (const struct b6b_socket *)priv;
 	int fd, err;
 
@@ -578,17 +582,10 @@ static int b6b_socket_stream_accept(struct b6b_interp *interp,
 		return 0;
 	}
 
-	if (getpeername(fd, (struct sockaddr *)&addr, &alen) < 0) {
-		err = errno;
-		close(fd);
-		b6b_return_strerror(interp, err);
-		return 0;
-	}
-
 	*o = b6b_socket_new(interp,
 	                    fd,
-	                    (const struct sockaddr *)&addr,
-	                    alen,
+	                    NULL,
+	                    0,
 	                    (const struct sockaddr *)&peer,
 	                    plen,
 	                    type,
