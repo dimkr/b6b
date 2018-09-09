@@ -566,7 +566,7 @@ static int b6b_socket_stream_accept(struct b6b_interp *interp,
 	struct sockaddr_storage peer;
 	socklen_t plen = sizeof(peer);
 	const struct b6b_socket *s = (const struct b6b_socket *)priv;
-	int fd, err;
+	int fd;
 
 	fd = accept4(s->fd,
 	             (struct sockaddr *)&peer,
