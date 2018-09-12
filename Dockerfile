@@ -21,7 +21,7 @@ ENV LANG en_US.UTF-8
 
 RUN sed -i s/^deb.*multiverse.*/\#\&/g /etc/apt/sources.list
 RUN apt-get -qq update
-RUN apt-get -y --no-install-recommends install gcc clang ninja-build locales python3-pip python3-setuptools python3-wheel libffi-dev valgrind curl git
+RUN apt-get -y --no-install-recommends install gcc clang llvm-dev ninja-build locales python3-pip python3-setuptools python3-wheel libffi-dev valgrind curl git
 RUN locale-gen --lang en_US.UTF-8
 RUN pip3 install meson
 
