@@ -28,7 +28,7 @@ CFLAGS="-fsanitize=address -fno-omit-frame-pointer -g" LDFLAGS=-fsanitize=addres
 for i in build-gcc build-clang build-no-threads
 do
 	ninja -C $i
-	meson configure -Dbuildtype=release $i
+	meson configure -Dbuildtype=release -Db_lto=true $i
 	DESTDIR=dest ninja -C $i install
 done
 
