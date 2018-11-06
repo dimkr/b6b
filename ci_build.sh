@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+apt-get -y --no-install-recommends install libffi-dev curl
+
 export CFLAGS=-g
 meson -Dwith_valgrind=true build-gcc
 CC=clang meson -Dwith_valgrind=true build-clang

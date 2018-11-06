@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017 Dima Krasner
+# Copyright 2017, 2018 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,21 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-sudo: required
-language: c
+language: minimal
 
 env:
   global:
-    - LC_ALL=en_US.UTF-8
-    - LANG=en_US.UTF-8
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
     #   via the "travis encrypt" command using the project repo's public key
     - secure: "aPMOOUYbnK4PpLnV/iKyct8eSsYVFgIiAXZywHITD1KB43K+qXW6YBofOSTIv7qLiWBnckO7K3QviZkUprWoY+OasZO8QEMCb2MKSod1njRManXZKsirMcQtzHsnxtnbECK3ArJpw048ItyxRRTe7NxP+swoC4wxO5ThItw6QFrpaH4BAqMAG4qp88vpUrui/pMj1KKVkwoZhUv4J6aRWHzPcp5nHcaGbnn9LAEBX89MgsgGtRKPizulAkdMp9iHbpd+bfKddgxLH/IBfOlt+bR3XbWYAmpyZSVF/ThABatQZKt7yngO45zUAUwoLbfY4AxUEXLBL1bYjA/97itpxy6ar0EDlogM8hOzGoIRAf/59pMfnmzVwmp5mHcUgCgNXMj3xMEjbZT8MypRpyxWpcjYrlu+EWpBKneh3MQo68R0EnZHF2bFpsN/+BHUqvLXLkRciEFa1hlD9EiB9TeJ6w9eLM6Fq3sERND7eRhl677ZV06Nt2uBugtvm7tSIJpHHbDauSeojUSHefTYBJgfn+/1QgZzyqp0zWmn5UTTawnuIM4ZRIehMPSsQXBFgBr1NFgdNcv/J2srBULoAt+YFcVJ9tEav8Bc/C08QpxC7bZ9MYOeB5RLcbj6wPXxsoE4q9Rbyo90yymFJFbg7v697648ldsjFG3Y/lyYAhkbBHo="
-
-matrix:
-  include:
-    - os: linux
-      dist: trusty
 
 services:
   - docker
@@ -37,8 +29,7 @@ before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
 
 script:
-  - docker build -t b6b -f Dockerfile .
-  - docker run `curl -s https://codecov.io/env | bash` -w /root b6b ./ci_build.sh
+  - docker run `curl -s https://codecov.io/env | bash` -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:latest ./ci_build.sh
 
 addons:
   coverity_scan:
