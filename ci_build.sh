@@ -20,7 +20,7 @@ apt-get -y --no-install-recommends install libffi-dev curl
 
 export CFLAGS=-g
 CC=gcc-8 meson -Dwith_valgrind=true build-gcc
-CC=clang-8 meson -Dwith_valgrind=true build-clang
+CC=clang meson -Dwith_valgrind=true build-clang
 meson -Dwith_threads=false -Dwith_valgrind=true build-no-threads
 meson -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
 meson -Db_coverage=true -Doptimistic_alloc=false build-coverage
