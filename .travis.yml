@@ -29,7 +29,7 @@ before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
 
 script:
-  - docker run `curl -s https://codecov.io/env | bash` -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:clang ./ci_build.sh
+  - docker run --cap-add=SYS_PTRACE `curl -s https://codecov.io/env | bash` -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:clang ./ci_build.sh
 
 addons:
   coverity_scan:
