@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017 Dima Krasner
+# Copyright 2017, 2020 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -61,11 +61,18 @@ if with_linenoise
 endif
 
 if get_option('with_miniz')
-	miniz = static_library('miniz',
-	                       'miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c',
-	                       c_args: ['-DMINIZ_NO_ARCHIVE_APIS', '-DMINIZ_NO_ZLIB_COMPATIBLE_NAMES'])
+	miniz_srcs = ['miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c']
+	miniz_cflags = ['-DMINIZ_NO_ARCHIVE_APIS', '-DMINIZ_NO_ZLIB_COMPATIBLE_NAMES']
+
+	if get_option('b_lto')
+		add_project_arguments(miniz_cflags, language: 'c')
+		libb6b_srcs += miniz_srcs
+	else
+		miniz = static_library('miniz', miniz_srcs, c_args: miniz_cflags)
+		b6b_libs += [miniz]
+	endif
+
 	libb6b_srcs += ['b6b_zlib.c']
-	b6b_libs += [miniz]
 endif
 
 libffi = cc.find_library('ffi', required: false)
