@@ -31,7 +31,7 @@ before_install:
 
 before_script:
   - pip3 install meson
-  - echo '{"ipv6": true}' > /etc/docker/daemon.json
+  - echo '{"ipv6": true}' | sudo tee /etc/docker/daemon.json
   - sudo systemctl restart docker
 
 script:
@@ -50,8 +50,6 @@ addons:
       - python3-setuptools
       - python3-wheel
       - ninja-build
-      - pkg-config
-      - libffi-dev
   coverity_scan:
     project:
       name: "dimkr/b6b"
