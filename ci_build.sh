@@ -2,7 +2,7 @@
 
 # This file is part of b6b.
 #
-# Copyright 2017, 2018, 2019 Dima Krasner
+# Copyright 2017, 2018, 2019, 2020 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,19 +18,18 @@
 
 apt-get -y --no-install-recommends install libffi-dev curl
 
-export CFLAGS=-g
-meson -Dwith_valgrind=true build-gcc
-CC=clang meson -Dwith_valgrind=true build-clang
-meson -Dwith_threads=false -Dwith_valgrind=true build-no-threads
-meson -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
-meson -Db_coverage=true -Doptimistic_alloc=false build-coverage
-CFLAGS="-fsanitize=address -fno-omit-frame-pointer -g" LDFLAGS=-fsanitize=address meson build-asan
+meson --warnlevel=3 -Dwith_valgrind=true build-gcc
+CC="ccache clang" meson --warnlevel=3 -Dwith_valgrind=true build-clang
+meson --warnlevel=3 -Dwith_threads=false -Dwith_valgrind=true build-no-threads
+meson --warnlevel=3 -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
+meson --warnlevel=3 -Db_coverage=true -Doptimistic_alloc=false build-coverage
+meson --warnlevel=3 --optimization=3 -Db_sanitize=address build-asan
 
 # build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off
 for i in build-gcc build-clang build-no-threads
 do
 	ninja -C $i
-	meson configure -Dbuildtype=release -Db_lto=true $i
+	meson configure --optimization=3 -Db_lto=true $i
 	DESTDIR=dest ninja -C $i install
 done
 

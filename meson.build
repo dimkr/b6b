@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017 Dima Krasner
+# Copyright 2017, 2020 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 project('b6b', 'c', version: '0.0.1', license: 'Apache-2.0')
 
 docdir = join_paths(get_option('datadir'), 'doc', 'b6b')
-add_project_arguments('-Wall', '-Wno-overlength-strings', '-D_FILE_OFFSET_BITS=64',
+add_project_arguments('-Wno-overlength-strings', '-D_FILE_OFFSET_BITS=64',
                       language: 'c')
 
 subdir('include')
