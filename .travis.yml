@@ -31,7 +31,7 @@ before_install:
 
 before_script:
   - pip3 install meson
-  - echo '{"ipv6": true}' | sudo tee /etc/docker/daemon.json
+  - 'echo {"ipv6": true} | sudo tee /etc/docker/daemon.json'
   - sudo systemctl restart docker
 
 script:
