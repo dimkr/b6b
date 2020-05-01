@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017, 2018 Dima Krasner
+# Copyright 2017, 2018, 2020 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
 
 script:
-  - docker run `curl -s https://codecov.io/env | bash` -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:latest ./ci_build.sh
+  - docker run `curl -s https://codecov.io/env | bash` --cap-add SYS_PTRACE -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:clang ./ci_build.sh
 
 addons:
   coverity_scan:
