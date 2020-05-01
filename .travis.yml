@@ -31,6 +31,8 @@ before_install:
 
 before_script:
   - pip3 install meson
+  - echo '{"ipv6": true}' > /etc/docker/daemon.json
+  - sudo systemctl restart docker
 
 script:
   - docker run --rm --cap-add SYS_PTRACE -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:clang ./ci_build.sh
