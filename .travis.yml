@@ -15,6 +15,7 @@
 # limitations under the License.
 
 language: minimal
+dist: bionic
 
 env:
   global:
@@ -28,10 +29,27 @@ services:
 before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
 
+before_script:
+  - pip3 install meson
+
 script:
-  - docker run `curl -s https://codecov.io/env | bash` --cap-add SYS_PTRACE -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:clang ./ci_build.sh
+  - docker run --rm --cap-add SYS_PTRACE -w /root/b6b -v `pwd`:/root/b6b dimkr/c-dev:clang ./ci_build.sh
+
+after_success:
+  - meson -Db_coverage=true -Doptimistic_alloc=false build-coverage
+  - meson test -C build-coverage
+  - bash <(curl -s https://codecov.io/bash)
+  - meson build-coverity
 
 addons:
+  apt:
+    packages:
+      - python3-pip
+      - python3-setuptools
+      - python3-wheel
+      - ninja-build
+      - pkg-config
+      - libffi-dev
   coverity_scan:
     project:
       name: "dimkr/b6b"
@@ -40,3 +58,5 @@ addons:
     build_command_prepend: "meson build-coverity"
     build_command:  "ninja -C build-coverity"
     branch_pattern: master
+
+cache: ccache

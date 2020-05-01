@@ -22,7 +22,6 @@ meson --warnlevel=2 -Dwith_valgrind=true build-gcc
 CC="ccache clang" meson --warnlevel=2 -Dwith_valgrind=true build-clang
 meson --warnlevel=2 -Dwith_threads=false -Dwith_valgrind=true build-no-threads
 meson --warnlevel=2 -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
-meson --warnlevel=2 -Db_coverage=true -Doptimistic_alloc=false build-coverage
 meson --warnlevel=2 --optimization=3 -Db_sanitize=address build-asan
 
 # build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off
@@ -65,7 +64,3 @@ do
 	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --no-suite b6b:intensive --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1"
 	meson test -C $i --no-rebuild --print-errorlogs --suite b6b:threaded --no-suite b6b:intensive --num-processes 1 -t 3 --wrapper "valgrind --tool=helgrind --error-exitcode=1 --fair-sched=yes"
 done
-
-meson test -C build-coverage
-cd build-coverage
-curl -s https://codecov.io/bash | bash
