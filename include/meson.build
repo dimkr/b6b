@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017 Dima Krasner
+# Copyright 2017, 2020 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,4 +14,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-b6b_includes = [include_directories('compat'), include_directories('.')]
+b6b_includes = [lolibc.get_variable('lolibc_includes'), include_directories('.')]

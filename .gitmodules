@@ -4,3 +4,6 @@
 [submodule "src/linenoise"]
 	path = src/linenoise
 	url = https://github.com/antirez/linenoise
+[submodule "subprojects/lolibc"]
+	path = subprojects/lolibc
+	url = http://github.com/dimkr/lolibc

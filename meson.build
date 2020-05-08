@@ -20,6 +20,8 @@ docdir = join_paths(get_option('datadir'), 'doc', 'b6b')
 add_project_arguments('-Wno-overlength-strings', '-D_FILE_OFFSET_BITS=64',
                       language: 'c')
 
+lolibc = subproject('lolibc')
+
 subdir('include')
 subdir('src')
 subdir('tests')
