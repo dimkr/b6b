@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ static inline void b6b_offload_thread_init(struct b6b_offload_thread *t)
 #endif
 }
 
-int b6b_offload_thread_start(struct b6b_offload_thread *t);
+int b6b_offload_thread_start(struct b6b_offload_thread *t, const int id);
 void b6b_offload_thread_stop(struct b6b_offload_thread *t);
 
 /* these two macros are used to poll the state machine */
