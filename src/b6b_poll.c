@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#define _GNU_SOURCE
 #include <sys/epoll.h>
 #include <errno.h>
 #include <unistd.h>
@@ -112,11 +113,20 @@ static enum b6b_res b6b_poll_proc(struct b6b_interp *interp,
 
 			out = b6b_syscall(interp,
 			                  &ret,
+#ifdef __NR_epoll_wait
 			                  __NR_epoll_wait,
+#else
+			                  __NR_epoll_pwait,
+#endif
 			                  (long)(intptr_t)p->priv,
 			                  (long)(intptr_t)evs,
 			                  (long)n->i,
+#ifdef __NR_epoll_wait
 			                  (long)t->i);
+#else
+			                  (long)t->i,
+			                  (long)(intptr_t)NULL);
+#endif
 
 			b6b_unref(p);
 
