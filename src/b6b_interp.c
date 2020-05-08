@@ -114,7 +114,11 @@ int b6b_interp_new(struct b6b_interp *interp,
 #ifdef B6B_HAVE_THREADS
 	b6b_thread_init(&interp->threads);
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
-	for (j = 0; j < sizeof(interp->offths) / sizeof(interp->offths[0]); ++j)
+	interp->noffths = sizeof(interp->offths) / sizeof(interp->offths[0]);
+	if (b6b_unlikely(opts & B6B_OPT_NO_POOL))
+		interp->noffths = 1;
+
+	for (j = 0; j < interp->noffths; ++j)
 		b6b_offload_thread_init(&interp->offths[j]);
 #	endif
 
@@ -124,7 +128,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 		goto bail;
 
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
-	for (j = 0; j < sizeof(interp->offths) / sizeof(interp->offths[0]); ++j) {
+	for (j = 0; j < interp->noffths; ++j) {
 		if (!b6b_offload_thread_start(&interp->offths[j], j))
 			goto bail;
 	}
@@ -251,7 +255,7 @@ static void b6b_join(struct b6b_interp *interp)
 		b6b_thread_pop(&interp->threads, t);
 
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
-	for (i = sizeof(interp->offths) / sizeof(interp->offths[0]) - 1; i >= 0; --i)
+	for (i = interp->noffths - 1; i >= 0; --i)
 		b6b_offload_thread_stop(&interp->offths[i]);
 #	endif
 
@@ -472,7 +476,7 @@ static struct b6b_offload_thread *b6b_pick_thread(struct b6b_interp *interp)
 {
 	unsigned int i;
 
-	for (i = 0; i < sizeof(interp->offths) / sizeof(interp->offths[0]); ++i) {
+	for (i = 0; i < interp->noffths; ++i) {
 		if (b6b_offload_ready(&interp->offths[i]))
 			return &interp->offths[i];
 	}
