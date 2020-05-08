@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017, 2018 Dima Krasner
+ * Copyright 2017, 2018, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #include <inttypes.h>
 
 #define B6B_QUANT_LEN 16
+#define B6B_OFFLOAD_MAX 16
 
 enum b6b_interp_opts {
 	B6B_OPT_CMD   = 1,
@@ -31,7 +32,7 @@ struct b6b_interp {
 #ifdef B6B_HAVE_THREADS
 	struct b6b_threads threads;
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
-	struct b6b_offload_thread offth;
+	struct b6b_offload_thread offths[B6B_OFFLOAD_MAX];
 #	endif
 #endif
 	struct b6b_thread *fg;
