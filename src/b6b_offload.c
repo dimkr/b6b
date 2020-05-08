@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 #include <pthread.h>
 #include <signal.h>
+#include <assert.h>
 
 #include <b6b.h>
 
@@ -61,7 +62,7 @@ static void *b6b_offload_thread_routine(void *arg)
 	pthread_exit(NULL);
 }
 
-int b6b_offload_thread_start(struct b6b_offload_thread *t)
+int b6b_offload_thread_start(struct b6b_offload_thread *t, const int id)
 {
 	int sig;
 
@@ -69,7 +70,8 @@ int b6b_offload_thread_start(struct b6b_offload_thread *t)
 		return 0;
 
 	/* pick a high realtime signal and add it to both masks */
-	t->sig = SIGRTMAX -1;
+	t->sig = SIGRTMAX - id - 1;
+	assert(t->sig >= SIGRTMIN);
 	if ((t->sig < SIGRTMIN) ||
 	    (sigaddset(&t->mask, t->sig) < 0) ||
 	    (sigaddset(&t->wmask, t->sig) < 0))
