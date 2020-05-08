@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ int main()
 	unsigned int times[2] = {0, 0};
 
 	/* output should be something like: cbacbacba */
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE | B6B_OPT_NO_POOL));
 	assert(b6b_call_copy(&interp, "{$global x {}} {$spawn {{$loop {{$sleep 0.1} {$list.append $x a}}}}} {$spawn {{$loop {{$sleep 0.1} {$list.append $x b}}}}} {$spawn {{$loop {{$sleep 0.1} {$list.append $x c}}}}} {$loop {{$if [$>= [$list.len $x] 9] {{$return [$str.join {} $x]}}} {$yield}}}", 254) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen >= 9);
@@ -38,7 +38,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	/* output should be something like: babacbaba */
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE | B6B_OPT_NO_POOL));
 	assert(b6b_call_copy(&interp, "{$global x {}} {$spawn {{$loop {{$sleep 0.1} {$list.append $x a}}}}} {$spawn {{$loop {{$sleep 0.1} {$list.append $x b}}}}} {$spawn {{$map x {1 2 3} {{$sleep 0.1}}} {$list.append $x c} {$return}}} {$loop {{$if [$>= [$list.len $x] 9] {{$return [$str.join {} $x]}}} {$yield}}}", 273) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen > 3);
@@ -62,7 +62,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	/* output should be something like: aaaacbaaa */
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE | B6B_OPT_NO_POOL));
 	assert(b6b_call_copy(&interp, "{$global x {}} {$spawn {{$loop {{$sleep 0.1} {$list.append $x a}}}}} {$spawn {{$map x {1 2 3 4 5} {{$sleep 0.1}}} {$list.append $x b} {$return}}} {$spawn {{$map x {1 2 3 4 5} {{$sleep 0.1}}} {$list.append $x c} {$return}}} {$loop {{$if [$>= [$list.len $x] 9] {{$return [$str.join {} $x]}}} {$yield}}}", 300) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen >= 9);
@@ -85,7 +85,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	/* output should be something like: aabaacaaa */
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE | B6B_OPT_NO_POOL));
 	assert(b6b_call_copy(&interp, "{$global x {}} {$spawn {{$loop {{$sleep 0.1} {$list.append $x a}}}}} {$spawn {{$map x {1 2 3} {{$sleep 0.1}}} {$list.append $x b} {$return}}} {$spawn {{$map x {1 2 3 4 5} {{$sleep 0.1}}} {$list.append $x c} {$return}}} {$loop {{$if [$>= [$list.len $x] 9] {{$return [$str.join {} $x]}}} {$yield}}}", 296) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen >= 9);
@@ -108,7 +108,7 @@ int main()
 	b6b_interp_destroy(&interp);
 
 	/* output should be something like: acbd */
-	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE));
+	assert(b6b_interp_new_argv(&interp, 0, NULL, B6B_OPT_TRACE | B6B_OPT_NO_POOL));
 	assert(b6b_call_copy(&interp, "{$global x {}} {$spawn {{$loop {{$if [$list.len $x] {{$list.append $x b} {$return}}}}}}} {$spawn {{$loop {{$if [$list.len $x] {{$list.append $x c} {$return}}}}}}} {$list.append $x a} {$sleep 1} {$list.append $x d} {$return [$str.join {} $x]}", 241) == B6B_RET);
 	assert(b6b_as_str(interp.fg->_));
 	assert(interp.fg->_->slen == 4);

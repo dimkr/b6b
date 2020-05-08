@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017, 2018 Dima Krasner
+ * Copyright 2017, 2018, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,13 +108,18 @@ int b6b_interp_new(struct b6b_interp *interp,
 {
 	const struct b6b_ext *e;
 	b6b_initf *ip;
-	unsigned int j;
+	int j;
 
 	interp->fg = NULL;
 #ifdef B6B_HAVE_THREADS
 	b6b_thread_init(&interp->threads);
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
-	b6b_offload_thread_init(&interp->offth);
+	interp->noffths = sizeof(interp->offths) / sizeof(interp->offths[0]);
+	if (b6b_unlikely(opts & B6B_OPT_NO_POOL))
+		interp->noffths = 1;
+
+	for (j = 0; j < interp->noffths; ++j)
+		b6b_offload_thread_init(&interp->offths[j]);
 #	endif
 
 	/* we allocate a small stack (just two pages) */
@@ -123,8 +128,10 @@ int b6b_interp_new(struct b6b_interp *interp,
 		goto bail;
 
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
-	if (!b6b_offload_thread_start(&interp->offth))
-		goto bail;
+	for (j = 0; j < interp->noffths; ++j) {
+		if (!b6b_offload_thread_start(&interp->offths[j], j))
+			goto bail;
+	}
 #	endif
 
 	interp->stksiz *= 2;
@@ -236,6 +243,7 @@ static void b6b_join(struct b6b_interp *interp)
 {
 #ifdef B6B_HAVE_THREADS
 	struct b6b_thread *t;
+	int i;
 
 	/* wait until all threads except the main thread are inactive */
 	interp->exit = 1;
@@ -247,7 +255,8 @@ static void b6b_join(struct b6b_interp *interp)
 		b6b_thread_pop(&interp->threads, t);
 
 #	ifdef B6B_HAVE_OFFLOAD_THREAD
-	b6b_offload_thread_stop(&interp->offth);
+	for (i = interp->noffths - 1; i >= 0; --i)
+		b6b_offload_thread_stop(&interp->offths[i]);
 #	endif
 
 #else
@@ -463,30 +472,45 @@ swap:
 
 #ifdef B6B_HAVE_OFFLOAD_THREAD
 
+static struct b6b_offload_thread *b6b_pick_thread(struct b6b_interp *interp)
+{
+	unsigned int i;
+
+	for (i = 0; i < interp->noffths; ++i) {
+		if (b6b_offload_ready(&interp->offths[i]))
+			return &interp->offths[i];
+	}
+
+	return NULL;
+}
+
 int b6b_offload(struct b6b_interp *interp,
                 void (*fn)(void *),
                 void *arg)
 {
 	struct b6b_thread *t;
 	int swap, pending = 0;
+	struct b6b_offload_thread *offth = NULL;
 
 	if (!b6b_threaded(interp))
 		fn(arg);
 	else {
 		b6b_thread_block(interp->fg);
 
-		if (!b6b_offload_ready(&interp->offth)) {
-			do {
-				/* if the offload thread is busy but no other thread is running,
-				 * this is clearly a serious bug */
-				if (!b6b_yield(interp)) {
-					b6b_thread_unblock(interp->fg);
-					return 0;
-				}
-			} while (!b6b_offload_ready(&interp->offth));
-		}
+		do {
+			offth = b6b_pick_thread(interp);
+			if (offth)
+				break;
 
-		if (!b6b_offload_start(&interp->offth, fn, arg)) {
+			/* if the offload thread is busy but no other thread is running,
+			 * this is clearly a serious bug */
+			if (!b6b_yield(interp)) {
+				b6b_thread_unblock(interp->fg);
+				return 0;
+			}
+		} while (1);
+
+		if (!b6b_offload_start(offth, fn, arg)) {
 			b6b_thread_unblock(interp->fg);
 			return 0;
 		}
@@ -527,11 +551,11 @@ int b6b_offload(struct b6b_interp *interp,
 			 * this loop, we can (and should) block */
 			if (!b6b_yield(interp))
 				break;
-		} while (!b6b_offload_done(&interp->offth));
+		} while (!b6b_offload_done(offth));
 
 		b6b_thread_unblock(interp->fg);
 
-		if (!b6b_offload_finish(&interp->offth))
+		if (!b6b_offload_finish(offth))
 			return 0;
 
 		/* if there's at least one thread which waits for us to complete the
