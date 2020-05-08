@@ -68,7 +68,10 @@ if get_option('with_miniz')
 		add_project_arguments(miniz_cflags, language: 'c')
 		libb6b_srcs += miniz_srcs
 	else
-		miniz = static_library('miniz', miniz_srcs, c_args: miniz_cflags)
+		miniz = static_library('miniz',
+		                       miniz_srcs,
+		                       c_args: miniz_cflags,
+		                       include_directories: b6b_includes)
 		b6b_libs += [miniz]
 	endif
 
