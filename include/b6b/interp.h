@@ -22,10 +22,11 @@
 #define B6B_OFFLOAD_MAX 16
 
 enum b6b_interp_opts {
-	B6B_OPT_CMD   = 1,
-	B6B_OPT_RAISE = 1 << 1,
-	B6B_OPT_NBF   = 1 << 2,
-	B6B_OPT_TRACE = 1 << 3
+	B6B_OPT_CMD     = 1,
+	B6B_OPT_RAISE   = 1 << 1,
+	B6B_OPT_NBF     = 1 << 2,
+	B6B_OPT_TRACE   = 1 << 3,
+	B6B_OPT_NO_POOL = 1 << 4
 };
 
 struct b6b_interp {
@@ -46,6 +47,9 @@ struct b6b_interp {
 #ifdef B6B_HAVE_THREADS
 	long stksiz;
 	int exit;
+#endif
+#if defined(B6B_HAVE_THREADS) && defined(B6B_HAVE_OFFLOAD_THREAD)
+	unsigned int noffths;
 #endif
 	unsigned int seed;
 #ifdef B6B_HAVE_THREADS
