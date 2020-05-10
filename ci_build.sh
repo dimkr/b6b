@@ -16,8 +16,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apt-get -y --no-install-recommends install libffi-dev curl
-
 meson --warnlevel=3 -Dwith_valgrind=true build-gcc
 CC="ccache clang" meson --warnlevel=3 -Dwith_valgrind=true build-clang
 meson --warnlevel=3 -Dwith_threads=false -Dwith_valgrind=true build-no-threads
