@@ -35,7 +35,7 @@ before_script:
   - sudo systemctl restart docker
 
 script:
-  - docker run --rm --cap-add SYS_PTRACE -u `id -u`:`id -g` -w /b6b -v `pwd`:/b6b -v ~/.ccache:/root/.ccache dimkr/b6b ./ci_build.sh
+  - docker run --rm --cap-add SYS_PTRACE -u `id -u`:`id -g` -w /b6b -v `pwd`:/b6b -v ~/.ccache:/tmp/.ccache -e CCACHE_DIR=/tmp/.ccache dimkr/b6b ./ci_build.sh
 
 after_success:
   - meson -Db_coverage=true -Doptimistic_alloc=false build-coverage
