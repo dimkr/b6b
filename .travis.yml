@@ -38,7 +38,7 @@ script:
   - docker run --rm --cap-add SYS_PTRACE -u `id -u`:`id -g` -w /b6b -v `pwd`:/b6b -v ~/.ccache:/tmp/.ccache -e CCACHE_DIR=/tmp/.ccache dimkr/b6b ./ci_build.sh
 
 after_success:
-  - meson --unity=on --unity-size=100 -Db_coverage=true -Doptimistic_alloc=false build-coverage
+  - meson -Db_coverage=true -Doptimistic_alloc=false build-coverage
   - meson test -C build-coverage
   - bash <(curl -s https://codecov.io/bash)
   - meson build-coverity
