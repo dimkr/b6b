@@ -17,10 +17,13 @@
 # limitations under the License.
 
 meson --warnlevel=3 -Dwith_valgrind=true build-gcc
-CC="ccache clang" meson --warnlevel=3 -Dwith_valgrind=true build-clang
-meson --warnlevel=3 -Dwith_threads=false -Dwith_valgrind=true build-no-threads
-meson --warnlevel=3 -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
-meson --warnlevel=3 --optimization=3 -Db_sanitize=address build-asan
+CC="ccache clang" meson --unity=on --unity-size=100 --warnlevel=3 -Dwith_valgrind=true build-clang
+meson --unity=on --unity-size=100 --warnlevel=3 -Dwith_threads=false -Dwith_valgrind=true build-no-threads
+meson --unity=on --unity-size=100 --warnlevel=3 -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
+meson --unity=on --unity-size=100 --warnlevel=3 --optimization=3 -Db_sanitize=address build-asan
+
+ninja -C build-gcc
+meson configure --unity=on --unity-size=100 build-gcc
 
 # build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off
 for i in build-gcc build-clang build-no-threads
