@@ -87,28 +87,24 @@ if libffi.found()
 	endif
 endif
 
-# b6b cannot be linked with a static libb6b due to the use of sections in
-# __b6b_ext and __b6b_init, which get lost in a static build
+libb6b = library('b6b',
+                 libb6b_srcs,
+                 include_directories: b6b_includes,
+                 dependencies: b6b_deps,
+                 link_with: b6b_libs,
+                 install: true)
+
 if get_option('default_library') == 'static' and with_linenoise
 	b6b = executable('b6b',
-	                 libb6b_srcs + ['b6b.c'],
+	                 'b6b.c',
 	                 include_directories: b6b_includes,
 	                 dependencies: b6b_deps,
-	                 link_with: b6b_libs,
+	                 link_whole: [libb6b],
 	                 install: true)
-else
-	libb6b = library('b6b',
-	                 libb6b_srcs,
+elif with_linenoise
+	b6b = executable('b6b',
+	                 'b6b.c',
 	                 include_directories: b6b_includes,
-	                 dependencies: b6b_deps,
-	                 link_with: b6b_libs,
+	                 link_with: [libb6b],
 	                 install: true)
-
-	if with_linenoise
-		b6b = executable('b6b',
-		                 'b6b.c',
-		                 include_directories: b6b_includes,
-		                 link_with: [libb6b],
-		                 install: true)
-	endif
 endif

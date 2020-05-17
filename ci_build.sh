@@ -16,14 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-meson -Dwith_valgrind=true build-gcc
+meson --default-library=static -Dwith_valgrind=true build-gcc
 CC="ccache clang" meson --unity=on --unity-size=100 -Dwith_valgrind=true build-clang
 meson --unity=on --unity-size=100 -Dwith_threads=false -Dwith_valgrind=true build-no-threads
 meson --unity=on --unity-size=100 -Dwith_threads=false -Dwith_miniz=false -Dwith_linenoise=false build-small
 meson --unity=on --unity-size=100 --optimization=3 -Db_sanitize=address build-asan
 
 ninja -C build-gcc
-meson configure --unity=on --unity-size=100 build-gcc
+meson configure --default-library=shared --unity=on --unity-size=100 build-gcc
 
 # build with GCC, clang, with GCC while thread support is disabled and a small build with all optional features off
 for i in build-gcc build-clang build-no-threads
