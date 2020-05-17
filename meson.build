@@ -17,7 +17,7 @@
 project('b6b', 'c', version: '0.0.1', license: 'Apache-2.0')
 
 docdir = join_paths(get_option('datadir'), 'doc', 'b6b')
-add_project_arguments('-Wno-overlength-strings', '-D_FILE_OFFSET_BITS=64',
+add_project_arguments('-Wno-overlength-strings', '-D_GNU_SOURCE', '-D_FILE_OFFSET_BITS=64',
                       language: 'c')
 
 lolibc = subproject('lolibc')

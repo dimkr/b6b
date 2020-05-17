@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-#define _GNU_SOURCE
 #include <sys/epoll.h>
 #include <errno.h>
 #include <unistd.h>

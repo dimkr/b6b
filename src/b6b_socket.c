@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017, 2018 Dima Krasner
+ * Copyright 2017, 2018, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/* for accept4() */
-#define _GNU_SOURCE
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -33,8 +30,6 @@
 #include <byteswap.h>
 
 #include <b6b.h>
-
-#undef _GNU_SOURCE
 
 #define B6B_SERVER_DEF_BACKLOG 5
 

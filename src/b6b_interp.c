@@ -16,9 +16,6 @@
  * limitations under the License.
  */
 
-/* for GNU strerror_r() */
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -28,8 +25,6 @@
 #include <limits.h>
 #include <time.h>
 #include <stdio.h>
-
-#undef _GNU_SOURCE
 
 #include <b6b.h>
 

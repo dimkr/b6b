@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,11 @@
  * limitations under the License.
  */
 
-/* for asprintf() */
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
 #include <wchar.h>
-
-#undef _GNU_SOURCE
 
 #include <b6b.h>
 
