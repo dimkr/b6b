@@ -456,6 +456,8 @@ int b6b_yield(struct b6b_interp *interp)
 
 swap:
 	bg = interp->fg;
+	if (b6b_thread_save(bg))
+		return 1;
 	interp->fg = t;
 	interp->qstep = 0;
 	b6b_thread_swap(bg, interp->fg);

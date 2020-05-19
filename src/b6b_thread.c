@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,7 @@ static int b6b_thread_prep(struct b6b_thread *t,
 	t->ucp.uc_link = NULL;
 	t->ucp.uc_stack.ss_sp = t->stack;
 
+	t->type = B6B_CONTEXT_TYPE_SWITCH;
 	t->fn = b6b_ref(fn);
 	t->flags = B6B_THREAD_BG;
 
@@ -162,6 +163,11 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 	bg->flags &= ~B6B_THREAD_FG;
 	bg->flags |= B6B_THREAD_BG;
 
+	if (fg->type == B6B_CONTEXT_TYPE_JMP) {
+		fg->type = B6B_CONTEXT_TYPE_SWITCH;
+		longjmp(fg->env, 1);
+	}
+
 	swapcontext(&bg->ucp, &fg->ucp);
 }
 
@@ -183,6 +189,7 @@ struct b6b_thread *b6b_thread_self(struct b6b_frame *global,
 	}
 
 #ifdef B6B_HAVE_THREADS
+	t->type = B6B_CONTEXT_TYPE_SWITCH;
 	t->stack = NULL;
 	t->fn = NULL;
 	t->flags = B6B_THREAD_FG;
