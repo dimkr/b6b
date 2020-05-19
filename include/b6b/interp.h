@@ -36,6 +36,7 @@ struct b6b_interp {
 	struct b6b_offload_thread offths[B6B_OFFLOAD_MAX];
 #	endif
 #endif
+	struct b6b_thread *self;
 	struct b6b_thread *fg;
 	struct b6b_frame *global;
 	struct b6b_obj *null;

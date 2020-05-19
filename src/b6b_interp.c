@@ -169,6 +169,7 @@ int b6b_interp_new(struct b6b_interp *interp,
 	interp->fg = b6b_thread_self(interp->global, interp->null);
 	if (!interp->fg)
 		goto bail;
+	interp->self = interp->fg;
 #ifdef B6B_HAVE_THREADS
 	b6b_thread_push(&interp->threads, interp->fg, NULL);
 #endif
@@ -456,7 +457,8 @@ int b6b_yield(struct b6b_interp *interp)
 
 swap:
 	bg = interp->fg;
-	if (b6b_thread_save(bg))
+	/* we must restore the main thread's signal mask */
+	if ((bg != interp->self) && b6b_thread_save(bg))
 		return 1;
 	interp->fg = t;
 	interp->qstep = 0;
