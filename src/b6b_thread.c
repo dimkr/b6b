@@ -165,8 +165,8 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 
 	/* we must restore the signal mask of OS threads */
 	if (!(bg->flags & B6B_THREAD_OS) &&
-            !(fg->flags & B6B_THREAD_OS) &&
-            (fg->type == B6B_CONTEXT_TYPE_JMP))
+	    !(fg->flags & B6B_THREAD_OS) &&
+	    (fg->type == B6B_CONTEXT_TYPE_JMP))
 		longjmp(fg->env, 1);
 	else {
 		if (!(bg->flags & B6B_THREAD_OS)) {
