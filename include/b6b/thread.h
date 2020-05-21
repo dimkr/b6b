@@ -27,8 +27,7 @@ enum b6b_thread_flags {
 	B6B_THREAD_BG      = 1,
 	B6B_THREAD_FG      = 1 << 1,
 	B6B_THREAD_DONE    = 1 << 2,
-	B6B_THREAD_BLOCKED = 1 << 3,
-	B6B_THREAD_OS      = 1 << 4
+	B6B_THREAD_BLOCKED = 1 << 3
 };
 
 enum b6b_context_type {

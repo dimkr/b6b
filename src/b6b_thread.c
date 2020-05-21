@@ -192,7 +192,7 @@ struct b6b_thread *b6b_thread_self(struct b6b_frame *global,
 	t->type = B6B_CONTEXT_TYPE_SWITCH;
 	t->stack = NULL;
 	t->fn = NULL;
-	t->flags = B6B_THREAD_FG | B6B_THREAD_OS;
+	t->flags = B6B_THREAD_FG;
 #endif
 	t->_ = b6b_ref(null);
 	t->depth = 1;
