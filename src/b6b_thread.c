@@ -163,12 +163,21 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 	bg->flags &= ~B6B_THREAD_FG;
 	bg->flags |= B6B_THREAD_BG;
 
-	if (fg->type == B6B_CONTEXT_TYPE_JMP) {
-		fg->type = B6B_CONTEXT_TYPE_SWITCH;
+	/* we must restore the signal mask of OS threads */
+	if (!(bg->flags & B6B_THREAD_OS) &&
+            !(fg->flags & B6B_THREAD_OS) &&
+            (fg->type == B6B_CONTEXT_TYPE_JMP))
 		longjmp(fg->env, 1);
-	}
+	else {
+		if (!(bg->flags & B6B_THREAD_OS)) {
+			if (setjmp(bg->env) != 0)
+				return;
 
-	swapcontext(&bg->ucp, &fg->ucp);
+			bg->type = B6B_CONTEXT_TYPE_JMP;
+		}
+
+		swapcontext(&bg->ucp, &fg->ucp);
+	}
 }
 
 #endif
@@ -192,7 +201,7 @@ struct b6b_thread *b6b_thread_self(struct b6b_frame *global,
 	t->type = B6B_CONTEXT_TYPE_SWITCH;
 	t->stack = NULL;
 	t->fn = NULL;
-	t->flags = B6B_THREAD_FG;
+	t->flags = B6B_THREAD_FG | B6B_THREAD_OS;
 #endif
 	t->_ = b6b_ref(null);
 	t->depth = 1;

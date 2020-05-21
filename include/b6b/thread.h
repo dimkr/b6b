@@ -27,7 +27,8 @@ enum b6b_thread_flags {
 	B6B_THREAD_BG      = 1,
 	B6B_THREAD_FG      = 1 << 1,
 	B6B_THREAD_DONE    = 1 << 2,
-	B6B_THREAD_BLOCKED = 1 << 3
+	B6B_THREAD_BLOCKED = 1 << 3,
+	B6B_THREAD_OS      = 1 << 4
 };
 
 enum b6b_context_type {
@@ -80,15 +81,6 @@ static inline void b6b_thread_push(struct b6b_threads *threads,
 }
 
 void b6b_thread_pop(struct b6b_threads *ts, struct b6b_thread *t);
-
-static inline int b6b_thread_save(struct b6b_thread *t)
-{
-	if (setjmp(t->env) != 0)
-		return 1;
-
-	t->type = B6B_CONTEXT_TYPE_JMP;
-	return 0;
-}
 
 void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg);
 
