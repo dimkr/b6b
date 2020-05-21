@@ -170,8 +170,10 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 		longjmp(fg->env, 1);
 	else {
 		if (!(bg->flags & B6B_THREAD_OS)) {
-			if (setjmp(bg->env) != 0)
+			if (setjmp(bg->env) != 0) {
+				bg->type = B6B_CONTEXT_TYPE_SWITCH;
 				return;
+			}
 
 			bg->type = B6B_CONTEXT_TYPE_JMP;
 		}
