@@ -78,11 +78,6 @@ static int b6b_thread_prep(struct b6b_thread *t,
 	if (b6b_unlikely(!t->curr))
 		return 0;
 
-	/* this isn't the main thread: block all signals; otherwise, terminating
-	 * signals may kill the process, bypassing signal handling */
-	if (sigfillset(&t->ucp.uc_sigmask) < 0)
-		goto bail;
-
 	if (!t->stack) {
 		t->stack = malloc(stksiz);
 		if (!b6b_allocated(t->stack))
@@ -163,23 +158,17 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 	bg->flags &= ~B6B_THREAD_FG;
 	bg->flags |= B6B_THREAD_BG;
 
-	/* we must restore the signal mask of OS threads */
-	if (!(bg->flags & B6B_THREAD_OS) &&
-	    !(fg->flags & B6B_THREAD_OS) &&
-	    (fg->type == B6B_CONTEXT_TYPE_JMP))
+	bg->type = B6B_CONTEXT_TYPE_JMP;
+	if (setjmp(bg->env) != 0)
+		return;
+
+	if (fg->type == B6B_CONTEXT_TYPE_JMP)
 		longjmp(fg->env, 1);
-	else {
-		if (!(bg->flags & B6B_THREAD_OS)) {
-			if (setjmp(bg->env) != 0) {
-				bg->type = B6B_CONTEXT_TYPE_SWITCH;
-				return;
-			}
 
-			bg->type = B6B_CONTEXT_TYPE_JMP;
-		}
+	/* we want to use the same signal mask */
+	pthread_sigmask(SIG_SETMASK, NULL, &fg->ucp.uc_sigmask);
 
-		swapcontext(&bg->ucp, &fg->ucp);
-	}
+	swapcontext(&bg->ucp, &fg->ucp);
 }
 
 #endif
