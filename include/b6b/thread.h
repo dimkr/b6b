@@ -42,12 +42,12 @@ struct b6b_thread {
 		jmp_buf env;
 		ucontext_t ucp;
 	};
-	enum b6b_context_type type;
 	void *stack;
 	struct b6b_frame *curr;
 	struct b6b_obj *fn;
 	struct b6b_obj *_;
 	TAILQ_ENTRY(b6b_thread) ents;
+	enum b6b_context_type type;
 #	ifdef B6B_HAVE_VALGRIND
 	int sid;
 #	endif
@@ -81,7 +81,6 @@ static inline void b6b_thread_push(struct b6b_threads *threads,
 }
 
 void b6b_thread_pop(struct b6b_threads *ts, struct b6b_thread *t);
-
 void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg);
 
 #	define b6b_thread_block(t) \
