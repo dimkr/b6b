@@ -22,41 +22,60 @@
 
 #include <b6b.h>
 
+static void b6b_offload_cond_init(struct b6b_offload_cond *cond)
+{
+	pthread_mutex_init(&cond->lock, NULL);
+	pthread_cond_init(&cond->cond, NULL);
+}
+
+static void b6b_offload_cond_destroy(struct b6b_offload_cond *cond)
+{
+	pthread_cond_destroy(&cond->cond);
+	pthread_mutex_destroy(&cond->lock);
+}
+
+static void b6b_offload_cond_wait(struct b6b_offload_cond *cond,
+                                  atomic_int *state,
+                                  const enum b6b_offload_state next)
+{
+	pthread_mutex_lock(&cond->lock);
+	while (atomic_load(state) != next)
+		pthread_cond_wait(&cond->cond, &cond->lock);
+	pthread_mutex_unlock(&cond->lock);
+}
+
+static void b6b_offload_cond_notify(struct b6b_offload_cond *cond,
+                                    atomic_int *state,
+                                    const enum b6b_offload_state next)
+{
+	pthread_mutex_lock(&cond->lock);
+	atomic_store(state, next);
+	pthread_cond_signal(&cond->cond);
+	pthread_mutex_unlock(&cond->lock);
+}
+
 __attribute__((noreturn))
 static void *b6b_offload_thread_routine(void *arg)
 {
 	struct b6b_offload_thread *t = (struct b6b_offload_thread *)arg;
-	int sig;
 
 	/* block all signals */
 	if (pthread_sigmask(SIG_BLOCK, &t->mask, NULL) != 0)
 		pthread_exit(NULL);
 
 	/* notify the main thread that initialization is complete */
-	atomic_store(&t->state, B6B_OFFLOAD_UP);
-	if (pthread_kill(t->main, t->sig) != 0)
-		pthread_exit(NULL);
+	b6b_offload_cond_notify(&t->ready, &t->state, B6B_OFFLOAD_UP);
 
-	/* block until t->sig; we wait only for this signal so we don't unqueue
-	 * signals handled by other threads */
-	while ((sigwait(&t->wmask, &sig) == 0) &&
-	       (atomic_load(&t->state) == B6B_OFFLOAD_RUNNING)) {
+	while (1) {
+		b6b_offload_cond_wait(&t->start, &t->state, B6B_OFFLOAD_RUNNING);
+
 		t->fn(t->arg);
 
 		/* signal b6b_offload_done() - we need this state to prevent a thread
 		 * from calling b6b_offload_start() (hence, changing the state to
 		 * B6B_OFFLOAD_RUNNING) when the previous user of the offload thread
 		 * calls b6b_yield() while waiting for completion */
-		atomic_store(&t->state, B6B_OFFLOAD_DONE);
-
-		/* in addition, notify the main thread using a signal: in the special
-		 * case of a single b6b thread we also need an alternative, blocking
-		 * mechanism for waiting until b6b_offload_done(); without this, the
-		 * only way to wait until b6b_offload_done() is a CPU-heavy loop of
-		 * b6b_yield() which doesn't do anything because there's no other
-		 * thread to switch to */
-		if (pthread_kill(t->main, t->sig) != 0)
-			pthread_exit(NULL);
+		b6b_offload_cond_notify(&t->finish, &t->state, B6B_OFFLOAD_DONE);
 	}
 
 	pthread_exit(NULL);
@@ -64,38 +83,22 @@ static void *b6b_offload_thread_routine(void *arg)
 
 int b6b_offload_thread_start(struct b6b_offload_thread *t, const int id)
 {
-	int sig;
-
-	if ((sigfillset(&t->mask) < 0) || (sigemptyset(&t->wmask) < 0))
+	if (sigfillset(&t->mask) < 0)
 		return 0;
 
-	/* pick a high realtime signal and add it to both masks */
-	t->sig = SIGRTMAX - id - 1;
-	assert(t->sig >= SIGRTMIN);
-	if ((t->sig < SIGRTMIN) ||
-	    (sigaddset(&t->mask, t->sig) < 0) ||
-	    (sigaddset(&t->wmask, t->sig) < 0))
-		return 0;
-
-	/* block only the realtime signal; we do not restore the signal mask because
-	 * this is racy in multi-threaded processes that may alter their signal mask
-	 * after we blocked t->sig */
-	if (pthread_sigmask(SIG_BLOCK, &t->wmask, NULL) != 0)
-		return 0;
+	b6b_offload_cond_init(&t->ready);
+	b6b_offload_cond_init(&t->start);
+	b6b_offload_cond_init(&t->finish);
 
 	t->main = pthread_self();
-	if (pthread_create(&t->tid, NULL, b6b_offload_thread_routine, t) != 0)
+	if (pthread_create(&t->tid, NULL, b6b_offload_thread_routine, t) != 0) {
+		b6b_offload_cond_destroy(&t->finish);
+		b6b_offload_cond_destroy(&t->start);
+		b6b_offload_cond_destroy(&t->ready);
 		return 0;
+	}
 
-	/* wait for the offload thread to send the realtime signal once
-	 * initialization is complete */
-	do {
-		if ((sigwait(&t->wmask, &sig) != 0) || (sig != t->sig)) {
-			pthread_cancel(t->tid);
-			pthread_join(t->tid, NULL);
-			return 0;
-		}
-	} while (atomic_load(&t->state) != B6B_OFFLOAD_UP);
+	b6b_offload_cond_wait(&t->ready, &t->state, B6B_OFFLOAD_UP);
 
 	/* signal b6b_offload_ready() */
 	atomic_store(&t->state, B6B_OFFLOAD_IDLE);
@@ -108,6 +111,10 @@ void b6b_offload_thread_stop(struct b6b_offload_thread *t)
 	if (atomic_load(&t->state) != B6B_OFFLOAD_INIT) {
 		pthread_cancel(t->tid);
 		pthread_join(t->tid, NULL);
+
+		b6b_offload_cond_destroy(&t->finish);
+		b6b_offload_cond_destroy(&t->start);
+		b6b_offload_cond_destroy(&t->ready);
 	}
 }
 
@@ -115,26 +122,17 @@ int b6b_offload_start(struct b6b_offload_thread *t,
                       void (*fn)(void *),
                       void *arg)
 {
-	/* falsify b6b_offload_ready() */
-	atomic_store(&t->state, B6B_OFFLOAD_RUNNING);
 	t->fn = fn;
 	t->arg = arg;
 
-	/* wake up the offload thread */
-	if (pthread_kill(t->tid, t->sig) != 0)
-		return 0;
+	b6b_offload_cond_notify(&t->start, &t->state, B6B_OFFLOAD_RUNNING);
 
 	return 1;
 }
 
 int b6b_offload_finish(struct b6b_offload_thread *t)
 {
-	int sig;
-
-	/* sigwait() should return almost instantly if b6b_offload_done(); we call
-	 * it to unqueue the signal */
-	if ((sigwait(&t->wmask, &sig) != 0) || (sig != t->sig))
-		return 0;
+	b6b_offload_cond_wait(&t->finish, &t->state, B6B_OFFLOAD_DONE);
 
 	atomic_store(&(t)->state, B6B_OFFLOAD_IDLE);
 	return 1;

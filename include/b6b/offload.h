@@ -34,15 +34,21 @@ enum b6b_offload_state {
 	B6B_OFFLOAD_DONE
 };
 
+struct b6b_offload_cond {
+	pthread_mutex_t lock;
+	pthread_cond_t cond;
+};
+
 struct b6b_offload_thread {
 	sigset_t mask;
-	sigset_t wmask;
+	struct b6b_offload_cond ready;
+	struct b6b_offload_cond start;
+	struct b6b_offload_cond finish;
 	pthread_t tid;
 	pthread_t main;
 	void (*fn)(void *);
 	void *arg;
 	atomic_int state;
-	int sig;
 };
 
 static inline void b6b_offload_thread_init(struct b6b_offload_thread *t)
