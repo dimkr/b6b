@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+add_project_arguments(lolibc.get_variable('lolibc_c_args'), language: 'c')
+
 cc = meson.get_compiler('c')
 
 with_valgrind = get_option('with_valgrind')
