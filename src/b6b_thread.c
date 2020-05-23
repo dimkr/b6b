@@ -61,6 +61,20 @@ void b6b_thread_pop(struct b6b_threads *ts, struct b6b_thread *t)
 	b6b_thread_destroy(t);
 }
 
+static int b6b_thread_get_context(struct b6b_thread *t)
+{
+	if (getcontext(&t->ucp) < 0)
+		return 0;
+
+	t->ucp.uc_stack.ss_size = t->stksiz;
+	/* it's OK to assign NULL in uc_link, since we always b6b_yield() after
+	 * the thread routine: the thread routine does not return */
+	t->ucp.uc_link = NULL;
+	t->ucp.uc_stack.ss_sp = t->stack;
+
+	return 1;
+}
+
 static int b6b_thread_prep(struct b6b_thread *t,
                            struct b6b_obj *fn,
                            struct b6b_frame *global,
@@ -70,9 +84,6 @@ static int b6b_thread_prep(struct b6b_thread *t,
                            const size_t stksiz)
 {
 	memset(t, 0, sizeof(*t));
-
-	if (getcontext(&t->ucp) < 0)
-		return 0;
 
 	t->curr = b6b_frame_new(global);
 	if (b6b_unlikely(!t->curr))
@@ -88,11 +99,10 @@ static int b6b_thread_prep(struct b6b_thread *t,
 #endif
 	}
 
-	t->ucp.uc_stack.ss_size = stksiz;
-	/* it's OK to assign NULL in uc_link, since we always b6b_yield() after
-	 * the thread routine: the thread routine does not return */
-	t->ucp.uc_link = NULL;
-	t->ucp.uc_stack.ss_sp = t->stack;
+	t->stksiz = stksiz;
+
+	if (!b6b_thread_get_context(t))
+		goto bail;
 
 	t->type = B6B_CONTEXT_TYPE_SWITCH;
 	t->fn = b6b_ref(fn);
@@ -152,11 +162,15 @@ struct b6b_thread *b6b_thread_new(struct b6b_threads *threads,
 
 void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 {
+	int jumped;
+
 	fg->flags &= ~B6B_THREAD_BG;
 	fg->flags |= B6B_THREAD_FG;
 
 	bg->flags &= ~B6B_THREAD_FG;
 	bg->flags |= B6B_THREAD_BG;
+
+	jumped = (bg->type == B6B_CONTEXT_TYPE_SWITCH);
 
 	bg->type = B6B_CONTEXT_TYPE_JMP;
 	if (setjmp(bg->env) != 0)
@@ -164,6 +178,9 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 
 	if (fg->type == B6B_CONTEXT_TYPE_JMP)
 		longjmp(fg->env, 1);
+
+	if (jumped)
+		b6b_thread_get_context(bg);
 
 	/* we want to use the same signal mask */
 	pthread_sigmask(SIG_SETMASK, NULL, &fg->ucp.uc_sigmask);

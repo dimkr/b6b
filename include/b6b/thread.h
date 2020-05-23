@@ -37,10 +37,9 @@ enum b6b_context_type {
 
 TAILQ_HEAD(b6b_threads, b6b_thread);
 struct b6b_thread {
-	union {
-		jmp_buf env;
-		ucontext_t ucp;
-	};
+	jmp_buf env;
+	ucontext_t ucp;
+	size_t stksiz;
 	void *stack;
 	struct b6b_frame *curr;
 	struct b6b_obj *fn;
