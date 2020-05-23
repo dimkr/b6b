@@ -34,14 +34,20 @@ static void b6b_offload_cond_destroy(struct b6b_offload_cond *cond)
 	pthread_mutex_destroy(&cond->lock);
 }
 
+static void b6b_offload_cond_cleanup(void *lock)
+{
+	pthread_mutex_unlock((pthread_mutex_t *)lock);
+}
+
 static void b6b_offload_cond_wait(struct b6b_offload_cond *cond,
                                   atomic_int *state,
                                   const enum b6b_offload_state next)
 {
 	pthread_mutex_lock(&cond->lock);
+	pthread_cleanup_push(b6b_offload_cond_cleanup, &cond->lock);
 	while (atomic_load(state) != next)
 		pthread_cond_wait(&cond->cond, &cond->lock);
-	pthread_mutex_unlock(&cond->lock);
+	pthread_cleanup_pop(1);
 }
 
 static void b6b_offload_cond_notify(struct b6b_offload_cond *cond,
