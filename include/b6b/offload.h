@@ -41,9 +41,7 @@ struct b6b_offload_cond {
 
 struct b6b_offload_thread {
 	sigset_t mask;
-	struct b6b_offload_cond ready;
-	struct b6b_offload_cond start;
-	struct b6b_offload_cond finish;
+	struct b6b_offload_cond cond;
 	pthread_t tid;
 	pthread_t main;
 	void (*fn)(void *);

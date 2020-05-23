@@ -39,25 +39,23 @@ static void b6b_offload_cond_cleanup(void *lock)
 	pthread_mutex_unlock((pthread_mutex_t *)lock);
 }
 
-static void b6b_offload_cond_wait(struct b6b_offload_cond *cond,
-                                  atomic_int *state,
+static void b6b_offload_cond_wait(struct b6b_offload_thread *t,
                                   const enum b6b_offload_state next)
 {
-	pthread_mutex_lock(&cond->lock);
-	pthread_cleanup_push(b6b_offload_cond_cleanup, &cond->lock);
-	while (atomic_load(state) != next)
-		pthread_cond_wait(&cond->cond, &cond->lock);
+	pthread_mutex_lock(&t->cond.lock);
+	pthread_cleanup_push(b6b_offload_cond_cleanup, &t->cond.lock);
+	while (atomic_load(&t->state) != next)
+		pthread_cond_wait(&t->cond.cond, &t->cond.lock);
 	pthread_cleanup_pop(1);
 }
 
-static void b6b_offload_cond_notify(struct b6b_offload_cond *cond,
-                                    atomic_int *state,
+static void b6b_offload_cond_notify(struct b6b_offload_thread *t,
                                     const enum b6b_offload_state next)
 {
-	pthread_mutex_lock(&cond->lock);
-	atomic_store(state, next);
-	pthread_cond_signal(&cond->cond);
-	pthread_mutex_unlock(&cond->lock);
+	pthread_mutex_lock(&t->cond.lock);
+	atomic_store(&t->state, next);
+	pthread_cond_signal(&t->cond.cond);
+	pthread_mutex_unlock(&t->cond.lock);
 }
 
 __attribute__((noreturn))
@@ -70,10 +68,10 @@ static void *b6b_offload_thread_routine(void *arg)
 		pthread_exit(NULL);
 
 	/* notify the main thread that initialization is complete */
-	b6b_offload_cond_notify(&t->ready, &t->state, B6B_OFFLOAD_UP);
+	b6b_offload_cond_notify(t, B6B_OFFLOAD_UP);
 
 	while (1) {
-		b6b_offload_cond_wait(&t->start, &t->state, B6B_OFFLOAD_RUNNING);
+		b6b_offload_cond_wait(t, B6B_OFFLOAD_RUNNING);
 
 		t->fn(t->arg);
 
@@ -81,7 +79,7 @@ static void *b6b_offload_thread_routine(void *arg)
 		 * from calling b6b_offload_start() (hence, changing the state to
 		 * B6B_OFFLOAD_RUNNING) when the previous user of the offload thread
 		 * calls b6b_yield() while waiting for completion */
-		b6b_offload_cond_notify(&t->finish, &t->state, B6B_OFFLOAD_DONE);
+		b6b_offload_cond_notify(t, B6B_OFFLOAD_DONE);
 	}
 
 	pthread_exit(NULL);
@@ -92,20 +90,15 @@ int b6b_offload_thread_start(struct b6b_offload_thread *t, const int id)
 	if (sigfillset(&t->mask) < 0)
 		return 0;
 
-	b6b_offload_cond_init(&t->ready);
-	b6b_offload_cond_init(&t->start);
-	b6b_offload_cond_init(&t->finish);
+	b6b_offload_cond_init(&t->cond);
 
 	t->main = pthread_self();
 	if (pthread_create(&t->tid, NULL, b6b_offload_thread_routine, t) != 0) {
-		b6b_offload_cond_destroy(&t->finish);
-		b6b_offload_cond_destroy(&t->start);
-		b6b_offload_cond_destroy(&t->ready);
+		b6b_offload_cond_destroy(&t->cond);
 		return 0;
 	}
 
-	b6b_offload_cond_wait(&t->ready, &t->state, B6B_OFFLOAD_UP);
-	b6b_offload_cond_destroy(&t->ready);
+	b6b_offload_cond_wait(t, B6B_OFFLOAD_UP);
 
 	/* signal b6b_offload_ready() */
 	atomic_store(&t->state, B6B_OFFLOAD_IDLE);
@@ -119,8 +112,7 @@ void b6b_offload_thread_stop(struct b6b_offload_thread *t)
 		pthread_cancel(t->tid);
 		pthread_join(t->tid, NULL);
 
-		b6b_offload_cond_destroy(&t->finish);
-		b6b_offload_cond_destroy(&t->start);
+		b6b_offload_cond_destroy(&t->cond);
 	}
 }
 
@@ -131,14 +123,14 @@ int b6b_offload_start(struct b6b_offload_thread *t,
 	t->fn = fn;
 	t->arg = arg;
 
-	b6b_offload_cond_notify(&t->start, &t->state, B6B_OFFLOAD_RUNNING);
+	b6b_offload_cond_notify(t, B6B_OFFLOAD_RUNNING);
 
 	return 1;
 }
 
 int b6b_offload_finish(struct b6b_offload_thread *t)
 {
-	b6b_offload_cond_wait(&t->finish, &t->state, B6B_OFFLOAD_DONE);
+	b6b_offload_cond_wait(t, B6B_OFFLOAD_DONE);
 
 	atomic_store(&(t)->state, B6B_OFFLOAD_IDLE);
 	return 1;
