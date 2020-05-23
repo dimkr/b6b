@@ -99,6 +99,7 @@ int b6b_offload_thread_start(struct b6b_offload_thread *t, const int id)
 	}
 
 	b6b_offload_cond_wait(&t->ready, &t->state, B6B_OFFLOAD_UP);
+	b6b_offload_cond_destroy(&t->ready);
 
 	/* signal b6b_offload_ready() */
 	atomic_store(&t->state, B6B_OFFLOAD_IDLE);
@@ -114,7 +115,6 @@ void b6b_offload_thread_stop(struct b6b_offload_thread *t)
 
 		b6b_offload_cond_destroy(&t->finish);
 		b6b_offload_cond_destroy(&t->start);
-		b6b_offload_cond_destroy(&t->ready);
 	}
 }
 
