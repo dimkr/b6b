@@ -170,7 +170,7 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 	bg->flags &= ~B6B_THREAD_FG;
 	bg->flags |= B6B_THREAD_BG;
 
-	jumped = (bg->type == B6B_CONTEXT_TYPE_SWITCH);
+	jumped = (bg->type == B6B_CONTEXT_TYPE_JMP);
 
 	bg->type = B6B_CONTEXT_TYPE_JMP;
 	if (setjmp(bg->env) != 0)
