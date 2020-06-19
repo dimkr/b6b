@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017, 2018 Dima Krasner
+ * Copyright 2017, 2018, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@
 
 #include <b6b.h>
 
-#include "miniz/miniz.h"
-#include "miniz/miniz_tdef.h"
+#include <miniz.h>
 
 #define B6B_DEFLATE_CHUNK_SZ 64 * 1024
 #define B6B_INFLATE_IN_CHUNK_SZ 64 * 1024

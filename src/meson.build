@@ -63,19 +63,11 @@ if with_linenoise
 endif
 
 if get_option('with_miniz')
-	miniz_srcs = ['miniz/miniz_tdef.c', 'miniz/miniz_tinfl.c', 'miniz/miniz.c']
 	miniz_cflags = ['-DMINIZ_NO_ARCHIVE_APIS', '-DMINIZ_NO_ZLIB_COMPATIBLE_NAMES']
+	add_project_arguments(miniz_cflags, language: 'c')
 
-	if get_option('b_lto')
-		add_project_arguments(miniz_cflags, language: 'c')
-		libb6b_srcs += miniz_srcs
-	else
-		miniz = static_library('miniz',
-		                       miniz_srcs,
-		                       c_args: miniz_cflags,
-		                       include_directories: b6b_includes)
-		b6b_libs += [miniz]
-	endif
+	miniz = subproject('miniz')
+	b6b_deps += miniz.get_variable('miniz_dependency')
 
 	libb6b_srcs += ['b6b_zlib.c']
 endif
