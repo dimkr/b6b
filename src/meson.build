@@ -63,6 +63,10 @@ if with_linenoise
 endif
 
 if get_option('with_miniz')
+	if get_option('b_lto')
+		error('LTO breaks linking with miniz')
+	endif
+
 	miniz_cflags = ['-DMINIZ_NO_ARCHIVE_APIS', '-DMINIZ_NO_ZLIB_COMPATIBLE_NAMES']
 	add_project_arguments(miniz_cflags, language: 'c')
 

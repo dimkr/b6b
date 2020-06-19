@@ -29,7 +29,7 @@ meson configure --default-library=shared --unity=on --unity-size=100 build-gcc
 for i in build-gcc build-clang build-no-threads
 do
 	ninja -C $i
-	meson configure --optimization=3 -Db_lto=true $i
+	meson configure --optimization=3 -Dwith_miniz=false -Db_lto=true $i
 	DESTDIR=dest ninja -C $i install
 done
 
