@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2020 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #ifdef B6B_HAVE_THREADS
 
 #	include <ucontext.h>
+#	include <setjmp.h>
 
 #	include <sys/queue.h>
 
@@ -29,14 +30,22 @@ enum b6b_thread_flags {
 	B6B_THREAD_BLOCKED = 1 << 3
 };
 
+enum b6b_context_type {
+	B6B_CONTEXT_TYPE_JMP,
+	B6B_CONTEXT_TYPE_SWITCH
+};
+
 TAILQ_HEAD(b6b_threads, b6b_thread);
 struct b6b_thread {
+	jmp_buf env;
 	ucontext_t ucp;
+	size_t stksiz;
 	void *stack;
 	struct b6b_frame *curr;
 	struct b6b_obj *fn;
 	struct b6b_obj *_;
 	TAILQ_ENTRY(b6b_thread) ents;
+	enum b6b_context_type type;
 #	ifdef B6B_HAVE_VALGRIND
 	int sid;
 #	endif
