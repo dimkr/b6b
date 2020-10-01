@@ -8,7 +8,7 @@
 
 [![Build Status](https://travis-ci.org/dimkr/b6b.svg?branch=master)](https://travis-ci.org/dimkr/b6b) [![codecov](https://codecov.io/gh/dimkr/b6b/branch/master/graph/badge.svg)](https://codecov.io/gh/dimkr/b6b) [![Coverity](https://scan.coverity.com/projects/13321/badge.svg)](https://scan.coverity.com/projects/dimkr-b6b) [![Documentation Status](https://readthedocs.org/projects/b6b/badge/?version=latest)](http://b6b.readthedocs.io/en/latest/?badge=latest)
 
-## Overview
+## Overview of theory
 
 b6b is a simple, dynamic, procedural and reflective scripting language inspired by [Tcl](http://www.tcl.tk/), [Python](http://www.python.org/), Lisp and shell scripting.
 
