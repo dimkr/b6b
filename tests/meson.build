@@ -161,14 +161,21 @@ else
 endif
 
 here = meson.current_source_dir()
-if get_option('default_library') != 'static'
-	foreach test: core_tests + stream_tests + binding_tests
-		test_name = 'b6b_test_@0@'.format(test[0])
+foreach test: core_tests + stream_tests + binding_tests
+	test_name = 'b6b_test_@0@'.format(test[0])
+
+	if get_option('default_library') != 'static'
 		test_exe = executable(test_name,
 		                      '@0@.c'.format(test_name),
 		                      include_directories: b6b_includes,
 		                      dependencies: test_deps,
 		                      link_with: [libb6b])
-		test(test[0], test_exe, timeout: test[2], suite: test[1], workdir: here)
-	endforeach
-endif
+	else
+		test_exe = executable(test_name,
+		                      '@0@.c'.format(test_name),
+		                      include_directories: b6b_includes,
+		                      dependencies: test_deps,
+		                      link_whole: [libb6b])
+	endif
+	test(test[0], test_exe, timeout: test[2], suite: test[1], workdir: here)
+endforeach
