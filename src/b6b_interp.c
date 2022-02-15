@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017, 2018, 2020 Dima Krasner
+ * Copyright 2017, 2018, 2020, 2022 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -238,7 +238,9 @@ static void b6b_join(struct b6b_interp *interp)
 {
 #ifdef B6B_HAVE_THREADS
 	struct b6b_thread *t;
+#	ifdef B6B_HAVE_OFFLOAD_THREAD
 	int i;
+#	endif
 
 	/* wait until all threads except the main thread are inactive */
 	interp->exit = 1;
