@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017, 2018 Dima Krasner
+# Copyright 2017, 2018, 2022 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -155,7 +155,7 @@ if libffi.found()
 endif
 
 if get_option('with_threads')
-	test_deps = [dependency('threads')]
+	test_deps = [dependency('threads'), libucontext.get_variable('libucontext_dep')]
 else
 	test_deps = []
 endif

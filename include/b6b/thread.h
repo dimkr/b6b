@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2022 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 #ifdef B6B_HAVE_THREADS
 
-#	include <ucontext.h>
+#	include <libucontext/libucontext.h>
 
 #	include <sys/queue.h>
 
@@ -31,7 +31,7 @@ enum b6b_thread_flags {
 
 TAILQ_HEAD(b6b_threads, b6b_thread);
 struct b6b_thread {
-	ucontext_t ucp;
+	libucontext_ucontext_t ucp;
 	void *stack;
 	struct b6b_frame *curr;
 	struct b6b_obj *fn;

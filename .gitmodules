@@ -7,3 +7,6 @@
 [submodule "subprojects/lolibc"]
 	path = subprojects/lolibc
 	url = http://github.com/dimkr/lolibc
+[submodule "subprojects/libucontext"]
+	path = subprojects/libucontext
+	url = https://github.com/kaniini/libucontext

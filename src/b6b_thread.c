@@ -1,7 +1,7 @@
 /*
  * This file is part of b6b.
  *
- * Copyright 2017 Dima Krasner
+ * Copyright 2017, 2022 Dima Krasner
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ static int b6b_thread_prep(struct b6b_thread *t,
 {
 	memset(t, 0, sizeof(*t));
 
-	if (getcontext(&t->ucp) < 0)
+	if (libucontext_getcontext(&t->ucp) < 0)
 		return 0;
 
 	t->curr = b6b_frame_new(global);
@@ -103,21 +103,21 @@ static int b6b_thread_prep(struct b6b_thread *t,
 	t->flags = B6B_THREAD_BG;
 
 	if (sizeof(int) < sizeof(uintptr_t))
-		makecontext(&t->ucp,
-		            (void (*)(void))routine,
-		            4,
-		            (int)((uint64_t)(uintptr_t)t >> 32),
-		            (int)((uint64_t)(uintptr_t)t & UINT_MAX),
-		            (int)((uint64_t)(uintptr_t)priv >> 32),
-		            (int)((uint64_t)(uintptr_t)priv & UINT_MAX));
+		libucontext_makecontext(&t->ucp,
+		                        (void (*)(void))routine,
+		                        4,
+		                        (int)((uint64_t)(uintptr_t)t >> 32),
+		                        (int)((uint64_t)(uintptr_t)t & UINT_MAX),
+		                        (int)((uint64_t)(uintptr_t)priv >> 32),
+		                        (int)((uint64_t)(uintptr_t)priv & UINT_MAX));
 	else
-		makecontext(&t->ucp,
-		            (void (*)(void))routine,
-		            4,
-		            0,
-		            (int)(uintptr_t)t,
-		            0,
-		            (int)(uintptr_t)priv);
+		libucontext_makecontext(&t->ucp,
+		                        (void (*)(void))routine,
+		                        4,
+		                        0,
+		                        (int)(uintptr_t)t,
+		                        0,
+		                        (int)(uintptr_t)priv);
 
 	t->_ = b6b_ref(null);
 	t->depth = 1;
@@ -162,7 +162,7 @@ void b6b_thread_swap(struct b6b_thread *bg, struct b6b_thread *fg)
 	bg->flags &= ~B6B_THREAD_FG;
 	bg->flags |= B6B_THREAD_BG;
 
-	swapcontext(&bg->ucp, &fg->ucp);
+	libucontext_swapcontext(&bg->ucp, &fg->ucp);
 }
 
 #endif
