@@ -7,3 +7,9 @@
 [submodule "subprojects/lolibc"]
 	path = subprojects/lolibc
 	url = http://github.com/dimkr/lolibc
+[submodule "src/mbedtls"]
+	path = src/mbedtls
+	url = https://github.com/ARMmbed/mbedtls
+[submodule "src/curl"]
+	path = src/curl
+	url = https://github.com/curl/curl
