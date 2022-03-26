@@ -3,7 +3,7 @@
 {#
 	This file is part of b6b.
 
-	Copyright 2017, 2018 Dima Krasner
+	Copyright 2017, 2018, 2022 Dima Krasner
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -206,7 +206,19 @@
 			{$return}
 		}}
 
-		{$http.loop add $client $on_request {} $on_error}
+		{$proc _ {
+			{$try {
+				{$local ssl_client [$ssl_server accept [$. fd]]}
+				{$http.loop add $ssl_client $on_request {} $on_error}
+			} {
+				{$http.loop remove $.}
+				{$. close}
+			}}
+		} $client}
+
+		{$spawn {
+			{$_}
+		}}
 	}}
 }}
 
@@ -214,10 +226,12 @@
 	{$global http.banner [$choice $http.banners]}
 }}
 
-{$if [$!= [$list.len $@] 4] {
-	{$stderr writeln {Usage: httpd addr port backlog}}
+{$if [$!= [$list.len $@] 6] {
+	{$stderr writeln {Usage: httpd addr port backlog cert key}}
 	{$exit 1}
 }}
+
+{$global ssl_server [$ssl.server $4 $5]}
 
 {$http.loop add [$signal $SIGTERM $SIGINT] $on_term {} {}}
 {$http.loop add [$inet.server tcp $1 $2 $3] $on_clients {} {}}

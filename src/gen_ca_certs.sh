@@ -1,6 +1,8 @@
+#!/bin/sh -e
+
 # This file is part of b6b.
 #
-# Copyright 2017, 2022 Dima Krasner
+# Copyright 2022 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +16,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-option('with_threads', type: 'boolean')
-option('with_miniz', type: 'boolean')
-option('with_linenoise', type: 'boolean')
-option('with_valgrind', type: 'boolean', value: false)
-option('optimistic_alloc', type: 'boolean')
-option('with_mbedtls', type: 'boolean')
+cd $2
+
+perl $1 -q cert.pem > /dev/null
+rm -f certdata.txt
+
+cat << EOF > b6b_ca_certs.c
+#include <sys/types.h>
+
+static const unsigned char arr[] = \\
+EOF
+
+grep -v -e ^# -e '^$' cert.pem |
+while read x
+do
+    echo "    \"$x\\n\" \\"
+done >> b6b_ca_certs.c
+
+cat << EOF >> b6b_ca_certs.c
+;
+
+const unsigned char *b6b_ca_certs = arr;
+const size_t b6b_ca_certs_len = sizeof(arr);
+EOF
+
+rm -f cert.pem
