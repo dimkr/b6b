@@ -485,8 +485,6 @@ int b6b_offload(struct b6b_interp *interp,
                 void (*fn)(void *),
                 void *arg)
 {
-	struct b6b_thread *t;
-	int swap, pending = 0;
 	struct b6b_offload_thread *offth = NULL;
 
 	if (!b6b_threaded(interp))
@@ -519,31 +517,6 @@ int b6b_offload(struct b6b_interp *interp,
 			if (!b6b_threaded(interp))
 				break;
 
-			/* check whether there is at least one thread that waits for us to
-			 * complete the blocking operation and at least one thread which
-			 * doesn't */
-			pending = swap = 0;
-			b6b_thread_foreach(&interp->threads, t) {
-				if (t != interp->fg) {
-					if (b6b_thread_blocked(t)) {
-						pending = 1;
-						if (swap)
-							break;
-					}
-					else {
-						swap = 1;
-						if (pending)
-							break;
-					}
-				}
-			}
-
-			/* if all other threads are blocked by us, we want to stop this
-			 * polling loop since all they do is repeatedly calling
-			 * b6b_yield() */
-			if (!swap)
-				break;
-
 			/* if all other threads exited during the previous iterations of
 			 * this loop, we can (and should) block */
 			if (!b6b_yield(interp))
@@ -560,8 +533,7 @@ int b6b_offload(struct b6b_interp *interp,
 		 * the next statement of the current thread also calls
 		 * b6b_offload_start(), that thread will spend more time in its
 		 * b6b_offload_ready() loop */
-		if (pending)
-			b6b_yield(interp);
+		b6b_yield(interp);
 	}
 
 	return 1;
