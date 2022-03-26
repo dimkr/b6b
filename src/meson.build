@@ -1,6 +1,6 @@
 # This file is part of b6b.
 #
-# Copyright 2017, 2020 Dima Krasner
+# Copyright 2017, 2020, 2022 Dima Krasner
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,6 +45,10 @@ if get_option('with_threads')
 	add_project_arguments('-DB6B_HAVE_THREADS', language: 'c')
 	libb6b_srcs += ['b6b_co.c', 'b6b_sem.c']
 	b6b_deps += [dependency('threads')]
+
+	libucontext = subproject('libucontext')
+	b6b_deps += libucontext.get_variable('libucontext_dep')
+	b6b_includes += libucontext.get_variable('headers')
 
 	with_offload = cc.has_header('stdatomic.h')
 	if with_offload
